@@ -14,11 +14,12 @@ export function Surface() {
         if (cancelled) return;
         layers.push(p.startPaper(), m.startMarker(), i.startInk());
       });
-    const id = "requestIdleCallback" in window ? window.requestIdleCallback(start, { timeout: 400 }) : window.setTimeout(start, 50);
+    const idle = typeof window.requestIdleCallback === "function";
+    const id = idle ? window.requestIdleCallback(start, { timeout: 400 }) : setTimeout(start, 50);
     return () => {
       cancelled = true;
-      if ("cancelIdleCallback" in window) window.cancelIdleCallback(id);
-      else window.clearTimeout(id);
+      if (idle) window.cancelIdleCallback(id as number);
+      else clearTimeout(id);
       layers.forEach((l) => l.destroy());
     };
   }, []);
