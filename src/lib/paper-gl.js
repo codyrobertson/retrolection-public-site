@@ -1,4 +1,3 @@
-// @ts-check
 /**
  * Paper: fibres, tooth and a faint wash, generated once by a fragment shader into a
  * seamless tile and handed to CSS as a background image.

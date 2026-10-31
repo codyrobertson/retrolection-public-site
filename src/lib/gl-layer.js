@@ -1,4 +1,3 @@
-// @ts-check
 /**
  * Tiled WebGL overlay for live DOM. Shared plumbing for the ink (text) and
  * marker (fills) layers.

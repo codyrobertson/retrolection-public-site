@@ -1,4 +1,3 @@
-// @ts-check
 /**
  * Ballpoint ink over live DOM text (see gl-layer.js for the shared GL plumbing).
  *

@@ -1,4 +1,3 @@
-// @ts-check
 /**
  * Copic-style alcohol marker fills over live DOM/SVG (see gl-layer.js).
  *
