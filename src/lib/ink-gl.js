@@ -30,8 +30,9 @@ void main(){
     vec2 pp=vec2(cp.x,y0+cp.y), cell=floor(pp/pitch), ctr=(cell+.5)*pitch, dd=ctr-pp;
     vec2 mc=mu+vec2(dd.x/(res.x/dpr),-dd.y/(th+2.*pad));
     vec4 g=texture2D(mask,mc);
-    float on=smoothstep(.38,.62,g.a);
-    float dotA=on*mix(1.,smoothstep(pitch*.68,pitch*.52,length(pp-ctr)),step(.55,S));
+    float big=step(.55,S);
+    float on=mix(pow(g.a,.8),smoothstep(.38,.62,g.a),big);   // small type keeps its anti-aliasing: thresholding thin strokes makes it unreadable
+    float dotA=on*mix(1.,smoothstep(pitch*.68,pitch*.52,length(pp-ctr)),big);
     gl_FragColor=vec4(g.rgb/max(g.a,.001)*dotA,dotA);return;
   }
   float c1=texture2D(b1,mu).a, c2=cc.a;

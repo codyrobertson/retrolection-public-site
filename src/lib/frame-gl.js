@@ -68,11 +68,11 @@ void main(){
   if(mk.a<.5){gl_FragColor=vec4(0.);return;}
   vec3 kd=texture2D(meta,mc).rgb;
   vec2 q=p-ctr;                                              // inside the cell, y down
-  float aa=.55;
-  float hb=(1.-smoothstep(3.9-aa,3.9+aa,abs(q.x)))*(1.-smoothstep(1.-aa*.5,1.+aa*.5,abs(q.y-.5)));   // '-'  (gap between cells)
-  float vb=(1.-smoothstep(1.-aa*.5,1.+aa*.5,abs(q.x)))*(1.-smoothstep(7.6-aa,7.6+aa,abs(q.y)));      // '|'
-  float cr=(1.-smoothstep(3.4-aa,3.4+aa,abs(q.x)))*(1.-smoothstep(1.-aa*.5,1.+aa*.5,abs(q.y-.5)));   // '+' bar
-  float a=kd.r>.5?hb:kd.g>.5?vb:max(cr,vb);
+  float aa=.5, ay=abs(q.y-.5);
+  float hb=(1.-smoothstep(2.5-aa,2.5+aa,abs(q.x)))*(1.-smoothstep(.5,.5+aa,ay));                    // '-'  a short dash
+  float vb=max(1.-smoothstep(.9,.9+aa,length(vec2(q.x,q.y-4.5))),1.-smoothstep(.9,.9+aa,length(vec2(q.x,q.y+3.5)))); // ':'  two dots
+  float cr=max((1.-smoothstep(2.5-aa,2.5+aa,abs(q.x)))*(1.-smoothstep(.5,.5+aa,ay)),(1.-smoothstep(.5,.5+aa,abs(q.x)))*(1.-smoothstep(2.5-aa,2.5+aa,ay))); // '+'
+  float a=kd.r>.5?hb:kd.g>.5?vb:cr;
   vec3 col=mk.rgb/mk.a;
   gl_FragColor=vec4(col*a,a);
 }`;
