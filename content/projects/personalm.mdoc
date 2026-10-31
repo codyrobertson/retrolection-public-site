@@ -11,7 +11,7 @@ tags:
   - "AI"
   - "ML"
   - "Ecommerce"
-featured: false
+featured: true
 draft: false
 seo:
   title: ''
@@ -34,5 +34,7 @@ The rule in production was **tower only**: trained models predict, LLMs explain.
 - **Qwen3-8B SFT and GRPO.** A LoRA fine-tune on 40,588 examples through Tinker, followed by a GRPO run. GRPO collapsed (every persona bought the same things), so that path was abandoned.
 - **Qwen3-Embedding-0.6B.** A contrastive full fine-tune on 30,792 purchase pairs. It scored 0.685 AUC, just under an off-the-shelf OpenAI embedding at 0.691, which settled that question.
 - **DistilBERT heads** for churn and category affinity, plus XGBoost as a diagnostic baseline.
+
+PersonaLM has since been retired; the team pivoted to a new product.
 
 {% Callout tone="note" text="Full case study coming soon." /%}
