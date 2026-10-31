@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getSite } from "@/lib/content";
 import { getSiteUrl } from "@/lib/seo";
-import "./fonts.css";
+import { inferi, messina, nichrome } from "./fonts";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${messina.variable} ${inferi.variable} ${nichrome.variable}`}>
       <body>{children}</body>
     </html>
   );

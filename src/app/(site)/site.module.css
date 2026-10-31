@@ -1,5 +1,6 @@
 .header,
 .footer {
+  font-family: var(--font-sans);
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
