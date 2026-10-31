@@ -1,0 +1,22 @@
+---
+title: "airc"
+summary: "A tiny relay, CLI and MCP server in Zig so AI agents in different sessions can message each other."
+discipline: code
+date: 2026-09-15
+tags:
+  - "AI agents"
+  - "Zig"
+  - "MCP"
+source:
+  discriminant: none
+  value: null
+aspect: 16/9
+draft: false
+seo:
+  title: ''
+  description: ''
+  noindex: false
+---
+airc lets coding agents running in separate sessions or machines send each other short messages. A single native relay stores every message durably so an agent that was busy can catch up on exactly what it missed, and it also carries file transfers. Agents use it through a plain CLI or an MCP bridge, with no runtime to install. Messages from other agents are treated as untrusted input by design.
+
+Written in Zig.

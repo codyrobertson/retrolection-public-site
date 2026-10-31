@@ -1,11 +1,16 @@
 ---
-title: DealKept
-summary: ''
+title: "DealKept"
+summary: "An always-on AI assistant for real estate teams that catches every promise made to a client across calls, texts and email, and turns it into a one-click follow-up."
 discipline: design-code
 status: hobby
-role: ''
-client: ''
-tags: []
+date: 2026-09-22
+role: "Founder"
+client: ""
+url: "https://dealkept.com"
+tags:
+  - "AI"
+  - "Real estate"
+  - "Privacy ML"
 featured: false
 draft: false
 seo:
@@ -13,4 +18,18 @@ seo:
   description: ''
   noindex: false
 ---
-Write-up coming soon.
+## What it does
+
+DealKept was an experiment in a particular shape of AI product: an always-on agent that works in the background and only surfaces what needs a human. It listens across a team's calls, texts and email, works out what was promised to each client, ranks the follow-ups, and lets the agent act with one click. It's for US real estate teams of 2 to 10 people, and it is deliberately not a CRM.
+
+The brand is built around Reid, a robin mascot, with master poses, expressions, animation frames and stickers produced from a versioned image-generation prompt library.
+
+## How it's built
+
+A Cloudflare-native TypeScript monorepo (Workers, Durable Objects, D1, Queues, Workflows, Vectorize) using Effect, Hono and oRPC. Ninety architecture decision records, and a rule that every screen passes design review before CI will ship it.
+
+## The privacy model
+
+Client messages are full of names, so I trained a small name detector to run inside a Cloudflare Worker: a 6-layer BERT distilled from a commercial PII model plus GLiNER, about 15 MB at 4-bit. It lifted recall on third-party names from 88.7% to 94.9%, but precision on non-Latin text fell from 92.1% to 83.5%, so it isn't shipped yet.
+
+{% Callout tone="note" text="Full case study coming soon." /%}

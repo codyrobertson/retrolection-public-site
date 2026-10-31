@@ -1,0 +1,30 @@
+---
+title: "Post2Plate"
+summary: "A social-first recipe inbox: share a recipe post, AI turns it into a clean recipe page, and fans cook from it on the web."
+discipline: design-code
+status: hobby
+date: 2026-05-02
+role: "Solo"
+client: ""
+url: "https://post2plate.com"
+tags:
+  - "AI"
+  - "Food"
+  - "Creators"
+featured: false
+draft: false
+seo:
+  title: ''
+  description: ''
+  noindex: false
+---
+## What it does
+
+Food creators post recipes on Instagram and TikTok but rarely have a website. With Post2Plate, a creator shares or DMs a post, AI parses it, and it's published at `/@handle/recipe`, where fans can actually cook from it. The creator owns the audience.
+
+I built it solo: product, brand (including Miso, the mascot), a FastAPI and Postgres backend, a Next.js front end and a Figma plugin.
+
+## The AI
+
+- **Parser:** gpt-oss-120b on Cerebras, with GPT-4o as fallback, at 92% on a 60-case test set. Video audio is transcribed with Whisper.
+- **Intelligence heads:** I trained about ten small TF-IDF and logistic-regression models for tasks like ingredient substitution and canonicalization, labeled with larger LLMs. Some looked great (0.99 on canonicalization), but my own training journal later flagged a few of those wins as inflated, which was the most useful lesson of the project.

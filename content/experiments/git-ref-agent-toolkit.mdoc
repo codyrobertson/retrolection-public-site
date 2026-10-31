@@ -1,0 +1,26 @@
+---
+title: "Git-ref agent toolkit"
+summary: "Three small CLIs that coordinate many parallel coding agents using nothing but git refs."
+discipline: code
+date: 2026-07-20
+tags:
+  - "AI agents"
+  - "Git"
+  - "CLI"
+source:
+  discriminant: none
+  value: null
+aspect: 16/9
+draft: false
+seo:
+  title: ''
+  description: ''
+  noindex: false
+---
+When dozens of agents work in one repo, they collide. These tools use git refs as cheap, atomic locks so they don't:
+
+- **gh-issue-lease**: an agent leases a GitHub issue before working on it, so two agents never take the same task.
+- **gh-once**: makes an action run exactly once across all agents.
+- **gh-worktree-gc**: cleans up stale agent worktrees.
+
+They came out of building HailTrigger with parallel agents, and are published on npm.

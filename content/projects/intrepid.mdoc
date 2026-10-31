@@ -1,11 +1,16 @@
 ---
-title: Intrepid
-summary: ''
+title: "Intrepid"
+summary: "A record of how an AI wrote a contract (what it read, where it hesitated, what it took back), built so lawyers can follow its reasoning."
 discipline: design-code
 status: hobby
-role: ''
-client: ''
-tags: []
+date: 2026-08-28
+role: "Solo"
+client: ""
+url: "https://intrepid-pied.vercel.app"
+tags:
+  - "AI"
+  - "Interpretability"
+  - "Legal"
 featured: false
 draft: false
 seo:
@@ -13,4 +18,16 @@ seo:
   description: ''
   noindex: false
 ---
-Write-up coming soon.
+## The idea
+
+Intrepid is a research prototype, not a product. Most AI-safety tools hand you a verdict: hallucinated or not. Intrepid shows lawyers the path instead. You step through how a model drafted a contract, clause by clause: what it read, where it hesitated and what it took back. There's no play button and no ML jargon on screen.
+
+It's built on one real, measured run of Qwen3-8B on an A100, read through a published sparse autoencoder. The rule: the interface never claims something the data can't back.
+
+## Details
+
+- One clause cited an authority that didn't exist; 8 of 12 redraws from the same starting point did the same.
+- Support for each claim is shown in three states: measured, undetermined, or nothing carried.
+- I turned down a 2.06× speedup because it caused four false alarms, and a 1.26× speedup because it reordered the evidence on 11 of 22 clauses.
+
+Built with Next.js 16, React 19, Tailwind v4 and a Python capture pipeline on Modal.

@@ -1,11 +1,16 @@
 ---
-title: TinyImage
-summary: ''
+title: "TinyImage"
+summary: "A tiny AI-image detector that runs entirely in your browser: an 11 MB distilled model checks images in about 8 ms, with nothing uploaded."
 discipline: code
 status: hobby
-role: ''
-client: ''
-tags: []
+date: 2026-08-13
+role: "Solo"
+client: ""
+url: "https://github.com/codyrobertson/instant-ai-seek"
+tags:
+  - "ML"
+  - "Computer vision"
+  - "Chrome extension"
 featured: false
 draft: false
 seo:
@@ -13,4 +18,19 @@ seo:
   description: ''
   noindex: false
 ---
-Write-up coming soon.
+## What it is
+
+TinyImage, published as the Chrome extension **Instant AI Seek**, detects AI-generated images without sending anything to a server. The model runs in the browser through ONNX Runtime Web, on WebGPU with a WASM fallback, at about 8 ms per image.
+
+## The model
+
+- **Teacher:** a ConvNeXt-Tiny fine-tuned to tell real photos from AI images across about ten generator families, including Flux, SDXL, SD 3.5, Midjourney, DALL-E, Ideogram, Recraft and StyleGAN3.
+- **Student (shipped):** a ResNet-18 distilled from the teacher, exported at 8-bit (11 MB) and fp16 (22 MB).
+- **Data:** real photos plus AI images generated for training, with a sealed evaluation set and out-of-sample holdouts.
+- **Training:** on a DGX Spark, with every run recorded in a training journal.
+
+## Results
+
+- 99.3% balanced accuracy on a sealed 300-image test set
+- 99.8% on out-of-sample Stable Diffusion and Midjourney images
+- 4.55% false-AI rate on 2,000 real photos in the wild

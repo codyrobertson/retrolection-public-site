@@ -1,0 +1,24 @@
+---
+title: "Rustoleum trader"
+summary: "Training a small language model to trade inside a market simulator written in Rust."
+discipline: code
+date: 2026-02-20
+tags:
+  - "ML"
+  - "Reinforcement learning"
+  - "Rust"
+source:
+  discriminant: none
+  value: null
+aspect: 16/9
+draft: false
+seo:
+  title: ''
+  description: ''
+  noindex: false
+---
+An experiment in teaching an LLM to make calibrated trading decisions. I fine-tuned Qwen3-8B with LoRA on supervised examples, then trained it further with GRPO reinforcement learning against a market simulator I wrote in Rust, and ran the result as a paper trader on Modal.
+
+The best run reached a profit factor of 1.27, a Brier score of 0.133 on its probability estimates and a 52% win rate in paper trading. Most of the work was in fighting reward hacking and policy collapse, and keeping a strict training journal.
+
+Paper trading only; no real money.
