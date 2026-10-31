@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ink — production CSS</title>
+<style>
+@font-face{font-family:Messina;src:url(../../src/fonts/messina-sans-400.woff2);font-weight:400}
+@font-face{font-family:Messina;src:url(../../src/fonts/messina-sans-700.woff2);font-weight:700}
+@font-face{font-family:Inferi;src:url(../../src/fonts/inferi-400.woff2);font-weight:400}
+@font-face{font-family:Inferi;src:url(../../src/fonts/inferi-700.woff2);font-weight:700}
+@font-face{font-family:Nichrome;src:url(../../src/fonts/md-nichrome-400.woff2);font-weight:400}
+:root{--bg:#fff;--fg:#171717;--line:#e5e5e5}
+@media (prefers-color-scheme:dark){:root{--bg:#0a0a0a;--fg:#ededed;--line:#262626;color-scheme:dark}}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:Inferi,Georgia,serif;padding:20px;-webkit-font-smoothing:antialiased}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+@media(max-width:700px){.cols{grid-template-columns:1fr}}
+.tag{font:600 11px system-ui;letter-spacing:.05em;text-transform:uppercase;opacity:.55;margin-bottom:10px}
+h1{font:700 44px/1.05 Messina,system-ui,sans-serif;margin-bottom:8px}
+h3{font:700 22px/1.2 Messina,system-ui,sans-serif;margin:14px 0 4px}
+.l{margin:3px 0}
+.s11{font-size:11px}.s12{font-size:12px}.s13{font-size:13px}.s14{font-size:14px}.s16{font-size:16px}.s18{font-size:18px}
+.sans{font-family:Messina,system-ui,sans-serif}.small{font-family:Nichrome,system-ui,sans-serif}
+.plain,.plain *{text-shadow:none!important;filter:none!important;animation:none!important}
+#m{font:12px ui-monospace,monospace;margin-top:16px;white-space:pre-wrap;opacity:.8}
+</style>
+<link rel="stylesheet" href="../../src/app/ink.css">
+</head>
+<body>
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><filter id="ink-rough" x="-2%" y="-5%" width="104%" height="110%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.1" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
+<div class="cols">
+ <div class="plain"><div class="tag">plain</div><div id="L"></div></div>
+ <div><div class="tag">ink.css (production file)</div><div id="R"></div></div>
+</div>
+<div id="m"></div>
+<script>
+const tpl=`<h1>Quiet ink, slow bleed</h1>
+<h3>Selected work, 2019–2026</h3>
+<p class="l s18">18 · Ballpoint ink sits unevenly on paper, pooling at the stroke edges.</p>
+<p class="l s16">16 · Ballpoint ink sits unevenly on paper, pooling at the stroke edges.</p>
+<p class="l s14">14 · Ballpoint ink sits unevenly on paper, pooling at the stroke edges.</p>
+<p class="l s13">13 · Ballpoint ink sits unevenly on paper, pooling at the stroke edges.</p>
+<p class="l s12">12 · Ballpoint ink sits unevenly on paper, pooling at the stroke edges.</p>
+<p class="l s11">11 · Ballpoint ink sits unevenly on paper, pooling at the stroke edges 0123456789</p>
+<p class="l s14 sans">14 sans · Ballpoint ink sits unevenly on paper, pooling at the edges.</p>
+<p class="l s12 small">12 nichrome · Ballpoint ink sits unevenly on paper, pooling at the edges.</p>`;
+L.innerHTML=tpl;R.innerHTML=tpl;
+
+async function frames(ms){const d=[];let last=performance.now();const end=last+ms;
+  await new Promise(res=>{(function f(n){d.push(n-last);last=n;n<end?requestAnimationFrame(f):res()})(last)});
+  d.shift();d.sort((a,b)=>a-b);return {avg:d.reduce((a,b)=>a+b,0)/d.length,p95:d[Math.floor(d.length*.95)],max:d.at(-1),n:d.length}}
+window.measure=async()=>{
+  const paint=Object.fromEntries(performance.getEntriesByType('paint').map(e=>[e.name,+e.startTime.toFixed(1)]));
+  const css=performance.getEntriesByName(new URL('../../src/app/ink.css',location).href)[0];
+  const ink=await frames(3000);
+  document.querySelector('.cols>div:nth-child(2)').classList.add('plain');
+  const plain=await frames(3000);
+  document.querySelector('.cols>div:nth-child(2)').classList.remove('plain');
+  const f=x=>`avg ${x.avg.toFixed(2)}ms  p95 ${x.p95.toFixed(2)}ms  max ${x.max.toFixed(1)}ms  (${x.n} frames)`;
+  const out={paint,inkCssFetchMs:css&&+css.duration.toFixed(2),inkCssBytes:css&&css.encodedBodySize,withInk:f(ink),withoutInk:f(plain)};
+  m.textContent=JSON.stringify(out,null,1);return out};
+</script>
+</body>
+</html>

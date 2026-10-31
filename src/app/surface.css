@@ -1,0 +1,51 @@
+/*
+ * Paper + marker styling. Both are progressive enhancements: nothing here applies
+ * until the matching script marks <html> as ready (paper-gl / marker-gl).
+ */
+
+/* Paper: the generated tile sits over the flat background colour, with two broad
+   washes of light that scroll with the page and never repeat. */
+html.paper-gl body {
+  background-image:
+    var(--paper-grain),
+    radial-gradient(90% 70% at 15% 0%, var(--paper-wash-a), transparent 70%),
+    radial-gradient(80% 60% at 100% 100%, var(--paper-wash-b), transparent 70%);
+  background-size: var(--paper-size) var(--paper-size), 100% 100%, 100% 100%;
+  background-repeat: repeat, no-repeat, no-repeat;
+}
+
+/* Marker: the overlay replaces the element's own fill. Light paper takes the ink
+   as a multiply (alcohol dye darkens the sheet); dark paper takes it normally. */
+html.marker-gl [data-marker] {
+  fill: transparent !important;
+  stroke: transparent !important;
+  background-color: transparent !important;
+}
+#marker-gl {
+  mix-blend-mode: multiply;
+}
+@media (prefers-color-scheme: dark) {
+  #marker-gl {
+    mix-blend-mode: normal;
+  }
+}
+:root[data-theme="light"] #marker-gl {
+  mix-blend-mode: multiply;
+}
+:root[data-theme="dark"] #marker-gl {
+  mix-blend-mode: normal;
+}
+
+@media print {
+  #marker-gl {
+    display: none;
+  }
+  html.marker-gl [data-marker] {
+    fill: revert !important;
+    stroke: revert !important;
+    background-color: revert !important;
+  }
+  html.paper-gl body {
+    background-image: none;
+  }
+}

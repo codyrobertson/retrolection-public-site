@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Surface } from "@/components/surface";
 import { getSite } from "@/lib/content";
 import { getSiteUrl } from "@/lib/seo";
 import { inferi, messina, nichrome } from "./fonts";
@@ -25,7 +26,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${messina.variable} ${inferi.variable} ${nichrome.variable}`}>
-      <body>{children}</body>
+      <body>
+        <Surface />
+        {children}
+      </body>
     </html>
   );
 }
