@@ -59,3 +59,26 @@ export function restoreSurfaceMode() {
   if (m === "digital") setSurfaceMode("digital", { instant: true });
   else document.documentElement.dataset.surface = "analog";
 }
+
+/**
+ * DOM-driven control: the mode lives in `<html data-surface="analog|digital">`.
+ * Setting that attribute (devtools, markup, any script) runs the switch, and any element with
+ * `data-surface-toggle` (or `data-surface-toggle="digital"` to force a mode) flips it on click.
+ * @returns {() => void} stop
+ */
+export function bindSurfaceAttributes() {
+  const docEl = document.documentElement;
+  const mo = new MutationObserver(() => {
+    const m = docEl.dataset.surface;
+    if ((m === "analog" || m === "digital") && m !== getSurfaceMode()) setSurfaceMode(m);
+  });
+  mo.observe(docEl, { attributes: true, attributeFilter: ["data-surface"] });
+  const click = (e) => {
+    const el = e.target instanceof Element ? e.target.closest("[data-surface-toggle]") : null;
+    if (!el) return;
+    const want = el.getAttribute("data-surface-toggle");
+    setSurfaceMode(want === "analog" || want === "digital" ? want : getSurfaceMode() === "analog" ? "digital" : "analog");
+  };
+  document.addEventListener("click", click);
+  return () => { mo.disconnect(); document.removeEventListener("click", click); };
+}

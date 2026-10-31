@@ -94,14 +94,14 @@ svg text{font:12px Messina,sans-serif;fill:var(--muted)}
   <p>Ballpoint ink sits unevenly on paper, pooling at the stroke edges and feathering a hair beyond them. It is oil based and slow, so it dries before it travels far, and the tooth of the paper decides where it catches. At small sizes the type stays crisp: 12px captions and 17px body remain easy to read.</p>
   <p class="cap">Caption at 12px: the effect scales down with type size so tiny text keeps its shape.</p>
 </main>
-<button class="surface-toggle" id="tog" type="button">Analog → Digital</button>
+<button class="surface-toggle" id="tog" type="button" data-surface-toggle>Analog → Digital</button>
 <script type="module">
 const [{ startInk }, { startMarker }, { startPaper }, { startFrames }, sm] = await Promise.all([
   import("../../src/lib/ink-gl.js"), import("../../src/lib/marker-gl.js"), import("../../src/lib/paper-gl.js"), import("../../src/lib/frame-gl.js"), import("../../src/lib/surface-mode.js")]);
-window.sm = sm; sm.restoreSurfaceMode();
+window.sm = sm; sm.restoreSurfaceMode(); sm.bindSurfaceAttributes();
 window.paper = startPaper(); window.marker = startMarker(); window.ink = startInk(); window.frames = startFrames();
 const tog = document.getElementById("tog");
-tog.onclick = () => { const n = sm.getSurfaceMode() === "analog" ? "digital" : "analog"; sm.setSurfaceMode(n); tog.textContent = n === "analog" ? "Analog → Digital" : "Digital → Analog"; };
+sm.onSurface(() => { tog.textContent = sm.getSurfaceMode() === "analog" ? "Analog → Digital" : "Digital → Analog"; });
 </script>
 </body>
 </html>
