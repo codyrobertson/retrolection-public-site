@@ -17,7 +17,7 @@
 .prose code { font-family: var(--font-mono); font-size: 0.9em; }
 .prose pre { overflow-x: auto; padding: 1rem; background: var(--surface); border-radius: var(--radius); }
 .prose blockquote { border-left: 2px solid var(--border); padding-left: 1em; color: var(--muted); }
-.prose figcaption { margin-top: 0.5em; font-size: 0.875rem; color: var(--muted); }
+.prose figcaption { margin-top: 0.5em; font-size: 0.875rem; font-family: var(--font-small); color: var(--muted); }
 
 .prose > .narrow { grid-column: narrow; }
 .prose > .wide { grid-column: wide; }

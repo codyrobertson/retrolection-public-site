@@ -9,20 +9,20 @@
 .section[data-width="full"] { --section-width: 100%; width: 100%; }
 
 .hero { display: grid; gap: 1.25rem; padding-block: clamp(2rem, 8vw, 6rem); }
-.eyebrow { font-family: var(--font-mono); font-size: 0.85rem; color: var(--muted); }
+.eyebrow { font-family: var(--font-small); font-size: 0.85rem; color: var(--muted); }
 .heroHeading { font-size: clamp(2.25rem, 6vw, 4.5rem); line-height: 1.05; letter-spacing: -0.02em; max-width: 18ch; }
 .lede { font-size: 1.15rem; color: var(--muted); max-width: 55ch; }
 .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem; }
 
 .heading { font-size: 1.25rem; margin-bottom: 1.25rem; }
 .headingRow { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
-.headingRow a { color: var(--muted); font-size: 0.9rem; }
+.headingRow a { color: var(--muted); font-size: 0.9rem; font-family: var(--font-small); }
 
 .markdown { display: grid; gap: 1em; line-height: 1.65; max-width: var(--measure); }
 .markdown a { text-decoration: underline; text-underline-offset: 0.2em; }
 
 .media { width: 100%; height: auto; border-radius: var(--radius); }
-.caption { margin-top: 0.5rem; font-size: 0.875rem; color: var(--muted); }
+.caption { margin-top: 0.5rem; font-size: 0.875rem; font-family: var(--font-small); color: var(--muted); }
 
 .cta { display: grid; gap: 1rem; justify-items: start; padding: clamp(1.5rem, 4vw, 3rem); border-radius: var(--radius); background: var(--surface); }
 

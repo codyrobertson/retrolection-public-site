@@ -13,8 +13,10 @@
   --gutter: clamp(1rem, 4vw, 2rem);
   --measure: 42rem;
   --section-width: 64rem;
-  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-sans: "Messina Sans", system-ui, sans-serif;
+  --font-serif: "Inferi", Georgia, "Times New Roman", serif;
+  --font-small: "MD Nichrome", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -29,6 +31,13 @@
   html {
     color-scheme: dark;
   }
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  font-weight: 400;
 }
 
 * {
