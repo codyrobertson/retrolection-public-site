@@ -1,11 +1,16 @@
 ---
-title: HailTrigger
-summary: ''
+title: "HailTrigger"
+summary: "A storm-response lead engine for roofing contractors: rank homes by hail exposure and roof vulnerability, mail them, and track every lead back to the address."
 discipline: design-code
 status: active
-role: ''
-client: ''
-tags: []
+date: 2026-06-02
+role: "Co-founder & Design Engineer"
+client: "Aspire Roofing"
+url: "https://hailtrigger.com"
+tags:
+  - "AI"
+  - "Geospatial"
+  - "Computer vision"
 featured: true
 draft: false
 seo:
@@ -13,4 +18,20 @@ seo:
   description: ''
   noindex: false
 ---
-Write-up coming soon.
+## What it does
+
+HailTrigger turns public property records and hail and wind data into a ranked list of homes worth contacting after a storm. Contractors choose homes for direct-mail campaigns, every mailer carries its own QR code, and scans, bookings and leads are attributed back to each address.
+
+It serves two very different users: contractor staff working in a dense dashboard, and homeowners scanning a postcard on their phone after a storm. It's positioned as targeting intelligence, never a damage claim.
+
+## Built with agents
+
+HailTrigger was built by a two-person team working with large numbers of parallel AI coding agents. By August 2026 the live product had 4,071 commits, 2,371 pull requests and 529 database migrations. A ground-up rebuild is underway on a stricter kernel-and-modules architecture.
+
+## The roof model
+
+To estimate roof vulnerability, I trained a roof-material classifier on authorized county aerial imagery, first fine-tuning a ResNet-50 and then training a classification head on DINOv2 features. The v4 model reached 86.7% exact-material accuracy on a 372-property holdout, and 92.2% on the 85% of properties where it was at least 95% confident. It runs as a canary, not yet the default.
+
+Built with Next.js, Postgres/PostGIS, a Python worker, MapLibre and print-mail APIs.
+
+{% Callout tone="note" text="Full case study coming soon." /%}

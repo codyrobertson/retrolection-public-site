@@ -1,0 +1,19 @@
+---
+title: "codex-advisor"
+summary: "Routes each coding-agent job to the cheapest model that can handle it, with a strong model kept for the hard calls."
+discipline: code
+date: 2026-07-09
+tags:
+  - "AI agents"
+  - "Tooling"
+source:
+  discriminant: none
+  value: null
+aspect: 16/9
+draft: false
+seo:
+  title: ''
+  description: ''
+  noindex: false
+---
+I got tired of throwing the biggest model at every coding task. Codex Advisor gives the root agent optional specialists: a cheap model that searches the repo and returns cited evidence, a strong model for architecture decisions and second opinions, and a mid-tier model that implements a small, explicit slice. The root agent still owns scope, verification and the final call, and a fallback runner enforces each specialist's write scope.
