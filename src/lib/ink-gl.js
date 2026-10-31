@@ -26,13 +26,13 @@ void main(){
   if(cc.a<.004&&mk.a<.004){gl_FragColor=vec4(0.);return;}    // most pixels: nothing near them
   float S=texture2D(meta,mu).r;                               // per-run effect strength (size-aware)
   if(DG>.5){                                                  // digital: 9-pin dot-matrix, one dot per grid cell
-    float pitch=mix(1.,1.7,S);
+    float pitch=mix(.9,1.6,S*S);
     vec2 pp=vec2(cp.x,y0+cp.y), cell=floor(pp/pitch), ctr=(cell+.5)*pitch, dd=ctr-pp;
     vec2 mc=mu+vec2(dd.x/(res.x/dpr),-dd.y/(th+2.*pad));
-    float cov=texture2D(b1,mc).a;
+    float cov=max(texture2D(b1,mc).a,texture2D(mask,mc).a);
     vec4 sc=texture2D(b2,mc);
-    float r=pitch*.5*(.95+.5*cov);            // each pin strikes a little differently
-    float dotA=smoothstep(.1,.38,cov)*smoothstep(r,r-.45,length(pp-ctr))*(.95+.05*h(cell+3.7));
+    float r=pitch*.5*(1.15+.4*cov);            // each pin strikes a little differently
+    float dotA=smoothstep(.06,.3,cov)*smoothstep(r,r-.45,length(pp-ctr))*(.95+.05*h(cell+3.7));
     vec3 dc=sc.rgb/max(sc.a,.001);
     gl_FragColor=vec4(dc*dotA,dotA);return;
   }
