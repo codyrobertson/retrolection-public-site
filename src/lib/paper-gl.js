@@ -90,9 +90,7 @@ float bh(vec2 q){q=fract(q*vec2(.1031,.1030));q+=dot(q,q.yx+33.33);return fract(
 void main(){
   vec2 fc=gl_FragCoord.xy, cp=vec2(fc.x,res.y-fc.y)/dpr, p=vec2(cp.x,cp.y+uScroll);
   float s=1.;
-  if(uFront<1e8){float q=1.+7.*pow(sin(3.14159*uFront),2.);
-    s=clamp((uFront-.2-.45*bh(floor(p/vec2(56.,28.))))/.2,0.,1.);
-    p=(floor(p/q)+.5)*q;}
+  if(uFront<1e8) s=uFront;
   float dg=mix(uFrom,uTo,step(bayer8(fc*.5),s));
   vec2 tu=(fract(p/uSize)*uPx+1.)/(uPx+2.);
   vec4 o;

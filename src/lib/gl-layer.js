@@ -35,18 +35,14 @@ float b2f(vec2 q){return mod(2.*q.x+3.*q.y,4.);}
 float bayer8(vec2 p){p=floor(p);return (b2f(mod(p,2.))*16.+b2f(mod(floor(p/2.),2.))*4.+b2f(mod(floor(p/4.),2.))+.5)/64.;}
 float bh(vec2 q){q=fract(q*vec2(.1031,.1030));q+=dot(q,q.yx+33.33);return fract((q.x+q.y)*q.x);}
 `;
-// The switch is the surface re-sampling itself: uFront runs 0..1 in time (no spatial front). The whole sheet collapses to a coarse
-// pixel mosaic, every ~56x28px block swaps mode at its own random moment while it is coarse, then the mosaic resolves into the new look.
+// The switch is a short eased dither crossfade: uFront runs 0..1 in time, every pixel flips when it crosses its Bayer threshold.
 const withSurface = (frag, gate) => {
   const i = frag.lastIndexOf("void main(){");
   const body = frag.slice(i + "void main(){".length);
   const head = frag.slice(0, i).replace("varying vec2 uv;", "varying vec2 uvv;vec2 uv;");
   return head + SURF + "void main0(){" + body +
     `void main(){uv=uvv;float fl=1.;
-  if(uFront<1e8){float q=1.+7.*pow(sin(3.14159*uFront),2.);
-    vec2 pc=vec2(uvv.x*res.x/dpr,y0+(1.-uvv.y)*th),sp=(floor(pc/q)+.5)*q;
-    uv=clamp(vec2(sp.x/(res.x/dpr),1.-(sp.y-y0)/th),0.,1.);
-    fl=clamp((uFront-.2-.45*bh(floor(pc/vec2(56.,28.))))/.2,0.,1.);}
+  if(uFront<1e8) fl=uFront;
   DG=mix(uFrom,uTo,step(bayer8(gl_FragCoord.xy*.5),fl));
   ${gate === "analog" ? "if(DG>.5){gl_FragColor=vec4(0.);return;}" : gate === "digital" ? "if(DG<.5){gl_FragColor=vec4(0.);return;}" : ""}
   main0();}`;

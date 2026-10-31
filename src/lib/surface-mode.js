@@ -2,14 +2,13 @@
  * Analog <-> digital surface mode, shared by every GL layer.
  *
  * One tiny state object (window.__surface) is read by each layer's draw call and
- * handed to its shader as uFrom / uTo / uFront. A switch has no wipe or front: uFront is
- * plain time (0..1) and the sheet re-samples itself. Every layer snaps to a pixel mosaic that
- * coarsens then resolves, and each ~56x28px block swaps mode at its own random moment while
- * coarse, through an ordered dither. When idle, front is "infinite" and each shader takes one branch.
+ * handed to its shader as uFrom / uTo / uFront. A switch is a short eased dither crossfade:
+ * uFront is time (0..1) and each pixel flips when it crosses its Bayer threshold. When idle,
+ * front is "infinite" and each shader takes exactly one branch.
  */
 
 const FAR = 1e9;
-const DURATION = 1400;
+const DURATION = 420;
 
 /** @type {{ from: number, to: number, front: number, dir: number }} */
 export const surface = (window.__surface ??= { from: 0, to: 0, front: FAR, dir: 1 });
@@ -44,7 +43,7 @@ export function setSurfaceMode(mode, opts = {}) {
   const step = (now) => {
     const k = Math.min(1, (now - t0) / DURATION);
     if (k >= 1) { surface.from = surface.to; surface.front = FAR; raf = 0; notify(); return; }
-    surface.front = k;
+    surface.front = ease(k);
     notify();
     raf = requestAnimationFrame(step);
   };
