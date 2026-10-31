@@ -11,7 +11,7 @@ import { createLayer } from "./gl-layer.js";
 
 const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEXTAREA", "INPUT", "SELECT", "SVG", "CANVAS", "CODE", "PRE"]);
 
-const FRAG = `precision highp float;varying vec2 uv;
+export const INK_FRAG = `precision highp float;varying vec2 uv;
 uniform sampler2D mask,b1,b2,meta;uniform vec2 res;uniform float dpr,t,settle,y0,th,pad;
 float h(vec2 p){p=fract(p*vec2(443.897,441.423));p+=dot(p,p.yx+19.19);return fract((p.x+p.y)*p.x);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
@@ -25,6 +25,16 @@ void main(){
   vec4 cc=texture2D(b2,mu); vec4 mk=texture2D(mask,mu);
   if(cc.a<.004&&mk.a<.004){gl_FragColor=vec4(0.);return;}    // most pixels: nothing near them
   float S=texture2D(meta,mu).r;                               // per-run effect strength (size-aware)
+  if(DG>.5){                                                  // digital: dot-matrix on a device-pixel grid, sampled from the crisp glyph mask
+    float pitch=mix(1.,2.,step(.55,S))/dpr;                    // body text: 1 device px (crisp bitmap); headlines: 2px dots
+    vec2 pp=vec2(cp.x,y0+cp.y), cell=floor(pp/pitch), ctr=(cell+.5)*pitch, dd=ctr-pp;
+    vec2 mc=mu+vec2(dd.x/(res.x/dpr),-dd.y/(th+2.*pad));
+    vec4 g=texture2D(mask,mc);
+    float big=step(.55,S);
+    float on=mix(pow(g.a,.8),smoothstep(.38,.62,g.a),big);   // small type keeps its anti-aliasing: thresholding thin strokes makes it unreadable
+    float dotA=on*mix(1.,smoothstep(pitch*.68,pitch*.52,length(pp-ctr)),big);
+    gl_FragColor=vec4(g.rgb/max(g.a,.001)*dotA,dotA);return;
+  }
   float c1=texture2D(b1,mu).a, c2=cc.a;
   vec3 col=cc.rgb/max(cc.a,.001);
   float lum=dot(col,vec3(.3,.6,.1));
@@ -102,7 +112,7 @@ export function startInk() {
   const ascents = new Map();
   let font = "", ls = "", color = "", alpha = -1, S = -1;
   const layer = createLayer({
-    id: "ink-gl", z: 2, readyClass: "ink-gl", frag: FRAG, sigmas: [0.45, 2.3], metaScale: 0.25, animated: true,
+    id: "ink-gl", z: 2, readyClass: "ink-gl", frag: INK_FRAG, sigmas: [0.45, 2.3], metaScale: 0.25, animated: true,
     collect,
     begin(mx) { font = ls = color = ""; alpha = S = -1; mx.textBaseline = "alphabetic"; },
     paint(mx, tx, w) {

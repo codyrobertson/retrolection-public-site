@@ -36,7 +36,9 @@ void main(){
   vec4 mt=texture2D(meta,mu);
   float nib=max(mt.r*32.,6.), ang=mt.g*3.14159265, seed=mt.b*37.;
   vec2 p=vec2(cp.x,y0+cp.y);
-  float c1=texture2D(b1,mu).a, c2=cc.a;
+  vec2 mq=mu; float bl=2.;                                                        // digital: work on 2px blocks, sampled at block centres
+  if(DG>.5){vec2 ctr=(floor(p/bl)+.5)*bl, dd=ctr-p; p=ctr; mq=mu+vec2(dd.x/(res.x/dpr),-dd.y/(th+2.*pad));}
+  float c1=texture2D(b1,mq).a, c2=texture2D(b2,mq).a;
   float G=vn(p*2.1)*.55+vn(p*5.3+4.)*.3+vn(p*11.+9.)*.15;
   float fib=vn(vec2(dot(p,vec2(.8,.6))*.9,dot(p,vec2(-.6,.8))*.07)+seed);
 
@@ -57,6 +59,16 @@ void main(){
   dn+=.55*smoothstep(.3,.8,edge);                                                 // pigment pools at the dried edge
 
   float body=smoothstep(.30,.60,c1+((vn(p*.45)-.5)*.12+(G-.5)*.08+(fib-.5)*.08)*settle);
+  if(DG>.5){                                                                     // digital: flat fill, ordered-dither tone, hard pixel edge
+    vec3 base=cc.rgb/max(cc.a,.001);
+    float thr=bayer8(floor(p/bl));
+    float edgeIn=step(.5,c1);
+    float deep=step(thr,clamp((dn-1.05)*.85,0.,1.));                              // denser ink -> more dark pixels, in a Bayer pattern
+    float lit=step(thr*.9+.05,.5+.35*smoothstep(1.,1.6,dn));                       // thin passes dither the flat tone out
+    vec3 dc=deep>.5?pow(base,vec3(1.55)):base;
+    float da=edgeIn*(deep>.5?.92:(.58*lit+.30));
+    gl_FragColor=vec4(dc*da,da);return;
+  }
   float A0=.66;
   float a=body*clamp(1.-pow(1.-A0,dn),0.,.97);
   float wick=smoothstep(.05,.40,c2+(fib-.5)*.28+(G-.5)*.1)*.13;                   // alcohol creeping along fibres past the edge

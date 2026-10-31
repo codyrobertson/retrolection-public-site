@@ -3,15 +3,9 @@
  * until the matching script marks <html> as ready (paper-gl / marker-gl).
  */
 
-/* Paper: the generated tile sits over the flat background colour, with two broad
-   washes of light that scroll with the page and never repeat. */
-html.paper-gl body {
-  background-image:
-    var(--paper-grain),
-    radial-gradient(90% 70% at 15% 0%, var(--paper-wash-a), transparent 70%),
-    radial-gradient(80% 60% at 100% 100%, var(--paper-wash-b), transparent 70%);
-  background-size: var(--paper-size) var(--paper-size), 100% 100%, 100% 100%;
-  background-repeat: repeat, no-repeat, no-repeat;
+/* Paper is a fixed WebGL canvas (paper-gl.js); nothing to style here beyond print. */
+#paper-gl {
+  pointer-events: none;
 }
 
 /* Marker: the overlay replaces the element's own fill. Light paper takes the ink
@@ -45,7 +39,20 @@ html.marker-gl [data-marker] {
     stroke: revert !important;
     background-color: revert !important;
   }
-  html.paper-gl body {
-    background-image: none;
+  #paper-gl {
+    display: none;
   }
 }
+
+/* boxes opted in with data-frame get their border drawn by WebGL (ballpoint or ASCII) */
+html.frame-gl [data-frame],
+html.frame-ascii-gl [data-frame] { border-color: transparent !important; }
+
+.surface-toggle {
+  position: fixed; right: 16px; bottom: 16px; z-index: 50;
+  font: 500 11px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .08em; text-transform: uppercase;
+  padding: 9px 12px; color: inherit; background: var(--background, #f6f2e9);
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent); cursor: pointer;
+}
+.surface-toggle:hover { border-color: currentColor; }
+@media print { .surface-toggle { display: none; } }
