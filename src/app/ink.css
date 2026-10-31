@@ -1,0 +1,31 @@
+/*
+ * Hides the DOM glyphs once the WebGL ink layer (src/lib/ink-gl.js) is painting
+ * them. Text stays in the DOM — selectable, searchable, readable by assistive
+ * tech — it is only made transparent, and only after the first GL frame is
+ * ready, so there is never a blank or flash of unstyled text.
+ *
+ * Elements the overlay can't track (sticky/fixed, transformed, clipped by
+ * overflow) are tagged data-ink-off by the script and keep their normal text.
+ */
+html.ink-gl body {
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+
+html.ink-gl [data-ink-off],
+html.ink-gl [data-ink-off] * {
+  -webkit-text-fill-color: currentColor;
+}
+
+#ink-gl canvas {
+  display: block;
+}
+
+@media print {
+  #ink-gl {
+    display: none;
+  }
+  html.ink-gl body {
+    -webkit-text-fill-color: currentColor;
+  }
+}
