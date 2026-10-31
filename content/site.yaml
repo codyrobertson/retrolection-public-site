@@ -1,0 +1,21 @@
+name: Your Name
+title: Your Name — AI-native Design Engineer
+description: >-
+  Design Engineer building AI-native tools and polished product experiences
+  where design and code meet.
+url: ''
+jobTitle: AI-native Design Engineer
+nav:
+  - label: Work
+    href: /work
+  - label: Experiments
+    href: /experiments
+  - label: Writing
+    href: /writing
+  - label: Résumé
+    href: /resume
+social:
+  - platform: github
+    url: https://github.com/
+  - platform: email
+    url: mailto:hello@example.com

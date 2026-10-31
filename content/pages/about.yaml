@@ -1,0 +1,13 @@
+title: About
+seo:
+  title: ''
+  description: ''
+  noindex: false
+sections:
+  - discriminant: text
+    value:
+      heading: About
+      body: >-
+        Placeholder about page built from page-builder sections. Add, remove,
+        and reorder sections in the CMS under Pages → Custom pages.
+      width: narrow

@@ -1,0 +1,87 @@
+.header,
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  width: min(80rem, 100% - 2 * var(--gutter));
+  margin-inline: auto;
+  padding-block: 1.25rem;
+}
+
+.footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.brand {
+  font-weight: 600;
+}
+
+.nav {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.nav a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.main {
+  flex: 1;
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+}
+.skip:focus {
+  left: 1rem;
+  top: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--foreground);
+  color: var(--background);
+  z-index: 10;
+}
+
+/* Shared index + entry page chrome */
+.page {
+  width: min(64rem, 100% - 2 * var(--gutter));
+  margin-inline: auto;
+  padding-block: clamp(2rem, 6vw, 4rem);
+  display: grid;
+  gap: 2rem;
+}
+.pageHeader {
+  display: grid;
+  gap: 0.75rem;
+}
+.pageTitle {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.lede {
+  color: var(--muted);
+  font-size: 1.1rem;
+  max-width: 55ch;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-family: var(--font-mono);
+}
+.cover {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+}

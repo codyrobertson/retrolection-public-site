@@ -1,0 +1,41 @@
+seo:
+  title: ''
+  description: ''
+  noindex: false
+sections:
+  - discriminant: hero
+    value:
+      eyebrow: AI-native Design Engineer
+      heading: I design and build AI-native tools and polished experiences.
+      subheading: >-
+        Placeholder intro — replace in the CMS. Design and code, merged.
+      links:
+        - label: See the work
+          href: /work
+        - label: Résumé
+          href: /resume
+      width: wide
+  - discriminant: featuredWork
+    value:
+      heading: Selected work
+      items: []
+      layout: grid
+      width: wide
+  - discriminant: experiments
+    value:
+      heading: Experiments
+      limit: 6
+      width: wide
+  - discriminant: latestPosts
+    value:
+      heading: Writing
+      limit: 3
+      width: standard
+  - discriminant: cta
+    value:
+      heading: Let's build something.
+      body: Placeholder call to action.
+      link:
+        label: Get in touch
+        href: mailto:hello@example.com
+      width: standard

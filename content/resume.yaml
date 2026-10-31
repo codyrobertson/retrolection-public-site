@@ -1,0 +1,28 @@
+headline: AI-native Design Engineer
+summary: >-
+  Placeholder summary. Replace in the CMS under About → Résumé.
+location: Remote
+experience:
+  - company: Example Co.
+    role: Design Engineer
+    url: ''
+    location: Remote
+    start: '2024'
+    end: ''
+    highlights:
+      - Placeholder highlight — shipped an AI-powered tool used by thousands.
+skills:
+  - group: Design
+    items:
+      - Product design
+      - Prototyping
+  - group: Engineering
+    items:
+      - TypeScript
+      - React / Next.js
+      - LLM tooling
+education: []
+seo:
+  title: ''
+  description: ''
+  noindex: false

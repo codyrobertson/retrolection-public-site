@@ -1,0 +1,49 @@
+.grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+  gap: 2rem 1.5rem;
+}
+
+.list {
+  list-style: none;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.card {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.cover {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.title {
+  font-weight: 600;
+}
+
+.summary,
+.meta {
+  color: var(--muted);
+  font-size: 0.925rem;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.card:hover .title,
+.row:hover .title {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
