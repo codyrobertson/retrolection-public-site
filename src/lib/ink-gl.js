@@ -11,7 +11,7 @@ import { createLayer } from "./gl-layer.js";
 
 const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEXTAREA", "INPUT", "SELECT", "SVG", "CANVAS", "CODE", "PRE"]);
 
-const FRAG = `precision highp float;varying vec2 uv;
+export const INK_FRAG = `precision highp float;varying vec2 uv;
 uniform sampler2D mask,b1,b2,meta;uniform vec2 res;uniform float dpr,t,settle,y0,th,pad;
 float h(vec2 p){p=fract(p*vec2(443.897,441.423));p+=dot(p,p.yx+19.19);return fract((p.x+p.y)*p.x);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
@@ -25,6 +25,17 @@ void main(){
   vec4 cc=texture2D(b2,mu); vec4 mk=texture2D(mask,mu);
   if(cc.a<.004&&mk.a<.004){gl_FragColor=vec4(0.);return;}    // most pixels: nothing near them
   float S=texture2D(meta,mu).r;                               // per-run effect strength (size-aware)
+  if(DG>.5){                                                  // digital: 9-pin dot-matrix, one dot per grid cell
+    float pitch=mix(1.,1.7,S);
+    vec2 pp=vec2(cp.x,y0+cp.y), cell=floor(pp/pitch), ctr=(cell+.5)*pitch, dd=ctr-pp;
+    vec2 mc=mu+vec2(dd.x/(res.x/dpr),-dd.y/(th+2.*pad));
+    float cov=texture2D(b1,mc).a;
+    vec4 sc=texture2D(b2,mc);
+    float r=pitch*.5*(.95+.5*cov);            // each pin strikes a little differently
+    float dotA=smoothstep(.1,.38,cov)*smoothstep(r,r-.45,length(pp-ctr))*(.95+.05*h(cell+3.7));
+    vec3 dc=sc.rgb/max(sc.a,.001);
+    gl_FragColor=vec4(dc*dotA,dotA);return;
+  }
   float c1=texture2D(b1,mu).a, c2=cc.a;
   vec3 col=cc.rgb/max(cc.a,.001);
   float lum=dot(col,vec3(.3,.6,.1));
@@ -102,7 +113,7 @@ export function startInk() {
   const ascents = new Map();
   let font = "", ls = "", color = "", alpha = -1, S = -1;
   const layer = createLayer({
-    id: "ink-gl", z: 2, readyClass: "ink-gl", frag: FRAG, sigmas: [0.45, 2.3], metaScale: 0.25, animated: true,
+    id: "ink-gl", z: 2, readyClass: "ink-gl", frag: INK_FRAG, sigmas: [0.45, 2.3], metaScale: 0.25, animated: true,
     collect,
     begin(mx) { font = ls = color = ""; alpha = S = -1; mx.textBaseline = "alphabetic"; },
     paint(mx, tx, w) {

@@ -15,6 +15,8 @@
  *    30fps and pause when hidden or under reduced motion.
  */
 
+import { surface, onSurface } from "./surface-mode.js";
+
 export const TILE_H = 1024;
 export const PAD = 16; // css px of mask beyond each tile edge so blur/halo cross seams
 const MARGIN = 512;
@@ -22,6 +24,28 @@ const MARGIN = 512;
 const VS = `attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;gl_Position=vec4(p,0,1);}`;
 const BLUR = `precision mediump float;varying vec2 uv;uniform sampler2D tex;uniform vec2 stp;
 void main(){vec4 s=vec4(0.);float w=0.;for(int i=-6;i<=6;i++){float x=float(i)*.5;float k=exp(-x*x*.5);s+=texture2D(tex,uv+stp*x)*k;w+=k;}gl_FragColor=s/w;}`;
+
+/**
+ * Injected before every composite shader's main(): the analog/digital mode helpers.
+ * DG is 0 (analog) or 1 (digital) for this pixel, already resolved through the sweep
+ * front and its dithered boundary. Shaders branch on it.
+ */
+const SURF = `uniform float uFrom,uTo,uFront;float DG,HEAD;
+float b2f(vec2 q){return mod(2.*q.x+3.*q.y,4.);}
+float bayer8(vec2 p){p=floor(p);return (b2f(mod(p,2.))*16.+b2f(mod(floor(p/2.),2.))*4.+b2f(mod(floor(p/4.),2.))+.5)/64.;}
+float bh(vec2 q){q=fract(q*vec2(.1031,.1030));q+=dot(q,q.yx+33.33);return fract((q.x+q.y)*q.x);}
+// the switch happens on the elements: each ~56x28px block flips on its own clock (a ripple down the page), dissolving through a Bayer dither
+float flipAt(vec2 p){vec2 b=floor(p/vec2(56.,28.));float sp=170.+240.*bh(b);return clamp((uFront-p.y)/sp-.55*bh(b+7.3),0.,1.);}
+`;
+const withSurface = (frag, gate) => {
+  const i = frag.lastIndexOf("void main(){");
+  const body = frag.slice(i + "void main(){".length);
+  return frag.slice(0, i) + SURF + "void main0(){" + body +
+    `void main(){float fl=uFront<1e8?flipAt(vec2(uv.x*res.x/dpr,y0+(1.-uv.y)*th)):1.;
+  DG=mix(uFrom,uTo,step(bayer8(gl_FragCoord.xy*.5),fl));HEAD=uFront<1e8?smoothstep(.02,.12,fl)*(1.-smoothstep(.12,.42,fl)):0.;
+  ${gate === "analog" ? "if(DG>.5){gl_FragColor=vec4(0.);return;}" : gate === "digital" ? "if(DG<.5){gl_FragColor=vec4(0.);return;}" : ""}
+  main0();float a=gl_FragColor.a;gl_FragColor=mix(gl_FragColor,vec4(vec3(1.,.5,.16)*a,a),HEAD*.9);}`;
+};
 
 const noop = { rebuild() {}, destroy() {} };
 
@@ -35,6 +59,7 @@ const noop = { rebuild() {}, destroy() {} };
  * @property {number} metaScale        meta map resolution relative to css px
  * @property {boolean} [metaNearest]   sample meta without filtering (for angles/ids)
  * @property {boolean} animated        redraw visible tiles at 30fps
+ * @property {"analog" | "digital"} [gate] draw only in this surface mode
  * @property {(root: HTMLElement, host: HTMLElement) => any[]} collect  items need numeric y,h
  * @property {(mx: CanvasRenderingContext2D, tx: CanvasRenderingContext2D) => void} begin  called per tile before painting
  * @property {(mx: CanvasRenderingContext2D, tx: CanvasRenderingContext2D, item: any) => void} paint
@@ -84,7 +109,7 @@ export function createLayer(cfg) {
     perf.contexts++;
     const mkS = (type, src) => { const o = g.createShader(type); g.shaderSource(o, src); g.compileShader(o); return o; };
     const prog = (fs) => { const pr = g.createProgram(); g.attachShader(pr, mkS(g.VERTEX_SHADER, VS)); g.attachShader(pr, mkS(g.FRAGMENT_SHADER, fs)); g.bindAttribLocation(pr, 0, "p"); g.linkProgram(pr); const c = {}; return { pr, u: (n) => (c[n] ??= g.getUniformLocation(pr, n)) }; };
-    const blurP = prog(BLUR), compP = prog(cfg.frag);
+    const blurP = prog(BLUR), compP = prog(withSurface(cfg.frag, cfg.gate));
     g.bindBuffer(g.ARRAY_BUFFER, g.createBuffer());
     g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), g.STATIC_DRAW);
     g.enableVertexAttribArray(0); g.vertexAttribPointer(0, 2, g.FLOAT, false, 0, 0);
@@ -146,6 +171,7 @@ export function createLayer(cfg) {
         g.uniform1f(compP.u("t"), cfg.animated ? (now - t0) / 1000 : 0);
         g.uniform1f(compP.u("y0"), tile.i * TILE_H); g.uniform1f(compP.u("th"), tile.th); g.uniform1f(compP.u("pad"), PAD);
         g.uniform1f(compP.u("settle"), !cfg.animated || reduced.matches ? 1 : 1 - Math.pow(1 - Math.min(1, (now - tile.start) / 3000), 3));
+        g.uniform1f(compP.u("uFrom"), surface.from); g.uniform1f(compP.u("uTo"), surface.to); g.uniform1f(compP.u("uFront"), surface.front);
         g.clearColor(0, 0, 0, 0); g.clear(g.COLOR_BUFFER_BIT); g.drawArrays(g.TRIANGLE_STRIP, 0, 4);
       },
     };
@@ -165,12 +191,12 @@ export function createLayer(cfg) {
     const now = performance.now();
     for (const [i, t] of active) {
       const th = Math.min(TILE_H, docH - i * TILE_H);
-      if (i < lo || i > hi || th <= 0) { t.cv.style.display = "none"; free.push(t); active.delete(i); }
+      if (i < lo || i > hi || th <= 0 || !buckets.get(i)?.length) { t.cv.style.display = "none"; free.push(t); active.delete(i); }
       else if (force) { t.load(i, th, false); t.draw(now); }
     }
     for (let i = lo; i <= hi; i++) {
       const th = Math.min(TILE_H, docH - i * TILE_H);
-      if (th <= 0 || active.has(i)) continue;
+      if (th <= 0 || active.has(i) || !buckets.get(i)?.length) continue;
       const t = free.pop() || createTile();
       if (!t) continue;
       t.load(i, th, first); t.draw(now); active.set(i, t);
@@ -186,6 +212,10 @@ export function createLayer(cfg) {
     }
     if (cfg.animated && !reduced.matches && !document.hidden) raf = requestAnimationFrame(loop);
   }
+  const offSurface = onSurface(() => {
+    const { vlo, vhi } = wanted(), now = performance.now();
+    for (const [i, tile] of active) if (i >= vlo && i <= vhi && !tile.lost) tile.draw(now);
+  });
   const kick = () => { if (cfg.animated && !raf && alive) raf = requestAnimationFrame(loop); };
 
   function build() {
@@ -219,7 +249,7 @@ export function createLayer(cfg) {
   return {
     rebuild: build,
     destroy() {
-      alive = false; cancelAnimationFrame(raf); clearTimeout(timer);
+      alive = false; cancelAnimationFrame(raf); clearTimeout(timer); offSurface();
       removeEventListener("scroll", onScroll); ro.disconnect(); mo.disconnect(); themeMo.disconnect();
       scheme.removeEventListener("change", scheduleBuild); document.fonts?.removeEventListener("loadingdone", scheduleBuild);
       document.removeEventListener("visibilitychange", kick);

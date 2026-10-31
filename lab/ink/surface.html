@@ -84,14 +84,24 @@ svg text{font:12px Messina,sans-serif;fill:var(--muted)}
   <div class="bar" data-marker="#3f7fd0" style="width:70%"></div>
   <div class="bar" data-marker="#e0584a" style="width:45%"></div>
 
+  <h2>Framed boxes</h2>
+  <div class="row">
+    <div data-frame style="border:1.5px solid var(--foreground);padding:18px 20px"><p style="margin:0">Ballpoint outline in analog, ASCII box drawing in digital.</p></div>
+    <div data-frame style="border:1.5px solid #3f7fd0;padding:18px 20px;height:120px"><p class="cap" style="margin:0">A second frame, tinted.</p></div>
+  </div>
+
   <h2>Body copy</h2>
   <p>Ballpoint ink sits unevenly on paper, pooling at the stroke edges and feathering a hair beyond them. It is oil based and slow, so it dries before it travels far, and the tooth of the paper decides where it catches. At small sizes the type stays crisp: 12px captions and 17px body remain easy to read.</p>
   <p class="cap">Caption at 12px: the effect scales down with type size so tiny text keeps its shape.</p>
 </main>
+<button class="surface-toggle" id="tog" type="button">Analog → Digital</button>
 <script type="module">
-const [{ startInk }, { startMarker }, { startPaper }] = await Promise.all([
-  import("../../src/lib/ink-gl.js"), import("../../src/lib/marker-gl.js"), import("../../src/lib/paper-gl.js")]);
-window.paper = startPaper(); window.marker = startMarker(); window.ink = startInk();
+const [{ startInk }, { startMarker }, { startPaper }, { startFrames }, sm] = await Promise.all([
+  import("../../src/lib/ink-gl.js"), import("../../src/lib/marker-gl.js"), import("../../src/lib/paper-gl.js"), import("../../src/lib/frame-gl.js"), import("../../src/lib/surface-mode.js")]);
+window.sm = sm; sm.restoreSurfaceMode();
+window.paper = startPaper(); window.marker = startMarker(); window.ink = startInk(); window.frames = startFrames();
+const tog = document.getElementById("tog");
+tog.onclick = () => { const n = sm.getSurfaceMode() === "analog" ? "digital" : "analog"; sm.setSurfaceMode(n); tog.textContent = n === "analog" ? "Analog → Digital" : "Digital → Analog"; };
 </script>
 </body>
 </html>
