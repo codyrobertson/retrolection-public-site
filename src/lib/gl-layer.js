@@ -21,7 +21,7 @@ export const TILE_H = 1024;
 export const PAD = 16; // css px of mask beyond each tile edge so blur/halo cross seams
 const MARGIN = 512;
 
-const VS = `attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;gl_Position=vec4(p,0,1);}`;
+const VS = `attribute vec2 p;varying vec2 uv;varying vec2 uvv;void main(){uvv=uv=p*.5+.5;gl_Position=vec4(p,0,1);}`;
 const BLUR = `precision mediump float;varying vec2 uv;uniform sampler2D tex;uniform vec2 stp;
 void main(){vec4 s=vec4(0.);float w=0.;for(int i=-6;i<=6;i++){float x=float(i)*.5;float k=exp(-x*x*.5);s+=texture2D(tex,uv+stp*x)*k;w+=k;}gl_FragColor=s/w;}`;
 
@@ -30,21 +30,26 @@ void main(){vec4 s=vec4(0.);float w=0.;for(int i=-6;i<=6;i++){float x=float(i)*.
  * DG is 0 (analog) or 1 (digital) for this pixel, already resolved through the sweep
  * front and its dithered boundary. Shaders branch on it.
  */
-const SURF = `uniform float uFrom,uTo,uFront;float DG,HEAD;
+const SURF = `uniform float uFrom,uTo,uFront;float DG;
 float b2f(vec2 q){return mod(2.*q.x+3.*q.y,4.);}
 float bayer8(vec2 p){p=floor(p);return (b2f(mod(p,2.))*16.+b2f(mod(floor(p/2.),2.))*4.+b2f(mod(floor(p/4.),2.))+.5)/64.;}
 float bh(vec2 q){q=fract(q*vec2(.1031,.1030));q+=dot(q,q.yx+33.33);return fract((q.x+q.y)*q.x);}
-// the switch happens on the elements: each ~56x28px block flips on its own clock (a ripple down the page), dissolving through a Bayer dither
-float flipAt(vec2 p){vec2 b=floor(p/vec2(56.,28.));float sp=170.+240.*bh(b);return clamp((uFront-p.y)/sp-.55*bh(b+7.3),0.,1.);}
 `;
+// The switch is the surface re-sampling itself: uFront runs 0..1 in time (no spatial front). The whole sheet collapses to a coarse
+// pixel mosaic, every ~56x28px block swaps mode at its own random moment while it is coarse, then the mosaic resolves into the new look.
 const withSurface = (frag, gate) => {
   const i = frag.lastIndexOf("void main(){");
   const body = frag.slice(i + "void main(){".length);
-  return frag.slice(0, i) + SURF + "void main0(){" + body +
-    `void main(){float fl=uFront<1e8?flipAt(vec2(uv.x*res.x/dpr,y0+(1.-uv.y)*th)):1.;
-  DG=mix(uFrom,uTo,step(bayer8(gl_FragCoord.xy*.5),fl));HEAD=uFront<1e8?smoothstep(.02,.12,fl)*(1.-smoothstep(.12,.42,fl)):0.;
+  const head = frag.slice(0, i).replace("varying vec2 uv;", "varying vec2 uvv;vec2 uv;");
+  return head + SURF + "void main0(){" + body +
+    `void main(){uv=uvv;float fl=1.;
+  if(uFront<1e8){float q=1.+7.*pow(sin(3.14159*uFront),2.);
+    vec2 pc=vec2(uvv.x*res.x/dpr,y0+(1.-uvv.y)*th),sp=(floor(pc/q)+.5)*q;
+    uv=clamp(vec2(sp.x/(res.x/dpr),1.-(sp.y-y0)/th),0.,1.);
+    fl=clamp((uFront-.2-.45*bh(floor(pc/vec2(56.,28.))))/.2,0.,1.);}
+  DG=mix(uFrom,uTo,step(bayer8(gl_FragCoord.xy*.5),fl));
   ${gate === "analog" ? "if(DG>.5){gl_FragColor=vec4(0.);return;}" : gate === "digital" ? "if(DG<.5){gl_FragColor=vec4(0.);return;}" : ""}
-  main0();float a=gl_FragColor.a;gl_FragColor=mix(gl_FragColor,vec4(vec3(1.,.5,.16)*a,a),HEAD*.9);}`;
+  main0();}`;
 };
 
 const noop = { rebuild() {}, destroy() {} };

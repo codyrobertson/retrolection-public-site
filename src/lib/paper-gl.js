@@ -89,8 +89,10 @@ float bayer8(vec2 p){p=floor(p);return (b2f(mod(p,2.))*16.+b2f(mod(floor(p/2.),2
 float bh(vec2 q){q=fract(q*vec2(.1031,.1030));q+=dot(q,q.yx+33.33);return fract((q.x+q.y)*q.x);}
 void main(){
   vec2 fc=gl_FragCoord.xy, cp=vec2(fc.x,res.y-fc.y)/dpr, p=vec2(cp.x,cp.y+uScroll);
-  vec2 b=floor(p/vec2(56.,28.));float sp=170.+240.*bh(b);
-  float s=uFront<1e8?clamp((uFront-p.y)/sp-.55*bh(b+7.3),0.,1.):1.;
+  float s=1.;
+  if(uFront<1e8){float q=1.+7.*pow(sin(3.14159*uFront),2.);
+    s=clamp((uFront-.2-.45*bh(floor(p/vec2(56.,28.))))/.2,0.,1.);
+    p=(floor(p/q)+.5)*q;}
   float dg=mix(uFrom,uTo,step(bayer8(fc*.5),s));
   vec2 tu=(fract(p/uSize)*uPx+1.)/(uPx+2.);
   vec4 o;
@@ -103,7 +105,6 @@ void main(){
     vec4 w=vec4(wA.rgb*wA.a*fa,wA.a*fa); w+=vec4(wB.rgb*wB.a*fb,wB.a*fb)*(1.-w.a);
     o=o+w*(1.-o.a);
   }
-  if(uFront<1e8){float hd=smoothstep(.02,.12,s)*(1.-smoothstep(.12,.42,s));o=mix(o,vec4(vec3(1.,.5,.16)*.22,.22),hd*step(bayer8(fc*.5+3.),.5));}
   gl_FragColor=o;
 }`;
 
