@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ink Lab</title>
+<style>
+@font-face{font-family:Messina;src:url(../../src/fonts/messina-sans-400.woff2);font-weight:400}
+@font-face{font-family:Messina;src:url(../../src/fonts/messina-sans-700.woff2);font-weight:700}
+@font-face{font-family:Inferi;src:url(../../src/fonts/inferi-400.woff2);font-weight:400}
+@font-face{font-family:Inferi;src:url(../../src/fonts/inferi-700.woff2);font-weight:700}
+@font-face{font-family:Nichrome;src:url(../../src/fonts/md-nichrome-400.woff2);font-weight:400}
+@font-face{font-family:Nichrome;src:url(../../src/fonts/md-nichrome-700.woff2);font-weight:700}
+
+:root{--bg:#fff;--fg:#171717;--muted:#6b6b6b;--border:#e5e5e5;--surface:#f5f5f4;--font:Inferi,Georgia,serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0a0a0a;--fg:#ededed;--muted:#a1a1a1;--border:#262626;--surface:#171717;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#0a0a0a;--fg:#ededed;--muted:#a1a1a1;--border:#262626;--surface:#171717;color-scheme:dark}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif;padding:24px var(--g,16px);max-width:1100px;margin:auto}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:24px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:5;border-bottom:1px solid var(--border)}
+header h1{font-size:15px;margin-right:auto}
+select,input,button{font:inherit;font-size:13px;background:var(--surface);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:5px 8px}
+input[type=text]{min-width:220px}
+section{border:1px solid var(--border);border-radius:10px;margin-bottom:20px;overflow:hidden}
+section>h2{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:12px}
+section>h2 span{color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0}
+.stage{padding:20px 14px;font-family:var(--font)}
+.stage canvas{display:block;max-width:100%}
+.h{font-size:clamp(36px,7vw,72px);line-height:1.05;font-weight:700}
+.p{font-size:18px;line-height:1.5;max-width:42rem;margin-top:10px}
+.ctl{display:flex;gap:14px;flex-wrap:wrap;padding:8px 14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+.ctl label{display:flex;gap:6px;align-items:center}
+.ctl input{padding:0}
+
+/* A — CSS text-shadow */
+@property --ink{syntax:"<number>";inherits:true;initial-value:1}
+#a .stage{--ink-core:34%;--ink-bleed:16%;--ink-pool:9%;
+  text-shadow:
+   0 0 calc(.018em*var(--ink)) color-mix(in srgb,currentColor calc(var(--ink-core)*var(--ink)),transparent),
+   0 0 calc(.06em*var(--ink)) color-mix(in srgb,currentColor calc(var(--ink-bleed)*var(--ink)),transparent),
+   .012em .02em calc(.045em*var(--ink)) color-mix(in srgb,currentColor var(--ink-pool),transparent);
+  animation:breathe 11s ease-in-out infinite alternate}
+:root[data-theme=dark] #a .stage{--ink-core:26%;--ink-bleed:12%;--ink-pool:7%}
+@keyframes breathe{from{--ink:.8}to{--ink:1.25}}
+
+/* B — SVG filter */
+#b .stage{filter:url(#inkfilter)}
+
+@media (prefers-reduced-motion:reduce){#a .stage{animation:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Ink Lab — ballpoint bleed approaches</h1>
+  <input type="text" id="txt" value="Quiet ink, slow bleed">
+  <select id="font">
+    <option value="Inferi,Georgia,serif">Inferi (serif)</option>
+    <option value="Messina,system-ui,sans-serif">Messina Sans</option>
+    <option value="Nichrome,system-ui,sans-serif">MD Nichrome</option>
+    <option value="Georgia,serif">Georgia</option>
+    <option value="ui-monospace,Menlo,monospace">Mono</option>
+  </select>
+  <select id="theme"><option value="">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+  <label style="font-size:13px"><input type="checkbox" id="motion" checked> animate</label>
+</header>
+
+<section id="o"><h2>Original (no effect)</h2><div class="stage"><div class="h t">Quiet ink, slow bleed</div><p class="p">A plain paragraph for comparison. Ballpoint ink sits unevenly on paper, pooling at the stroke edges and feathering a hair beyond them.</p></div></section>
+
+<section id="a"><h2>A · CSS text-shadow <span>DOM text, selectable, native, zero JS · cheapest</span></h2><div class="stage"><div class="h t">Quiet ink, slow bleed</div><p class="p">A plain paragraph for comparison. Ballpoint ink sits unevenly on paper, pooling at the stroke edges and feathering a hair beyond them.</p></div></section>
+
+<section id="b"><h2>B · SVG filter <span>DOM text, real edge roughness via turbulence · GPU-composited in Chromium</span></h2><div class="stage"><div class="h t">Quiet ink, slow bleed</div><p class="p">A plain paragraph for comparison. Ballpoint ink sits unevenly on paper, pooling at the stroke edges and feathering a hair beyond them.</p></div>
+  <div class="ctl"><label>roughness <input type="range" id="b-scale" min="0" max="4" step=".1" value="1.6"></label><label>bleed <input type="range" id="b-blur" min="0" max="2" step=".05" value=".6"></label></div></section>
+
+<section id="c"><h2>C · WebGL fragment shader <span>text → texture → ink spread + paper grain · fully custom, canvas (not selectable)</span></h2><div class="stage"><canvas id="c-cv"></canvas></div>
+  <div class="ctl"><label>spread <input type="range" id="c-spread" min="0" max="2" step=".05" value="1"></label><label>grain <input type="range" id="c-grain" min="0" max="1" step=".01" value=".6"></label><label>pooling <input type="range" id="c-pool" min="0" max="1" step=".01" value=".7"></label><button id="c-rewet" type="button">re-wet</button></div></section>
+
+<section id="d"><h2>D · p5.js pen strokes <span>stamped ballpoint dots with pressure noise · most hand-made, heaviest</span></h2><div class="stage"><div id="d-host"></div></div></section>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="inkfilter" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+    <feTurbulence id="f-turb" type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap id="f-disp" in="SourceGraphic" in2="n" scale="1.6" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+    <feGaussianBlur id="f-blur" in="rough" stdDeviation=".6" result="soft"/>
+    <feMerge><feMergeNode in="soft"/><feMergeNode in="rough"/></feMerge>
+  </filter>
+</svg>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+<script>
+const $ = (s) => document.querySelector(s);
+const root = document.documentElement;
+const state = { motion: true };
+const cs = () => getComputedStyle(document.body);
+const isDark = () => cs().colorScheme.includes("dark") && getComputedStyle(root).backgroundColor !== "rgb(255, 255, 255)";
+const fg = () => cs().color;
+const bg = () => cs().backgroundColor;
+const ptext = "A plain paragraph for comparison. Ballpoint ink sits unevenly on paper, pooling at the stroke edges and feathering a hair beyond them.";
+
+/* controls */
+$("#txt").oninput = (e) => { document.querySelectorAll(".t").forEach((n) => (n.textContent = e.target.value)); rebuildMasks(); };
+$("#font").onchange = (e) => { root.style.setProperty("--font", e.target.value); rebuildMasks(); };
+$("#theme").onchange = (e) => { e.target.value ? root.dataset.theme = e.target.value : delete root.dataset.theme; setTimeout(rebuildMasks, 30); };
+$("#motion").onchange = (e) => { state.motion = e.target.checked; document.querySelectorAll("#a .stage").forEach((n) => (n.style.animationPlayState = state.motion ? "running" : "paused")); };
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => setTimeout(rebuildMasks, 30));
+if (matchMedia("(prefers-reduced-motion: reduce)").matches) { $("#motion").checked = false; state.motion = false; }
+
+/* shared: rasterise text into a mask canvas (white alpha) */
+function makeMask(w, h) {
+  const c = document.createElement("canvas"); const dpr = Math.min(devicePixelRatio || 1, 2);
+  c.width = w * dpr; c.height = h * dpr;
+  const x = c.getContext("2d"); x.scale(dpr, dpr);
+  const font = getComputedStyle(root).getPropertyValue("--font");
+  x.fillStyle = "#fff"; x.textBaseline = "top";
+  const size = Math.min(72, Math.max(36, innerWidth * 0.07));
+  x.font = `700 ${size}px ${font}`; x.fillText($("#txt").value, 0, 6);
+  x.font = `400 18px ${font}`;
+  let line = "", y = size + 24; const maxW = Math.min(w, 672);
+  for (const word of ptext.split(" ")) { const t = line ? line + " " + word : word; if (x.measureText(t).width > maxW) { x.fillText(line, 0, y); y += 27; line = word; } else line = t; }
+  x.fillText(line, 0, y);
+  return { c, dpr, w, h };
+}
+const sizeFor = () => { const w = Math.min(1072, innerWidth - 60); const s = Math.min(72, Math.max(36, innerWidth * 0.07)); return [w, Math.ceil(s + 24 + 27 * 4 + 16)]; };
+
+/* ---------- C: WebGL ----------
+ * Pipeline: text mask → separable gaussian blurs (tight + wide, computed once per layout)
+ * → per-frame composite shader. The composite models what a ballpoint actually does:
+ *  - ink only takes where the paper has tooth, so stroke edges are cut by anisotropic fibre noise
+ *  - a faint feathered halo wicks outward along those same fibres
+ *  - ink pools slightly darker at stroke margins and is a touch lighter in the middle
+ *  - thin strokes carry less ink; the odd dry skip; fine granulation
+ *  - on load the ink "settles" (halo grows in over ~3s), then breathes very slowly
+ */
+const gl = (() => {
+  const cv = $("#c-cv");
+  const g = cv.getContext("webgl", { premultipliedAlpha: true, alpha: true });
+  if (!g) { cv.replaceWith(Object.assign(document.createElement("p"), { textContent: "WebGL unavailable" })); return null; }
+  const VS = `attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;gl_Position=vec4(p,0,1);}`;
+  const BLUR = `precision mediump float;varying vec2 uv;uniform sampler2D tex;uniform vec2 stp;
+  void main(){float s=0.,w=0.;for(int i=-6;i<=6;i++){float x=float(i)*.5;float k=exp(-x*x*.5);s+=texture2D(tex,uv+stp*x).a*k;w+=k;}gl_FragColor=vec4(vec3(s/w),s/w);}`;
+  const COMP = `precision highp float;varying vec2 uv;
+  uniform sampler2D mask,b1,b2;uniform vec2 res;uniform float dpr,t,settle,spread,grain,pool,tint;uniform vec3 ink;
+  float h(vec2 p){p=fract(p*vec2(443.897,441.423));p+=dot(p,p.yx+19.19);return fract((p.x+p.y)*p.x);}
+  float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+  // paper fibres: three noise layers, each stretched ~8:1 along a different heading
+  float fibre(vec2 p,float seed){float a=0.;
+    for(int i=0;i<3;i++){float an=float(i)*1.0472+.35+seed;float c=cos(an),s=sin(an);vec2 q=vec2(c*p.x-s*p.y,s*p.x+c*p.y);a+=vn(q*vec2(1.1,.14)+float(i)*13.7+seed*7.);}
+    return a/3.;}
+  void main(){
+    vec2 p=uv*res/dpr;                       // css px, so the paper has a fixed physical scale
+    float m=texture2D(mask,uv).a, c1=texture2D(b1,uv).a, c2=texture2D(b2,uv).a;
+    float F=fibre(p+vec2(0.,t*.12),0.);       // paper tooth, drifts imperceptibly
+    float D=fibre(p*.55,2.1);                 // second field for dry skips
+    float G=vn(p*2.6)*.5+vn(p*6.3+9.)*.5;     // fine granulation
+    float breath=1.+.07*sin(t*.31)+.04*sin(t*.77+1.3);
+    float wet=settle;
+    // 1. stroke body: tight blur thresholded at .5 keeps the true shape; fibre noise roughens only the edge
+    float rough=(F-.5)*(.28+.30*wet)*grain*2.;
+    float body=smoothstep(.22,.52,c1+rough);
+    // 2. feathered halo: wide blur, gated by fibres so it creeps along them instead of glowing evenly
+    float halo=smoothstep(.17,.52,c2*breath*spread+(F-.5)*.62*grain)*.15*wet;
+    halo*=.6+.8*G;
+    // 3. ink density
+    float edge=4.*c1*(1.-c1);                 // peaks on the stroke margin
+    float thin=smoothstep(.22,.62,c2);        // thin strokes lay down less ink
+    float dens=.965+.035*edge*pool;
+    dens*=mix(.9,1.,thin);
+    dens*=1.-.07*G*grain;
+    dens*=1.-smoothstep(.70,.88,D)*.16*grain; // occasional dry skip
+    float a=body*dens;
+    a=a+halo*(1.-body);
+    // ballpoint ink is a hair bluer than the type colour in light mode
+    vec3 col=mix(ink,vec3(.10,.13,.30),tint*(1.-edge*.5));
+    a=clamp(a,0.,1.);
+    gl_FragColor=vec4(col*a,a);
+  }`;
+  const mk = (t, s) => { const o = g.createShader(t); g.shaderSource(o, s); g.compileShader(o); if (!g.getShaderParameter(o, g.COMPILE_STATUS)) console.error(g.getShaderInfoLog(o)); return o; };
+  const prog = (fs) => { const pr = g.createProgram(); g.attachShader(pr, mk(g.VERTEX_SHADER, VS)); g.attachShader(pr, mk(g.FRAGMENT_SHADER, fs)); g.bindAttribLocation(pr, 0, "p"); g.linkProgram(pr); const c = {}; return { pr, u: (n) => (c[n] ??= g.getUniformLocation(pr, n)) }; };
+  const blurP = prog(BLUR), compP = prog(COMP);
+  g.bindBuffer(g.ARRAY_BUFFER, g.createBuffer());
+  g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), g.STATIC_DRAW);
+  g.enableVertexAttribArray(0); g.vertexAttribPointer(0, 2, g.FLOAT, false, 0, 0);
+  const tex = () => { const x = g.createTexture(); g.bindTexture(g.TEXTURE_2D, x);
+    [g.TEXTURE_MIN_FILTER, g.TEXTURE_MAG_FILTER].forEach((k) => g.texParameteri(g.TEXTURE_2D, k, g.LINEAR));
+    [g.TEXTURE_WRAP_S, g.TEXTURE_WRAP_T].forEach((k) => g.texParameteri(g.TEXTURE_2D, k, g.CLAMP_TO_EDGE)); return x; };
+  const target = (w, h) => { const t = tex(); g.texImage2D(g.TEXTURE_2D, 0, g.RGBA, w, h, 0, g.RGBA, g.UNSIGNED_BYTE, null);
+    const fb = g.createFramebuffer(); g.bindFramebuffer(g.FRAMEBUFFER, fb); g.framebufferTexture2D(g.FRAMEBUFFER, g.COLOR_ATTACHMENT0, g.TEXTURE_2D, t, 0); return { t, fb }; };
+  return { g, cv, blurP, compP, tex, target, mask: tex(), ready: false, t0: 0 };
+})();
+function blurPass(src, dst, dx, dy, sigmaPx, w, h) {
+  const { g, blurP } = gl;
+  g.bindFramebuffer(g.FRAMEBUFFER, dst.fb); g.viewport(0, 0, w, h); g.disable(g.BLEND);
+  g.useProgram(blurP.pr); g.activeTexture(g.TEXTURE0); g.bindTexture(g.TEXTURE_2D, src);
+  g.uniform1i(blurP.u("tex"), 0); g.uniform2f(blurP.u("stp"), (dx * sigmaPx) / w, (dy * sigmaPx) / h);
+  g.drawArrays(g.TRIANGLE_STRIP, 0, 4);
+}
+function uploadC(mask) {
+  if (!gl) return; const { g, cv } = gl;
+  const w = mask.c.width, h = mask.c.height;
+  cv.width = w; cv.height = h; cv.style.width = mask.w + "px"; cv.style.height = mask.h + "px";
+  g.bindTexture(g.TEXTURE_2D, gl.mask);
+  g.pixelStorei(g.UNPACK_FLIP_Y_WEBGL, true); g.pixelStorei(g.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+  g.texImage2D(g.TEXTURE_2D, 0, g.RGBA, g.RGBA, g.UNSIGNED_BYTE, mask.c);
+  const tmp = gl.target(w, h); gl.b1 = gl.target(w, h); gl.b2 = gl.target(w, h);
+  const s1 = 0.45 * mask.dpr, s2 = 2.3 * mask.dpr;
+  blurPass(gl.mask, tmp, 1, 0, s1, w, h); blurPass(tmp.t, gl.b1, 0, 1, s1, w, h);
+  blurPass(gl.mask, tmp, 1, 0, s2, w, h); blurPass(tmp.t, gl.b2, 0, 1, s2, w, h);
+  g.bindFramebuffer(g.FRAMEBUFFER, null); g.viewport(0, 0, w, h);
+  gl.dpr = mask.dpr; gl.ready = true; gl.t0 = performance.now();
+}
+const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+function drawC(t, now) {
+  if (!gl || !gl.ready) return; const { g, compP: P } = gl;
+  const m = fg().match(/\d+(\.\d+)?/g).map(Number);
+  const dark = (m[0] + m[1] + m[2]) / 3 > 128;
+  g.bindFramebuffer(g.FRAMEBUFFER, null); g.viewport(0, 0, gl.cv.width, gl.cv.height);
+  g.enable(g.BLEND); g.blendFunc(g.ONE, g.ONE_MINUS_SRC_ALPHA);
+  g.useProgram(P.pr);
+  [gl.mask, gl.b1.t, gl.b2.t].forEach((x, i) => { g.activeTexture(g.TEXTURE0 + i); g.bindTexture(g.TEXTURE_2D, x); });
+  g.uniform1i(P.u("mask"), 0); g.uniform1i(P.u("b1"), 1); g.uniform1i(P.u("b2"), 2);
+  g.uniform2f(P.u("res"), gl.cv.width, gl.cv.height); g.uniform1f(P.u("dpr"), gl.dpr);
+  g.uniform1f(P.u("t"), t);
+  g.uniform1f(P.u("settle"), state.motion ? easeOut(Math.min(1, (now - gl.t0) / 3000)) : 1);
+  g.uniform1f(P.u("spread"), +$("#c-spread").value); g.uniform1f(P.u("grain"), +$("#c-grain").value); g.uniform1f(P.u("pool"), +$("#c-pool").value);
+  g.uniform1f(P.u("tint"), dark ? 0 : 0.14);
+  g.uniform3f(P.u("ink"), m[0] / 255, m[1] / 255, m[2] / 255);
+  g.clearColor(0, 0, 0, 0); g.clear(g.COLOR_BUFFER_BIT); g.drawArrays(g.TRIANGLE_STRIP, 0, 4);
+}
+
+/* ---------- D: p5 ---------- */
+let p5inst = null, pts = [], dMask = null;
+function buildPts(mask) {
+  const x = mask.c.getContext("2d"); const { width: W, height: H } = mask.c;
+  const d = x.getImageData(0, 0, W, H).data; pts = [];
+  const at = (i, j) => (i < 0 || j < 0 || i >= W || j >= H ? 0 : d[(j * W + i) * 4 + 3]);
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const a = d[(j * W + i) * 4 + 3]; if (!a) continue;
+    const edge = at(i - 1, j) < 128 || at(i + 1, j) < 128 || at(i, j - 1) < 128 || at(i, j + 1) < 128;
+    pts.push([i / mask.dpr, j / mask.dpr, a / 255, edge ? 1 : 0]);
+  }
+  dMask = mask;
+}
+function startP5(mask) {
+  buildPts(mask);
+  if (p5inst) p5inst.remove();
+  if (!window.p5) { $("#d-host").textContent = "p5 failed to load (offline?)"; return; }
+  p5inst = new p5((s) => {
+    s.setup = () => { s.createCanvas(mask.w, mask.h).parent("d-host"); s.pixelDensity(Math.min(devicePixelRatio || 1, 2)); s.frameRate(14); s.noStroke(); };
+    s.draw = () => {
+      s.clear(); const c = s.color(fg()); const t = state.motion ? s.frameCount * 0.04 : 0;
+      for (const [x, y, a, e] of pts) {
+        const n = s.noise(x * 0.06, y * 0.06, t);            // pressure field: slow-drifting
+        const press = 0.55 + n * 0.7;
+        c.setAlpha(255 * a * Math.min(1, press * 0.9));
+        s.fill(c); s.circle(x + s.random(-0.15, 0.15), y + s.random(-0.15, 0.15), 1.05 + press * 0.5);
+        if (e && s.random() < 0.55 * press) {                  // edge pooling: tiny satellite dots wander outward
+          const ang = s.random(s.TWO_PI), r = s.random(0.3, 1.4) * (0.6 + n);
+          c.setAlpha(255 * 0.22 * press); s.fill(c); s.circle(x + Math.cos(ang) * r, y + Math.sin(ang) * r, s.random(0.5, 1.1));
+        }
+      }
+    };
+  });
+}
+
+/* ---------- B: animated filter (slow, cheap: only turbulence seed-frequency drift) ---------- */
+const turb = $("#f-turb"), disp = $("#f-disp"), blur = $("#f-blur");
+$("#b-scale").oninput = (e) => disp.setAttribute("scale", e.target.value);
+$("#b-blur").oninput = (e) => blur.setAttribute("stdDeviation", e.target.value);
+
+$("#c-rewet").onclick = () => { gl.t0 = performance.now(); };
+/* ---------- loop / rebuild ---------- */
+let mask;
+function rebuildMasks() {
+  const [w, h] = sizeFor(); mask = makeMask(w, h);
+  uploadC(mask); startP5(mask);
+}
+let t0 = performance.now();
+function tick(now) {
+  const t = state.motion ? (now - t0) / 1000 : 0;
+  drawC(t, now);
+  if (state.motion) turb.setAttribute("baseFrequency", (0.9 + Math.sin(t * 0.25) * 0.05).toFixed(3));
+  requestAnimationFrame(tick);
+}
+document.fonts.ready.then(() => { rebuildMasks(); requestAnimationFrame(tick); });
+addEventListener("resize", () => { clearTimeout(window.__r); window.__r = setTimeout(rebuildMasks, 200); });
+</script>
+</body>
+</html>

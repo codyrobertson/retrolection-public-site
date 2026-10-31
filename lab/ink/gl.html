@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ink GL — DOM overlay test</title>
+<style>
+@font-face{font-family:Messina;src:url(../../src/fonts/messina-sans-400.woff2);font-weight:400}
+@font-face{font-family:Messina;src:url(../../src/fonts/messina-sans-700.woff2);font-weight:700}
+@font-face{font-family:Inferi;src:url(../../src/fonts/inferi-400.woff2);font-weight:400}
+@font-face{font-family:Inferi;src:url(../../src/fonts/inferi-700.woff2);font-weight:700}
+@font-face{font-family:Nichrome;src:url(../../src/fonts/md-nichrome-400.woff2);font-weight:400}
+:root{--bg:#fff;--fg:#171717;--muted:#6b6b6b}
+@media (prefers-color-scheme:dark){:root{--bg:#0a0a0a;--fg:#ededed;--muted:#a1a1a1;color-scheme:dark}}
+:root[data-theme=light]{--bg:#fff;--fg:#171717;--muted:#6b6b6b;color-scheme:light}
+:root[data-theme=dark]{--bg:#0a0a0a;--fg:#ededed;--muted:#a1a1a1;color-scheme:dark}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:Inferi,Georgia,serif;-webkit-font-smoothing:antialiased}
+header{position:sticky;top:0;background:var(--bg);padding:12px 24px;border-bottom:1px solid var(--muted);font:600 14px Messina,sans-serif;z-index:3}
+main{max-width:44rem;margin:0 auto;padding:24px}
+h1{font:700 56px/1.05 Messina,sans-serif;margin:24px 0 12px}
+h2{font:700 28px/1.2 Messina,sans-serif;margin:40px 0 10px}
+p{font-size:17px;line-height:1.55;margin:0 0 14px}
+.muted{color:var(--muted);font-size:13px;font-family:Nichrome,sans-serif}
+.s11{font-size:11px}.s12{font-size:12px}.s14{font-size:14px}
+a{color:inherit;text-decoration:underline}
+</style>
+<link rel="stylesheet" href="../../src/app/ink.css">
+</head>
+<body>
+<header>Sticky header (tracked by DOM, skipped by overlay)</header>
+<main id="m"></main>
+<script type="module">
+const para = "Ballpoint ink sits unevenly on paper, pooling at the stroke edges and feathering a hair beyond them. It is oil based and slow, so it dries before it travels far, and the tooth of the paper decides where it catches.";
+let h = `<h1>Quiet ink, slow bleed</h1><p class="muted">Selected work · 2019–2026 · small caption in Nichrome</p>`;
+for (let i = 0; i < 7; i++) h += `<h2>Section ${i + 1}: a heading in sans</h2><p>${para} <a href="#">A link</a>.</p><p class="s14">${para}</p><p class="s12">${para} ${para}</p><p class="s11">${para} 0123456789 ${para}</p>`;
+m.innerHTML = h;
+import("../../src/lib/ink-gl.js").then(({ startInk }) => { window.ink = startInk(); });
+</script>
+</body>
+</html>
