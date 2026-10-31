@@ -2,7 +2,7 @@ import Markdoc from "@markdoc/markdoc";
 import Link from "next/link";
 import React from "react";
 import { CardGrid, PostList } from "@/components/cards";
-import { getCaseStudies, getExperiments, getPosts, type Section } from "@/lib/content";
+import { getProjects, getExperiments, getPosts, type Section } from "@/lib/content";
 import styles from "./sections.module.css";
 
 /**
@@ -78,7 +78,7 @@ const renderers: { [K in Section["discriminant"]]: (props: { value: ValueOf<K> }
   },
 
   async featuredWork({ value }) {
-    const all = await getCaseStudies();
+    const all = await getProjects();
     const picked = value.items.filter(Boolean) as string[];
     const items = picked.length
       ? picked.map((slug) => all.find((c) => c.slug === slug)).filter((c) => c !== undefined)
@@ -87,9 +87,9 @@ const renderers: { [K in Section["discriminant"]]: (props: { value: ValueOf<K> }
       <>
         <div className={styles.headingRow}>
           <h2 className={styles.heading}>{value.heading}</h2>
-          <Link href="/work">All work →</Link>
+          <Link href="/projects">All projects →</Link>
         </div>
-        <CardGrid items={items.length ? items : all.slice(0, 4)} base="/work" layout={value.layout} />
+        <CardGrid items={items.length ? items : all.slice(0, 4)} base="/projects" layout={value.layout} />
       </>
     );
   },

@@ -6,12 +6,14 @@ description: >-
 url: ''
 jobTitle: AI-native Design Engineer
 nav:
-  - label: Work
-    href: /work
+  - label: Projects
+    href: /projects
   - label: Experiments
     href: /experiments
   - label: Writing
     href: /writing
+  - label: Artifacts
+    href: /artifacts
   - label: Résumé
     href: /resume
 social:

@@ -15,7 +15,7 @@ const reader = createReader(process.cwd(), keystaticConfig);
 
 const showDrafts = process.env.NODE_ENV === "development";
 
-type Collection = "caseStudies" | "experiments" | "posts";
+type Collection = "projects" | "experiments" | "posts" | "artifacts";
 
 const markdocConfig = fields.markdoc.createMarkdocConfig({
   components: richComponents,
@@ -85,16 +85,19 @@ async function one<C extends Collection>(collection: C, slug: string) {
   return { slug, ...meta, body: toTree(body.node) };
 }
 
-export async function getCaseStudies() {
+const statusOrder = { active: 0, hobby: 1, retired: 2 } as const;
+
+/** Active first, then hobby, then retired; newest first within each. */
+export async function getProjects() {
   "use cache";
   cacheLife("max");
-  return list("caseStudies");
+  return (await list("projects")).sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
 }
 
-export async function getCaseStudy(slug: string) {
+export async function getProject(slug: string) {
   "use cache";
   cacheLife("max");
-  return one("caseStudies", slug);
+  return one("projects", slug);
 }
 
 export async function getExperiments() {
@@ -121,6 +124,18 @@ export async function getPost(slug: string) {
   return one("posts", slug);
 }
 
+export async function getArtifacts() {
+  "use cache";
+  cacheLife("max");
+  return list("artifacts");
+}
+
+export async function getArtifact(slug: string) {
+  "use cache";
+  cacheLife("max");
+  return one("artifacts", slug);
+}
+
 export async function getPages() {
   "use cache";
   cacheLife("max");
@@ -135,8 +150,11 @@ export async function getPage(slug: string) {
   return page ? { slug, ...page } : null;
 }
 
-export type CaseStudySummary = Awaited<ReturnType<typeof getCaseStudies>>[number];
+export type ProjectSummary = Awaited<ReturnType<typeof getProjects>>[number];
+export type ArtifactSummary = Awaited<ReturnType<typeof getArtifacts>>[number];
 export type ExperimentSummary = Awaited<ReturnType<typeof getExperiments>>[number];
 export type PostSummary = Awaited<ReturnType<typeof getPosts>>[number];
 export type Experiment = NonNullable<Awaited<ReturnType<typeof getExperiment>>>;
+export type Discipline = ProjectSummary["discipline"];
+export type ProjectStatus = ProjectSummary["status"];
 export type Section = Awaited<ReturnType<typeof getHome>>["sections"][number];

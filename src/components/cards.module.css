@@ -47,3 +47,9 @@
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
+
+.card .meta {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+}

@@ -53,6 +53,20 @@ const tags = fields.array(fields.text({ label: "Tag" }), {
   itemLabel: (props) => props.value,
 });
 
+/**
+ * Which side of the craft an entry sits on. "Design + Code" is its own value,
+ * not two tags, so lists can split cleanly three ways.
+ */
+const discipline = fields.select({
+  label: "Discipline",
+  options: [
+    { label: "Design", value: "design" },
+    { label: "Code", value: "code" },
+    { label: "Design + Code", value: "design-code" },
+  ],
+  defaultValue: "design-code",
+});
+
 /** Rich-text components available inside every long-form body. */
 export const richComponents = {
   Video: block({
@@ -173,12 +187,12 @@ const sections = fields.blocks(
       itemLabel: (p) => `Image: ${p.fields.alt.value || "untitled"}`,
     },
     featuredWork: {
-      label: "Featured case studies",
+      label: "Featured projects",
       schema: fields.object({
         heading: fields.text({ label: "Heading", defaultValue: "Selected work" }),
-        items: fields.array(fields.relationship({ label: "Case study", collection: "caseStudies" }), {
-          label: "Case studies",
-          description: "Leave empty to show the featured case studies automatically.",
+        items: fields.array(fields.relationship({ label: "Project", collection: "projects" }), {
+          label: "Projects",
+          description: "Leave empty to show the featured projects automatically.",
           itemLabel: (p) => p.value ?? "Select…",
         }),
         layout: fields.select({
@@ -235,7 +249,7 @@ export default config({
     brand: { name: "Site CMS" },
     navigation: {
       Pages: ["home", "pages"],
-      Work: ["caseStudies", "experiments", "posts"],
+      Work: ["projects", "experiments", "posts", "artifacts"],
       About: ["resume"],
       Settings: ["site"],
     },
@@ -339,26 +353,38 @@ export default config({
   },
 
   collections: {
-    caseStudies: collection({
-      label: "Case studies",
+    projects: collection({
+      label: "Projects",
       slugField: "title",
-      path: "content/case-studies/*",
+      path: "content/projects/*",
       format: { contentField: "body" },
       entryLayout: "content",
-      columns: ["title", "date"],
+      columns: ["title", "discipline", "status"],
       schema: {
         title: fields.slug({ name: { label: "Title" } }),
-        summary: fields.text({ label: "Summary", multiline: true, validation: { length: { min: 1 } } }),
-        date: fields.date({ label: "Date", validation: { isRequired: true } }),
+        summary: fields.text({ label: "Summary", multiline: true }),
+        discipline,
+        status: fields.select({
+          label: "Status",
+          description: "Is this still maintained?",
+          options: [
+            { label: "Active", value: "active" },
+            { label: "Hobby", value: "hobby" },
+            { label: "Retired", value: "retired" },
+          ],
+          defaultValue: "active",
+        }),
+        date: fields.date({ label: "Date", description: "When it started or shipped. Orders projects within a status." }),
         role: fields.text({ label: "Your role" }),
         client: fields.text({ label: "Client / company" }),
-        cover: image("Cover image", "case-studies"),
+        url: fields.url({ label: "Live URL" }),
+        cover: image("Cover image", "projects"),
         coverAlt: fields.text({ label: "Cover alt text" }),
         tags,
         featured: fields.checkbox({ label: "Featured", defaultValue: false }),
         draft: fields.checkbox({ label: "Draft (hidden from the site)", defaultValue: false }),
         seo,
-        body: body("case-studies"),
+        body: body("projects"),
       },
     }),
 
@@ -372,6 +398,7 @@ export default config({
       schema: {
         title: fields.slug({ name: { label: "Title" } }),
         summary: fields.text({ label: "Summary", multiline: true }),
+        discipline,
         date: fields.date({ label: "Date", validation: { isRequired: true } }),
         cover: image("Thumbnail", "experiments"),
         coverAlt: fields.text({ label: "Thumbnail alt text" }),
@@ -438,6 +465,28 @@ export default config({
         draft: fields.checkbox({ label: "Draft (hidden from the site)", defaultValue: false }),
         seo,
         body: body("posts"),
+      },
+    }),
+
+    artifacts: collection({
+      label: "Artifacts",
+      slugField: "title",
+      path: "content/artifacts/*",
+      format: { contentField: "body" },
+      entryLayout: "content",
+      columns: ["title", "date"],
+      schema: {
+        title: fields.slug({ name: { label: "Title" } }),
+        summary: fields.text({ label: "Note", description: "Optional one-liner.", multiline: true }),
+        discipline,
+        date: fields.date({ label: "Date", validation: { isRequired: true } }),
+        cover: image("Image", "artifacts"),
+        coverAlt: fields.text({ label: "Image alt text" }),
+        link: fields.url({ label: "Link", description: "Optional — where it lives, if elsewhere." }),
+        tags,
+        draft: fields.checkbox({ label: "Draft (hidden from the site)", defaultValue: false }),
+        seo,
+        body: body("artifacts"),
       },
     }),
 

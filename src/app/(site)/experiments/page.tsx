@@ -1,4 +1,5 @@
 import { CardGrid } from "@/components/cards";
+import { DisciplineFilter } from "@/components/discipline-filter";
 import { getExperiments } from "@/lib/content";
 import { buildMetadata } from "@/lib/seo";
 import styles from "../site.module.css";
@@ -13,7 +14,9 @@ export default async function ExperimentsIndex() {
       <header className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Experiments</h1>
       </header>
-      <CardGrid items={items} base="/experiments" />
+      <DisciplineFilter name="experiments-discipline">
+        <CardGrid items={items} base="/experiments" />
+      </DisciplineFilter>
     </div>
   );
 }

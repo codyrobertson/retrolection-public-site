@@ -11,14 +11,26 @@ fails if a file doesn't match it.
 | Site settings (name, nav, socials, production URL) | `content/site.yaml` | — |
 | Home page sections | `content/home.yaml` | `/` |
 | Résumé | `content/resume.yaml` | `/resume` |
-| Case studies | `content/case-studies/<slug>.mdoc` | `/work/<slug>` |
+| Projects | `content/projects/<slug>.mdoc` | `/projects/<slug>` |
 | Experiments | `content/experiments/<slug>.mdoc` | `/experiments/<slug>` |
-| Blog posts | `content/posts/<slug>.mdoc` | `/writing/<slug>` |
+| Writing | `content/posts/<slug>.mdoc` | `/writing/<slug>` |
+| Artifacts (scratch pad) | `content/artifacts/<slug>.mdoc` | `/artifacts/<slug>` |
 | Custom pages (About, etc.) | `content/pages/<slug>.yaml` | `/<slug>` |
 | Uploaded images | `public/images/<collection>/` | `/images/...` |
 | Static experiment bundles | `public/lab/<folder>/index.html` | `/lab/<folder>/` |
 
 The filename is the slug. `.mdoc` files are YAML frontmatter + a [Markdoc](https://markdoc.dev) body.
+
+## Taxonomy
+
+- `discipline` (projects, experiments, artifacts): `design` | `code` | `design-code`.
+  `design-code` counts as both: the index filter shows it under Design and under Code,
+  and the "Design + Code" option narrows to only those.
+- `status` (projects only): `active` | `hobby` | `retired`. Project lists sort
+  active → hobby → retired, newest first within each.
+- Artifacts are freeform: title, date and body are all that's needed.
+
+Labels: `src/lib/taxonomy.ts`. Filter: `src/components/discipline-filter.tsx` (CSS only).
 
 ## Rich-text components (`.mdoc` bodies)
 

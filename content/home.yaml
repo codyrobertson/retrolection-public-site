@@ -11,7 +11,7 @@ sections:
         Placeholder intro — replace in the CMS. Design and code, merged.
       links:
         - label: See the work
-          href: /work
+          href: /projects
         - label: Résumé
           href: /resume
       width: wide
