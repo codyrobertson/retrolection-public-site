@@ -1,13 +1,69 @@
 title: About
 seo:
   title: ''
-  description: ''
+  description: >-
+    Cody Robertson is a Phoenix design engineer and creative director who
+    makes emerging tech make sense, from the first NFT bridges to AI-native
+    products.
   noindex: false
 sections:
+  - discriminant: hero
+    value:
+      eyebrow: About
+      heading: I make the new thing make sense.
+      subheading: >-
+        Design engineer, creative director, and startup lifer, based in Phoenix.
+      links: []
+      width: standard
   - discriminant: text
     value:
-      heading: About
+      heading: Where it started
       body: >-
-        Placeholder about page built from page-builder sections. Add, remove,
-        and reorder sections in the CMS under Pages → Custom pages.
+        I was obsessed with skateboard graphics as a kid. That turned into
+        vector editing, then graphic design, then branding, then the web. In
+        high school I joined House of Genius, a Phoenix startup program, as its
+        youngest participant, designing for local founders and learning how to
+        pitch.
+
+
+        I went to SCAD, but I was already getting hired in my first year, so I
+        left. Everyone told me it was a bad idea. I bet on myself anyway.
+      width: narrow
+  - discriminant: text
+    value:
+      heading: Riding the waves
+      body: >-
+        After agency work in Phoenix, I moved to New York as employee #12 at
+        Real Blocks, a fintech startup tokenizing REITs, then did agency work
+        for Coca-Cola, Citarella, and the Boy Scouts of America.
+
+
+        At Polyient I became creative director in the middle of the NFT boom.
+        There was no playbook, so we invented the patterns: some of the first
+        NFT staking, fractionalization, and bi-directional NFT-to-token bridge
+        interfaces. I learned Blender, co-founded ApeIn, and shipped Isle of
+        Motu, a turn-based Unity game, with no game-dev experience, a $100K
+        budget, and six months.
+      width: narrow
+  - discriminant: text
+    value:
+      heading: Now
+      body: >-
+        A couple of years ago I saw how much AI could augment my creative work,
+        so I learned programming fundamentals, system design, and how the
+        backend, frontend, and APIs layer together. Design and code now feel
+        like the same muscle. I still love pushing pixels in Figma.
+
+
+        These days I build AI-native products end to end, like
+        [Sedona](/projects/sedona) and ReelsVault, as both creative director and
+        design engineer. I also teach coding locally with VibeCode PHX.
+      width: narrow
+  - discriminant: cta
+    value:
+      heading: Say hello.
+      body: ''
+      link:
+        label: cody@retrolection.com
+        href: mailto:cody@retrolection.com
       width: narrow

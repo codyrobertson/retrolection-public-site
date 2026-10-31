@@ -5,19 +5,21 @@ seo:
 sections:
   - discriminant: hero
     value:
-      eyebrow: AI-native Design Engineer
-      heading: I design and build AI-native tools and polished experiences.
+      eyebrow: Design Engineer · Phoenix, AZ
+      heading: I design the interface to what's next.
       subheading: >-
-        Placeholder intro — replace in the CMS. Design and code, merged.
+        Creative director turned design engineer. From the first NFT bridges to
+        AI-native products, I take the new, complicated thing and make it make
+        sense: the brand, the product, and the code behind it.
       links:
-        - label: See the work
+        - label: See the projects
           href: /projects
         - label: Résumé
           href: /resume
       width: wide
   - discriminant: featuredWork
     value:
-      heading: Selected work
+      heading: Selected projects
       items: []
       layout: grid
       width: wide
@@ -33,9 +35,9 @@ sections:
       width: standard
   - discriminant: cta
     value:
-      heading: Let's build something.
-      body: Placeholder call to action.
+      heading: Creative solutions to technical problems.
+      body: If you're building something new and need it designed, built, or both, let's talk.
       link:
         label: Get in touch
-        href: mailto:hello@example.com
+        href: mailto:cody@retrolection.com
       width: standard

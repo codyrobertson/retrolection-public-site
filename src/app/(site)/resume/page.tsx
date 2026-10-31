@@ -30,9 +30,7 @@ export default async function ResumePage() {
         <h2 className={resume.heading}>Experience</h2>
         {data.experience.map((job) => (
           <div key={`${job.company}-${job.start}`} className={resume.item}>
-            <p className={resume.when}>
-              {job.start} – {job.end || "Present"}
-            </p>
+            <p className={resume.when}>{job.start && `${job.start} – ${job.end || "Present"}`}</p>
             <div>
               <h3 className={resume.role}>
                 {job.role} · {job.url ? <a href={job.url}>{job.company}</a> : job.company}

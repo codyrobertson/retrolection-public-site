@@ -1,10 +1,10 @@
-name: Your Name
-title: Your Name — AI-native Design Engineer
+name: Cody Robertson
+title: Cody Robertson — Design Engineer
 description: >-
-  Design Engineer building AI-native tools and polished product experiences
-  where design and code meet.
+  Design engineer and creative director in Phoenix. I take emerging tech and
+  make it make sense: the brand, the product, and the code behind it.
 url: ''
-jobTitle: AI-native Design Engineer
+jobTitle: Design Engineer
 nav:
   - label: Projects
     href: /projects
@@ -14,10 +14,14 @@ nav:
     href: /writing
   - label: Artifacts
     href: /artifacts
+  - label: About
+    href: /about
   - label: Résumé
     href: /resume
 social:
   - platform: github
-    url: https://github.com/
+    url: https://github.com/codyrobertson
+  - platform: dribbble
+    url: https://dribbble.com/mackody
   - platform: email
-    url: mailto:hello@example.com
+    url: mailto:cody@retrolection.com

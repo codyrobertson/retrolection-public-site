@@ -1,27 +1,119 @@
-headline: AI-native Design Engineer
+headline: Design Engineer & Creative Director
 summary: >-
-  Placeholder summary. Replace in the CMS under About → Résumé.
-location: Remote
+  Self-taught designer who grew up in startups. Creative director behind a
+  string of Web3 industry firsts, now building AI-native products end to end:
+  brand, interface, and code. I see the whole system (the creative concept,
+  the economic model, the technical execution) and connect the dots.
+location: Phoenix, AZ
 experience:
-  - company: Example Co.
+  - company: Independent
     role: Design Engineer
     url: ''
-    location: Remote
-    start: '2024'
+    location: Phoenix, AZ
+    start: ''
     end: ''
     highlights:
-      - Placeholder highlight — shipped an AI-powered tool used by thousands.
+      - >-
+        Sedona: creative director and design engineer on an AI-agent platform
+        on Solana. Designed the brand, website, and front end.
+      - >-
+        ReelsVault: AI tool that turns saved Instagram Reels into searchable
+        competitive intelligence, with transcription, classification, semantic
+        search, and pattern extraction.
+      - >-
+        Product, brand, and landing-page work for whag.me, StablOS, Stabl Pay,
+        and Step3.
+      - Teaches coding locally through VibeCode PHX.
+  - company: Isle of Motu (ApeIn)
+    role: Co-founder & Creative Director
+    url: ''
+    location: ''
+    start: ''
+    end: ''
+    highlights:
+      - >-
+        Cross-chain GameFi experience with three titles, including Jungle
+        Rumble, a tokenized PVP idle brawler built in Unity.
+      - >-
+        Shipped a turn-based Unity game with no prior game-dev experience: three
+        months to learn and hire, six months to build, on a $100K budget.
+      - >-
+        Created the first design system to render randomized 3D NFTs in the
+        browser, with a Blender asset pipeline for in-app randomization.
+  - company: Polyient Labs & Polyient Games
+    role: Creative Director
+    url: https://polyient.io
+    location: ''
+    start: ''
+    end: ''
+    highlights:
+      - >-
+        Scaled the creative organization at what was then the largest Web3
+        incubator; a dozen-plus companies incubated, with successful exits.
+      - >-
+        Designed industry-first patterns: the first utility NFT, the first
+        bi-directional NFT-to-ERC-20 bridge interface, and the first NFT/ERC-20
+        liquid staking interface.
+      - >-
+        Launched about ten NFT collections across three chains, earning more
+        than 4,000 ETH in primary sales.
+  - company: Real Blocks
+    role: Creative Director
+    url: ''
+    location: New York, NY
+    start: ''
+    end: ''
+    highlights:
+      - >-
+        Employee #12 at the first company to offer accredited investors
+        tokenized REITs (Barclays Fintech Incubator).
+      - Naming, brand identity, web and application design, and marketing strategy.
+  - company: Block Collective
+    role: Creative Partner
+    url: ''
+    location: ''
+    start: ''
+    end: ''
+    highlights:
+      - >-
+        Led the creative organization for ICO-era crypto startups, including
+        Sweetbridge (blockchain supply chain, 20+ localizations).
+  - company: Retrolection
+    role: Founder
+    url: https://www.retrolection.com
+    location: Phoenix, AZ
+    start: ''
+    end: ''
+    highlights:
+      - >-
+        Brand strategy, identity, and digital design studio. Clients include
+        Coca-Cola, GSK, Lionsgate, Barclays, OCEG, Citarella, Sourcely, and the
+        Boy Scouts of America.
 skills:
   - group: Design
     items:
-      - Product design
-      - Prototyping
+      - Brand strategy & identity
+      - UI/UX, web & application design
+      - Design systems
+      - Pitch decks & marketing strategy
   - group: Engineering
     items:
-      - TypeScript
-      - React / Next.js
-      - LLM tooling
-education: []
+      - AI-native product development
+      - Front end
+      - System design
+  - group: 3D, games & physical
+    items:
+      - 3D art & rendering (Blender)
+      - Game art direction & concept art
+      - Illustration & character design
+      - Packaging & merchandise
+education:
+  - school: MIT
+    detail: Blockchain Systems
+    year: ''
+  - school: Savannah College of Art and Design (SCAD)
+    detail: Attended; left after the first year to work full time
+    year: ''
 seo:
   title: ''
   description: ''
