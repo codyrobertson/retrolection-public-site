@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { InkGL } from "@/components/ink-gl";
+import { Surface } from "@/components/surface";
 import { getSite } from "@/lib/content";
 import { getSiteUrl } from "@/lib/seo";
 import { inferi, messina, nichrome } from "./fonts";
@@ -27,7 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${messina.variable} ${inferi.variable} ${nichrome.variable}`}>
       <body>
-        <InkGL />
+        <Surface />
         {children}
       </body>
     </html>

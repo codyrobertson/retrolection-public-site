@@ -1,11 +1,14 @@
 @import "./ink.css";
+@import "./surface.css";
 
 /*
  * Design tokens. The visual direction is intentionally unstyled for now —
  * change these first when the design lands.
  */
 :root {
-  --background: #ffffff;
+  --background: #f6f2e9;
+  --paper-wash-a: rgb(255 252 244 / 0.55);
+  --paper-wash-b: rgb(214 196 160 / 0.16);
   --foreground: #171717;
   --muted: #6b6b6b;
   --border: #e5e5e5;
@@ -23,7 +26,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #0f0f0e;
+    --paper-wash-a: rgb(255 244 226 / 0.035);
+    --paper-wash-b: rgb(0 0 0 / 0.35);
     --foreground: #ededed;
     --muted: #a1a1a1;
     --border: #262626;

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Surface — paper, ink, marker</title>
+<style>
+@font-face{font-family:Messina;src:url(../../src/fonts/messina-sans-400.woff2);font-weight:400}
+@font-face{font-family:Messina;src:url(../../src/fonts/messina-sans-700.woff2);font-weight:700}
+@font-face{font-family:Inferi;src:url(../../src/fonts/inferi-400.woff2);font-weight:400}
+@font-face{font-family:Inferi;src:url(../../src/fonts/inferi-700.woff2);font-weight:700}
+:root{--background:#f6f2e9;--foreground:#1c1a17;--muted:#6f685c;--paper-wash-a:rgb(255 252 244/.55);--paper-wash-b:rgb(214 196 160/.16)}
+@media (prefers-color-scheme:dark){:root{--background:#0f0f0e;--foreground:#ece8e0;--muted:#a39d92;--paper-wash-a:rgb(255 244 226/.035);--paper-wash-b:rgb(0 0 0/.35);color-scheme:dark}}
+:root[data-theme=light]{--background:#f6f2e9;--foreground:#1c1a17;--muted:#6f685c;--paper-wash-a:rgb(255 252 244/.55);--paper-wash-b:rgb(214 196 160/.16);color-scheme:light}
+:root[data-theme=dark]{--background:#0f0f0e;--foreground:#ece8e0;--muted:#a39d92;--paper-wash-a:rgb(255 244 226/.035);--paper-wash-b:rgb(0 0 0/.35);color-scheme:dark}
+*{box-sizing:border-box;margin:0}
+body{background:var(--background);color:var(--foreground);font-family:Inferi,Georgia,serif;-webkit-font-smoothing:antialiased}
+main{max-width:56rem;margin:0 auto;padding:40px 24px 80px}
+h1{font:700 52px/1.05 Messina,sans-serif;margin-bottom:10px}
+h2{font:700 22px/1.2 Messina,sans-serif;margin:44px 0 12px}
+p{font-size:17px;line-height:1.55;max-width:38rem;margin-bottom:12px}
+.cap{font:12px Messina,sans-serif;color:var(--muted)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+@media(max-width:700px){.row{grid-template-columns:1fr}}
+svg{width:100%;height:auto;display:block}
+svg text{font:12px Messina,sans-serif;fill:var(--muted)}
+.sw{display:flex;gap:14px;flex-wrap:wrap}
+.sw div{width:120px;height:80px;border-radius:6px}
+.bar{height:28px;border-radius:4px;margin:8px 0}
+</style>
+<link rel="stylesheet" href="../../src/app/ink.css">
+<link rel="stylesheet" href="../../src/app/surface.css">
+</head>
+<body>
+<main>
+  <h1>Paper, ink &amp; marker</h1>
+  <p>Fibres, tooth and a faint wash sit under the page; type is laid down in ballpoint; fills in charts and illustrations take Copic-style marker, with overlapping passes, a darker wet edge and a little bleed into the sheet.</p>
+
+  <h2>Charts</h2>
+  <div class="row">
+    <figure>
+      <svg viewBox="0 0 320 200" role="img" aria-label="Bar chart">
+        <line x1="30" y1="170" x2="310" y2="170" stroke="currentColor" stroke-opacity=".35"/>
+        <rect data-marker="#e0584a" x="44"  y="60"  width="38" height="110" rx="2"/>
+        <rect data-marker="#f0a23a" x="96"  y="95"  width="38" height="75"  rx="2"/>
+        <rect data-marker="#4aa36b" x="148" y="40"  width="38" height="130" rx="2"/>
+        <rect data-marker="#3f7fd0" x="200" y="80"  width="38" height="90"  rx="2"/>
+        <rect data-marker="#8a5fc0" x="252" y="120" width="38" height="50"  rx="2"/>
+        <text x="44" y="188">Q1</text><text x="96" y="188">Q2</text><text x="148" y="188">Q3</text><text x="200" y="188">Q4</text><text x="252" y="188">Q5</text>
+      </svg>
+      <figcaption class="cap">Bars — rect, rounded, vertical strokes</figcaption>
+    </figure>
+    <figure>
+      <svg viewBox="0 0 320 200" role="img" aria-label="Area chart">
+        <path data-marker="#3f7fd0" d="M20 170 L20 120 C60 90 90 140 130 100 S200 40 240 70 S290 110 300 90 L300 170 Z"/>
+        <path data-marker="#e0584a" data-marker-angle="-20" d="M20 170 L20 150 C70 130 110 160 160 135 S250 120 300 140 L300 170 Z"/>
+        <text x="20" y="190">Layered areas — overlap darkens like real marker</text>
+      </svg>
+      <figcaption class="cap">Areas — path, overlapping fills</figcaption>
+    </figure>
+    <figure>
+      <svg viewBox="0 0 200 200" role="img" aria-label="Donut">
+        <circle data-marker="#f0a23a" cx="100" cy="100" r="62" fill="none" stroke-width="30" stroke-dasharray="150 400" transform="rotate(-90 100 100)"/>
+        <circle data-marker="#4aa36b" cx="100" cy="100" r="62" fill="none" stroke-width="30" stroke-dasharray="110 400" stroke-dashoffset="-150" transform="rotate(-90 100 100)"/>
+        <circle data-marker="#8a5fc0" cx="100" cy="100" r="62" fill="none" stroke-width="30" stroke-dasharray="120 400" stroke-dashoffset="-260" transform="rotate(-90 100 100)"/>
+      </svg>
+      <figcaption class="cap">Donut — stroked arcs</figcaption>
+    </figure>
+    <figure>
+      <svg viewBox="0 0 200 200" role="img" aria-label="Illustration">
+        <circle data-marker="#f0a23a" cx="60" cy="64" r="34"/>
+        <polygon data-marker="#4aa36b" points="30,170 100,70 170,170"/>
+        <rect data-marker="#e0584a" x="112" y="118" width="60" height="52" rx="4"/>
+        <ellipse data-marker="#3f7fd0" cx="100" cy="188" rx="80" ry="8"/>
+      </svg>
+      <figcaption class="cap">Illustration — shapes</figcaption>
+    </figure>
+  </div>
+
+  <h2>HTML boxes</h2>
+  <div class="sw">
+    <div data-marker="#e0584a"></div><div data-marker="#f0a23a"></div><div data-marker="#4aa36b"></div><div data-marker="#3f7fd0"></div><div data-marker="#8a5fc0"></div>
+  </div>
+  <div class="bar" data-marker="#3f7fd0" style="width:70%"></div>
+  <div class="bar" data-marker="#e0584a" style="width:45%"></div>
+
+  <h2>Body copy</h2>
+  <p>Ballpoint ink sits unevenly on paper, pooling at the stroke edges and feathering a hair beyond them. It is oil based and slow, so it dries before it travels far, and the tooth of the paper decides where it catches. At small sizes the type stays crisp: 12px captions and 17px body remain easy to read.</p>
+  <p class="cap">Caption at 12px: the effect scales down with type size so tiny text keeps its shape.</p>
+</main>
+<script type="module">
+const [{ startInk }, { startMarker }, { startPaper }] = await Promise.all([
+  import("../../src/lib/ink-gl.js"), import("../../src/lib/marker-gl.js"), import("../../src/lib/paper-gl.js")]);
+window.paper = startPaper(); window.marker = startMarker(); window.ink = startInk();
+</script>
+</body>
+</html>
