@@ -69,7 +69,7 @@ void main(){
   vec3 kd=texture2D(meta,mc).rgb;
   vec2 q=p-ctr;                                              // inside the cell, y down
   float aa=.5, ay=abs(q.y-.5);
-  float hb=(1.-smoothstep(2.5-aa,2.5+aa,abs(q.x)))*(1.-smoothstep(.5,.5+aa,ay));                    // '-'  a short dash
+  float hb=(1.-smoothstep(1.9-aa,1.9+aa,abs(q.x)))*(1.-smoothstep(.5,.5+aa,ay));                    // '-'  a short dash
   float vb=max(1.-smoothstep(.9,.9+aa,length(vec2(q.x,q.y-4.5))),1.-smoothstep(.9,.9+aa,length(vec2(q.x,q.y+3.5)))); // ':'  two dots
   float cr=max((1.-smoothstep(2.5-aa,2.5+aa,abs(q.x)))*(1.-smoothstep(.5,.5+aa,ay)),(1.-smoothstep(.5,.5+aa,abs(q.x)))*(1.-smoothstep(2.5-aa,2.5+aa,ay))); // '+'
   float a=kd.r>.5?hb:kd.g>.5?vb:cr;
