@@ -1,0 +1,35 @@
+/*
+ * The page turn (components/PageCurl.tsx). Its keyframes are written at the click, for the
+ * window it happens in: curl-sheet cuts the outgoing page at the fold, curl-back is the
+ * turned corner's back, curl-hold the hand that holds it. The incoming page just waits under.
+ */
+:root:active-view-transition-type(page-curl) {
+  &::view-transition-old(root) {
+    z-index: 1; /* the outgoing sheet lies on the incoming one, not under it */
+    animation: curl-sheet var(--curl-ms, 900ms) linear both;
+  }
+  &::view-transition-new(root) {
+    animation: none;
+  }
+
+  &::view-transition-group(curl-flap) {
+    animation: none;
+    /* the turned corner stands off the sheet: its shadow falls on whichever page is under it */
+    filter: drop-shadow(-6px 10px 14px rgb(0 0 0 / 0.22)) drop-shadow(-1px 2px 2px rgb(0 0 0 / 0.12));
+  }
+  &::view-transition-old(curl-flap),
+  &::view-transition-old(curl-hand) {
+    display: none;
+  }
+  &::view-transition-new(curl-flap) {
+    animation: curl-back var(--curl-ms, 900ms) linear both;
+  }
+
+  &::view-transition-group(curl-hand) {
+    transform-origin: 0 0;
+    animation: curl-hold var(--curl-ms, 900ms) linear both;
+  }
+  &::view-transition-new(curl-hand) {
+    animation: none;
+  }
+}

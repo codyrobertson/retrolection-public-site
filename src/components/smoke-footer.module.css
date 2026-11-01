@@ -1,0 +1,121 @@
+/*
+ * The foot's vignette. Everything is the art's own css px (footer-art.json, at --u: 1px) times
+ * --u, which fits the hand + ashtray group (--group wide) to the screen between the gutters,
+ * from full size down to .42. The smoke is the one thing that is not scaled: it rises --rise.
+ *
+ * The art is alpha masks, tinted here: paper under the hand and ashtray (so they hide the
+ * wood), ink over them. The footer is always on the light stock (site.module.css scopes the
+ * day tokens to it), so these are graphite on paper on every page.
+ */
+.vignette {
+  --u: clamp(0.42px, calc((100vw - 2 * var(--gutter)) / var(--group)), 1px);
+  --rise: 125px;                                                     /* ember to the scrim */
+  /* the ashtray, 16 of air, the hand: the group set against the right gutter, the arm coming up off the page's foot */
+  --hand-x: calc(100vw - var(--gutter) - var(--hand-w) * var(--u));
+  --tray-x: calc(var(--hand-x) - (var(--tray-w) + 16) * var(--u));
+  --tray-b: calc(22 * var(--u));
+  --ember-l: calc(var(--tray-x) + var(--ember-x) * var(--u));
+  --ember-b: calc(var(--tray-b) + var(--ember-y) * var(--u));
+
+  position: relative;
+  height: max(calc(var(--ember-b) + var(--rise) + 10px), calc(var(--hand-h) * var(--u) + 12px));
+  overflow: hidden;
+  pointer-events: none;
+}
+/* wide: the links stand at the bottom right (site.module.css), so the group stands in the middle */
+@media (min-width: 1200px) {
+  .vignette { --hand-x: calc(50vw + (var(--group) / 2 - var(--hand-w)) * var(--u)); }
+}
+
+.vignette > *,
+.hand > * {
+  position: absolute;
+  pointer-events: none;
+}
+
+.trayBody,
+.trayInk,
+.handBody,
+.handInk,
+.wisp {
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* the veneer: plank grain, full width, tiling across */
+.wood {
+  inset: 0;
+  background: var(--ink);
+  opacity: 0.16;
+  -webkit-mask: url(/footer/wood-ink.webp) repeat-x left bottom / var(--wood-w) var(--wood-h);
+  mask: url(/footer/wood-ink.webp) repeat-x left bottom / var(--wood-w) var(--wood-h);
+}
+
+.trayBody,
+.trayInk {
+  left: var(--tray-x);
+  bottom: var(--tray-b);
+  width: calc(var(--tray-w) * var(--u));
+  height: calc(var(--tray-h) * var(--u));
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+.trayBody { background: var(--paper); -webkit-mask-image: url(/footer/tray-body.webp); mask-image: url(/footer/tray-body.webp); }
+.trayInk { background: var(--ink); -webkit-mask-image: url(/footer/tray-ink.webp); mask-image: url(/footer/tray-ink.webp); }
+
+/* the smoke as a drawing: what shows until the plume is live */
+.wisp {
+  left: calc(var(--ember-l) - 17px);
+  bottom: calc(var(--ember-b) - 4px);
+  width: calc(var(--wisp-w) * 1px);
+  height: calc(var(--wisp-h) * 1px);
+  background: var(--ink);
+  opacity: 0.7;
+  -webkit-mask: url(/footer/wisp-ink.webp) no-repeat 0 0 / 100% 100%;
+  mask: url(/footer/wisp-ink.webp) no-repeat 0 0 / 100% 100%;
+  transition: opacity 0.6s ease;
+}
+.vignette[data-live] .wisp { opacity: 0; }
+
+/* the ember: a dot of vermilion with a short fall-off; the plume's shader adds the glow when live */
+.ember {
+  left: calc(var(--ember-l) - 6 * var(--u));
+  bottom: calc(var(--ember-b) - 6 * var(--u));
+  width: calc(12 * var(--u));
+  height: calc(12 * var(--u));
+  background: radial-gradient(circle closest-side, var(--vermilion) 0 27%, transparent 75%);
+}
+
+.smoke {
+  width: max(240px, calc(300 * var(--u)));
+  height: calc(var(--rise) + 24px);
+  left: calc(var(--ember-l) - max(120px, 150 * var(--u)));
+  bottom: calc(var(--ember-b) - 24px);
+}
+
+/* the hand: a sheet of frames; --hc and --hr (set by the tapping) pick one. The sleeve is cut square at the cell's foot, the page's */
+.hand {
+  left: var(--hand-x);
+  bottom: 0;
+  width: calc(var(--hand-w) * var(--u));
+  height: calc(var(--hand-h) * var(--u));
+}
+.handBody,
+.handInk {
+  inset: 0;
+  -webkit-mask-size: calc(var(--hand-w) * var(--hand-cols) * var(--u)) calc(var(--hand-h) * var(--hand-rows) * var(--u));
+  mask-size: calc(var(--hand-w) * var(--hand-cols) * var(--u)) calc(var(--hand-h) * var(--hand-rows) * var(--u));
+  -webkit-mask-position: calc(var(--hc, 0) * var(--hand-w) * var(--u) * -1) calc(var(--hr, 0) * var(--hand-h) * var(--u) * -1);
+  mask-position: calc(var(--hc, 0) * var(--hand-w) * var(--u) * -1) calc(var(--hr, 0) * var(--hand-h) * var(--u) * -1);
+}
+.handBody { background: var(--paper); -webkit-mask-image: url(/footer/hand-body.webp); mask-image: url(/footer/hand-body.webp); }
+.handInk { background: var(--ink); -webkit-mask-image: url(/footer/hand-ink.webp); mask-image: url(/footer/hand-ink.webp); }
+
+/* the top of the veneer goes to paper: the smoke is gone before it reaches it (the hand is above it) */
+.scrim {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--ember-b) + var(--rise) - 14px);                 /* the smoke has this much clear air above the ember */
+  background: linear-gradient(to bottom, var(--paper) 0 4px, transparent);
+}

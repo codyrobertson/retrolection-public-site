@@ -1,0 +1,384 @@
+/* Plate 01 is the hero: a box ruled in type, a sheet in the machine, and the board the hands
+   push up from below the fold to type its heading. The sheet scrolls as any page does; the
+   desk (.plate) is pinned over it, and the sheet goes into the machine at the platen, the
+   hero's foot: what is further down the sheet (the work, WorkIndex) comes up out of it, and
+   the hands type each line as it does. Past the sheet's foot they take the board away. */
+
+.scene {
+  /* the stage: the window under the masthead, but never so short that the box and the board
+     can't both be in it; a shorter window pins the desk higher, its foot on the window's */
+  --stage: max(100svh - 64px, 560px);
+  position: relative;
+  /* room after the sheet for its foot to come up past the platen, and the board to go */
+  padding-bottom: calc(var(--below, 40svh) + 48px);
+}
+
+.plate {
+  position: sticky;
+  /* a window too short for the whole stage pins it with its foot on the window's, but never so
+     high that less than about half the window is paper above the platen (--at): the board is
+     cropped at the bottom instead */
+  top: min(64px, max(100svh - var(--stage), 55svh - var(--at, 0px)));
+  z-index: 2;
+  height: var(--stage);
+  margin-bottom: calc(-1 * var(--stage));     /* over the sheet, not before it */
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sheet {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(10px, 2vh, 24px) var(--gutter) 0;
+}
+
+/* The box: its frame counted out in mono characters (AsciiBox), the hero inside it. Its
+   type is sized off the box (cqi), so the lines keep their measure at any width. */
+.note {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  /* as wide as the board under it (--kbw, set from the stage), or near enough where it can't be */
+  width: min(var(--kbw, 720px), 100%);
+  margin-top: clamp(10px, 3vh, 36px);
+  container-type: inline-size;
+  /* a true monospace: the frame is counted in characters, and every one must be as wide */
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-3);
+}
+
+.probe {
+  position: absolute;
+  visibility: hidden;
+  white-space: pre;
+}
+
+/* paper inside, so the board slides under the box when it is pushed up the page; it comes
+   in behind the rule as the rule finishes drawing itself (AsciiBox) */
+.box { position: relative; margin: 0 auto; opacity: 0; transition: opacity 0.3s ease, background-color 0.6s ease; }
+.box[data-ready="true"] { opacity: 1; }
+.box[data-drawn="true"] { background: var(--paper); }
+.box .boxBody > :not(.corner) { opacity: 0; transition: opacity 0.5s ease 0.05s; }
+.box[data-drawn="true"] .boxBody > :not(.corner) { opacity: 1; }
+
+.rule { white-space: pre; overflow: hidden; }
+
+/* the body is as tall as what it holds, not stretched to the sides: AsciiBox counts the rows
+   off it, and a stretched body would never let the count come down when the box widens */
+.boxMid { display: flex; align-items: flex-start; }
+
+.side {
+  flex: none;
+  white-space: pre;
+  overflow: hidden;
+}
+
+.boxBody {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 22px 2ch 18px;
+}
+
+/* the eyebrow, just there in the top right corner */
+.corner {
+  position: absolute;
+  top: 10px;
+  right: 1ch;
+  margin: 0;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  white-space: pre;
+}
+
+/* the dateline: the reader's day and time, the first thing the hands type */
+.stamp {
+  margin: 0 0 1.1em;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 6.6cqi;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.sub {
+  margin: 0.95em 0 0;
+  max-width: 30em;
+  font-family: var(--serif);
+  font-size: max(15px, 2.35cqi);
+  line-height: 1.4;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;                 /* held open while the shortcodes are typed */
+  margin: 1.4em 0 0;
+}
+
+.primary, .ghost {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 14.5px;
+  text-decoration: none;
+}
+/* a link is typed as a shortcode, and becomes its button when Return goes down */
+.primary, .ghost {
+  animation: rendered 0.42s cubic-bezier(0.2, 0.8, 0.2, 1.2);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+@keyframes rendered {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+.code {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  font-size: 13px;
+  color: var(--ink-2);
+  white-space: pre;
+}
+.primary { background: var(--ink); color: var(--paper); }
+.primary:hover { background: #33312d; }
+.ghost { border: 1px solid rgb(26 25 23 / 0.22); color: var(--ink); }
+.ghost:hover { border-color: var(--ink); }
+.primary:focus-visible, .ghost:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 3px; }
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* the line pasted in under the heading: there whole, lit for a moment as a selection is */
+.paste { opacity: 0; }
+.paste[data-on="true"] {
+  opacity: 1;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  animation: pasted 1.1s ease-out;
+}
+@keyframes pasted {
+  0% { background: rgb(212 70 42 / 0.18); }
+  100% { background: rgb(212 70 42 / 0); }
+}
+
+/* the reader's line: whatever they type while the board is up, the hands type here */
+.prompt {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6ch;
+  min-height: 18px;
+  margin: 1.3em 0 0;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.promptMark { color: var(--vermilion); }
+
+/* the platen: the hero's foot, a rule across the sheet in the box's own dashes (a "-" in every
+   other character, as AsciiBox counts them out), where the sheet goes into the machine */
+.platen {
+  height: 1lh;
+  margin: 0.4em -2ch 0;
+  background: repeating-linear-gradient(90deg, transparent 0 0.2ch, currentColor 0.2ch 0.8ch, transparent 0.8ch 2ch) 0 50% / 100% 1px no-repeat;
+}
+.said { min-width: 0; overflow-wrap: anywhere; }
+
+/* every letter holds its place before it is typed, so the line never shifts */
+.char { opacity: 0; }
+.char[data-on="true"] { opacity: 1; }
+/* the letters take their colour from the line as the lights change, not one transition each */
+:global(html[data-theme-moving]) .char { transition: none !important; }
+
+/* the caret takes no room in the line (its margin gives back its width), so the line wraps
+   the same with it as without it, wherever it is */
+.caret {
+  display: inline-block;
+  width: 0.06em;
+  height: 0.8em;
+  margin: 0 -0.06em 0 0;
+  transform: translateX(0.03em);
+  vertical-align: -0.04em;
+  background: var(--vermilion);
+  animation: blink 1.06s steps(1) infinite;
+}
+
+@keyframes blink { 50% { opacity: 0; } }
+
+/* the desk: the board and the hands, drawn under everything else */
+.canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.canvas[data-ready="true"] { opacity: 1; }
+
+/* a short window: the box closes up, so the board keeps its keys clear of it */
+@media (max-height: 760px) {
+  .boxBody { padding: 16px 2ch 12px; }
+  .stamp { margin-bottom: 0.7em; }
+  .sub { margin-top: 0.7em; line-height: 1.34; }
+  .links { margin-top: 1em; }
+}
+
+/* a box too narrow for the eyebrow beside the dateline: it takes a line of its own */
+@container (max-width: 480px) {
+  .corner { position: static; margin: -8px 0 10px; text-align: right; }
+}
+
+/* a phone held upright (as PHONE in TypingPlate; one on its side has the desk's layout) */
+@media (max-width: 720px) and (orientation: portrait) {
+  .note { width: min(92vw, calc(var(--stage) * 0.72)); font-size: 11px; line-height: 15px; }
+  .corner { position: static; margin: -8px 0 10px; text-align: right; }
+  .prompt { display: none; }
+  .headline { font-size: 9cqi; }
+  .primary, .ghost { height: 36px; padding: 0 15px; font-size: 13.5px; }
+  .links { min-height: 36px; }
+  .code { height: 36px; font-size: 11px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene { padding-bottom: 0; }
+  .plate { position: absolute; top: 0; left: 0; right: 0; margin: 0; }
+  .platen { margin-bottom: var(--room, 0px); }
+  /* all of it shown, and at once, script or none */
+  .char, .paste, .box, .box .boxBody > :not(.corner) { opacity: 1; transition: none; }
+  .caret { animation: none; }
+  .paste[data-on="true"] { animation: none; }
+  .primary, .ghost { transition: none; animation: none; }
+  .canvas { transition: none; }
+}
+
+/* ---------------------------------------------------------------- ?tune */
+
+.tune {
+  position: fixed;
+  z-index: 200;
+  top: 76px;
+  right: 12px;
+  bottom: 12px;
+  width: 292px;
+  overflow-y: auto;
+  padding: 12px 14px 14px;
+  background: rgb(250 248 242 / 0.94);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
+.tuneHead {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.tuneHead [data-state="ok"] { color: #2f7a3e; }
+.tuneHead [data-state="fail"] { color: var(--vermilion); }
+.tuneHead [data-state="busy"] { color: var(--ink-3); }
+
+.metrics {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+.metrics li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.metrics b { font-weight: 500; font-variant-numeric: tabular-nums; }
+.metrics [data-ok="true"] b { color: #2f7a3e; }
+.metrics [data-ok="false"] b { color: var(--vermilion); }
+.metrics [data-ok="wait"] b { color: var(--ink-3); }
+
+.group {
+  margin: 0 0 10px;
+  padding: 0;
+  border: 0;
+}
+.group legend {
+  padding: 0;
+  margin-bottom: 4px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.slider {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  row-gap: 2px;
+  margin-bottom: 6px;
+}
+.slider output { font-variant-numeric: tabular-nums; color: var(--ink); }
+.slider input {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin: 0;
+  accent-color: var(--ink);
+}
+
+.tuneActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+.tuneActions button {
+  appearance: none;
+  padding: 6px 10px;
+  border: 1px solid var(--ink);
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+}
+.tuneActions button:first-child { background: var(--ink); color: var(--paper); }
+
+.tuneFoot { margin: 10px 0 0; color: var(--ink-3); }
+
+/* without scripts nothing is measured, so nothing would come up: the box is simply there */
+@media (scripting: none) {
+  .box, .box .boxBody > :not(.corner) { opacity: 1; }
+}
+@media (scripting: none) {
+  .char { opacity: 1; }
+}

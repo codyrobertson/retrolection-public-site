@@ -6,16 +6,15 @@ sections:
   - discriminant: hero
     value:
       eyebrow: Design Engineer · Phoenix, AZ
-      heading: I design the interface to what's next.
+      heading: I design and build AI-native products.
       subheading: >-
-        Creative director turned design engineer. From the first NFT bridges to
-        AI-native products, I take the new, complicated thing and make it make
-        sense: the brand, the product, and the code behind it.
+        Creative director turned design engineer. From crypto to AI-native
+        solutions: the brand, the product, and the code behind it.
       links:
-        - label: See the projects
+        - label: See Projects
           href: /projects
-        - label: Résumé
-          href: /resume
+        - label: View GitHub
+          href: https://github.com/codyrobertson
       width: wide
   - discriminant: featuredWork
     value:

@@ -1,51 +1,69 @@
 @import "./ink.css";
 @import "./surface.css";
+@import "./curl.css";
 
 /*
- * Design tokens. The visual direction is intentionally unstyled for now —
- * change these first when the design lands.
+ * Paper and graphite. The plates are drawn in one ink on one stock, so the page is too;
+ * vermilion is the only other colour and it marks time. The page is light until the board
+ * is taken away below the work (TypingPlate), when the lights go down: html[data-theme].
+ * The older names (--background, --muted…) are the same colours, for the CMS pages.
  */
 :root {
-  --background: #f6f2e9;
+  color-scheme: light;
+  --paper: #f4f1e8;
+  --paper-deep: #ebe7db;
+  --ink: #1a1917;
+  --ink-2: #4a4740;
+  --ink-3: #8a857a;
+  --rule: rgb(26 25 23 / 0.14);
+  --vermilion: #d4462a;
+  /* the paper's large wash (paper-gl): a little light from the top left, and nothing pooling
+     at the foot of the page */
   --paper-wash-a: rgb(255 252 244 / 0.55);
-  --paper-wash-b: rgb(214 196 160 / 0.16);
-  --foreground: #171717;
-  --muted: #6b6b6b;
-  --border: #e5e5e5;
-  --surface: #f5f5f4;
-  --accent: #2563eb;
+  --paper-wash-b: rgb(0 0 0 / 0);
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --muted: var(--ink-3);
+  --border: var(--rule);
+  --surface: var(--paper-deep);
+  --accent: var(--vermilion);
+
   --radius: 10px;
-  --gutter: clamp(1rem, 4vw, 2rem);
+  --gutter: clamp(16px, 3.2vw, 44px);
   --measure: 42rem;
   --section-width: 64rem;
+  --masthead: 64px;
+
   --font-sans: var(--font-messina), system-ui, sans-serif;
   --font-serif: var(--font-inferi), Georgia, "Times New Roman", serif;
   --font-small: var(--font-nichrome), system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: var(--font-sans);
+  --serif: var(--font-serif);
+  --mono: var(--font-nichrome), ui-monospace, monospace;
+
+  /* the lights going down (or up): every colour that follows the theme moves together */
+  --theme-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --theme-time: 0.9s;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f0f0e;
-    --paper-wash-a: rgb(255 244 226 / 0.035);
-    --paper-wash-b: rgb(0 0 0 / 0.35);
-    --foreground: #ededed;
-    --muted: #a1a1a1;
-    --border: #262626;
-    --surface: #171717;
-    --accent: #60a5fa;
-  }
-  html {
-    color-scheme: dark;
-  }
-}
-
-h1,
-h2,
-h3,
-h4,
-button {
-  font-family: var(--font-sans);
+/* night: graphite turned to chalk on a dark stock; vermilion lifted to hold its weight */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #141311;
+  --paper-deep: #1c1b18;
+  --ink: #ebe6da;
+  --ink-2: #b9b3a6;
+  --ink-3: #7d776c;
+  --rule: rgb(235 230 218 / 0.13);
+  --vermilion: #ec5b3c;
+  --paper-wash-a: rgb(255 244 226 / 0.035);
+  --paper-wash-b: rgb(0 0 0 / 0);
+  /* the spill (black-ink-gl): the pigment is cooler than the stock, the tide line warmer and a hair lighter, the gloss the room's grey light */
+  --spill-ink: #08080a;
+  --spill-stain: #2a241c;
+  --spill-sheen: #6b645a;
 }
 
 * {
@@ -56,17 +74,45 @@ button {
 
 html {
   height: 100%;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: var(--font-serif);
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* only while the lights change: never a transition on load, or on a page that starts dark.
+   Grounds and rules fade everywhere; colour, which every child inherits (and so restyles the whole
+   page each frame), only in the blocks on screen (lib/theme-fade marks them [data-fade]) */
+:where(html[data-theme-moving]) body,
+:where(html[data-theme-moving]) body * {
+  transition:
+    background-color var(--theme-time) var(--theme-ease),
+    border-color var(--theme-time) var(--theme-ease) !important;
+}
+html[data-theme-moving] :where([data-fade], [data-fade] *) {
+  transition:
+    background-color var(--theme-time) var(--theme-ease),
+    border-color var(--theme-time) var(--theme-ease),
+    color var(--theme-time) var(--theme-ease),
+    fill var(--theme-time) var(--theme-ease),
+    stroke var(--theme-time) var(--theme-ease) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+button {
+  font-family: var(--font-sans);
 }
 
 a {
@@ -82,4 +128,9 @@ video {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--paper);
 }
