@@ -1,0 +1,215 @@
+/* Plate 02: the work, as lines of the hero's sheet (WorkIndex), inside the hero's box and in
+   its type. Each line is typed as it comes up past the platen: its number in the box's mono,
+   its name in the heading's face, then its details, its status, and its mark (the project's
+   abstract drawing in the plates' graphite) as its last letter goes down. The box is the
+   container: lines are laid out by how wide it stands, not the window. */
+.index {
+  padding-top: 1.2em;
+  /* arriving here (#work) puts the label just under the masthead, the board up under the first lines */
+  scroll-margin-top: 84px;
+}
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.label {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 0.6em;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+/* ---- tabs: bracketed when chosen, as a shortcode is ---------------------------------- */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  margin: 0 -1ch 0.6em;
+  font-size: 13px;
+}
+.tab {
+  appearance: none;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1ch;
+  padding: 6px 1ch;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.tab::before, .tab::after { color: var(--vermilion); opacity: 0; transition: opacity 0.2s ease; }
+.tab::before { content: "[" / ""; margin-right: -0.4ch; }
+.tab::after { content: "]" / ""; margin-left: -0.4ch; }
+.tab:hover { color: var(--ink); }
+.tab[aria-pressed="true"] { color: var(--ink); }
+.tab[aria-pressed="true"]::before, .tab[aria-pressed="true"]::after { opacity: 1; }
+.tab:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 2px; }
+.count { font-size: 11px; color: var(--ink-3); }
+
+/* the rest of the work, on its own page */
+.more { margin: 1.1em 0 0; font-size: 12px; letter-spacing: 0.02em; }
+.more a { color: var(--ink-2); text-decoration: none; background: linear-gradient(currentColor, currentColor) no-repeat 0 100% / 0 1px; padding: 4px 0; transition: color 0.2s ease, background-size 0.3s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.more a:hover { color: var(--ink); background-size: 100% 1px; }
+.more a:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 3px; }
+
+/* ---- the lines ------------------------------------------------------------------------ */
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px dashed var(--rule);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto 132px;
+  grid-template-areas: "name meta status mark";
+  align-items: center;
+  gap: 0 2.5ch;
+  min-height: 96px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--rule);
+  color: var(--ink);
+  text-decoration: none;
+  /* a line focused from the keyboard is brought up clear of the board, never left under it */
+  scroll-margin-bottom: calc(var(--below, 0px) + 24px);
+}
+.row:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 2px; }
+
+/* a long name breaks onto a second line rather than being cut: the ink draws every letter */
+.typed { grid-area: name; min-width: 0; white-space: pre-wrap; text-wrap: balance; line-height: 1.12; }
+.num, .ch { opacity: 0; }
+.num[data-on="true"], .ch[data-on="true"] { opacity: 1; }
+.num { font-size: 12px; color: var(--ink-3); }
+.ch {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: clamp(20px, 3.6cqi, 30px);
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+.row:hover .ch { color: #33312d; }
+
+.caret {
+  display: inline-block;
+  width: 0.5ch;
+  height: 1.1em;
+  margin-right: -0.5ch;
+  vertical-align: -0.2em;
+  background: var(--vermilion);
+  animation: blink 1.06s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* what comes with a line when its last letter goes down (or with it, pasted): lit for a
+   moment, as the pasted bio is */
+.meta, .status, .thumb { opacity: 0; transition: opacity 0.3s ease; }
+.row[data-state="done"] .meta, .row[data-state="done"] .status, .row[data-state="done"] .thumb { opacity: 1; }
+.row[data-state="done"] .meta { animation: pasted 1.1s ease-out; }
+@keyframes pasted { from { background: rgb(212 70 42 / 0.18); } to { background: rgb(212 70 42 / 0); } }
+
+.meta { grid-area: meta; max-width: 30ch; font-size: 12px; line-height: 1.45; color: var(--ink-2); text-align: right; text-wrap: balance; }
+.status { grid-area: status; font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
+.status::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 0.8ch;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  vertical-align: 1px;
+}
+.row[data-active="true"] .status::before { background: var(--vermilion); border-color: var(--vermilion); }
+
+/* the mark, in a little box of its own, its corners the box's */
+.thumb {
+  grid-area: mark;
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border: 1px dashed var(--rule);
+  background: var(--paper);
+}
+.thumb::before, .thumb::after { content: "+"; position: absolute; z-index: 1; font-size: 11px; line-height: 1; color: var(--ink-3); }
+.thumb::before { top: -6px; left: -3px; }
+.thumb::after { right: -3px; bottom: -6px; }
+
+/* the mark: ink strokes that draw themselves in the first time the line is done, and again
+   when it is pointed at; the tone laid in under them comes up after */
+.art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--ink);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.66;
+  transition: opacity 0.3s ease;
+}
+.row:hover .art { opacity: 0.85; }
+/* while the lights change, the paths take their stroke from the svg (and the letters their colour
+   from the row) as it fades: hundreds of them each running a transition of their own was the jank */
+:global(html[data-theme-moving]) .art :not(.accent),
+:global(html[data-theme-moving]) .ch { transition: none !important; }
+.stroke, .accent {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.9s cubic-bezier(0.5, 0, 0.2, 1) calc(var(--i) * 22ms);
+}
+.accent { stroke: var(--vermilion); }
+.tone { stroke-width: 0.7; opacity: 0; transition: opacity 0.8s ease 0.5s; }
+.row[data-seen="true"] .stroke, .row[data-seen="true"] .accent { stroke-dashoffset: 0; }
+.row[data-seen="true"] .tone { opacity: 1; }
+.row[data-seen="true"]:hover .stroke { animation: redraw 0.8s cubic-bezier(0.5, 0, 0.2, 1) calc(var(--i) * 14ms) backwards; }
+@keyframes redraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+::view-transition-group(*) { animation-duration: 0.45s; animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+/* a wide box: bigger marks */
+@container (min-width: 900px) {
+  .row { grid-template-columns: minmax(0, 1fr) auto auto 168px; min-height: 120px; }
+}
+/* a narrow one: the details go under the name, the mark stays at the end */
+@container (max-width: 620px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) 92px;
+    grid-template-areas: "name mark" "meta mark" "status mark";
+    gap: 2px 2ch;
+    min-height: 0;
+    padding: 12px 0;
+  }
+  .meta { max-width: none; text-align: left; }
+}
+@container (max-width: 380px) {
+  .row { grid-template-columns: minmax(0, 1fr) 68px; }
+  .meta { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stroke, .accent { transition: none; stroke-dashoffset: 0; }
+  .tone { transition: none; opacity: 1; }
+  .row[data-seen="true"]:hover .stroke { animation: none; }
+  .meta, .status, .thumb, .art { transition: none; }
+  .row[data-state="done"] .meta { animation: none; }
+  .caret { animation: none; }
+}
+
+/* without scripts nothing comes up past the platen: the lines and their marks are simply there */
+@media (scripting: none) {
+  .num, .ch, .meta, .status, .thumb { opacity: 1; }
+  .stroke, .accent { stroke-dashoffset: 0; }
+  .tone { opacity: 1; }
+}

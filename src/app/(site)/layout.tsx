@@ -1,4 +1,6 @@
-import Link from "next/link";
+import Masthead from "@/components/Masthead";
+import PageCurl from "@/components/PageCurl";
+import SmokeFooter from "@/components/SmokeFooter";
 import { JsonLd } from "@/components/json-ld";
 import { getSite } from "@/lib/content";
 import { getSiteUrl } from "@/lib/seo";
@@ -38,40 +40,31 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
       <a href="#main" className={styles.skip}>
         Skip to content
       </a>
-      <header className={styles.header}>
-        <Link href="/" className={styles.brand}>
-          {site.name}
-        </Link>
-        <nav aria-label="Primary">
-          <ul className={styles.nav}>
-            {site.nav.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href}>{item.label}</Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </header>
+      <Masthead />
       <main id="main" className={styles.main}>
         {children}
       </main>
       <footer className={styles.footer}>
-        <p>
-          © <BuildYear /> {site.name}
-        </p>
-        <ul className={styles.nav}>
-          {site.social.map((s) => (
-            <li key={s.url}>
-              <a href={s.url} rel="me noopener" target={s.url.startsWith("http") ? "_blank" : undefined}>
-                {s.platform}
-              </a>
+        <SmokeFooter />
+        <div className={styles.meta}>
+          <p>
+            © <BuildYear /> {site.name}
+          </p>
+          <ul className={styles.nav}>
+            {site.social.map((s) => (
+              <li key={s.url}>
+                <a href={s.url} rel="me noopener" target={s.url.startsWith("http") ? "_blank" : undefined}>
+                  {s.platform}
+                </a>
+              </li>
+            ))}
+            <li>
+              <a href="/feed.xml">RSS</a>
             </li>
-          ))}
-          <li>
-            <a href="/feed.xml">RSS</a>
-          </li>
-        </ul>
+          </ul>
+        </div>
       </footer>
+      <PageCurl />
     </>
   );
 }

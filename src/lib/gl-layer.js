@@ -66,6 +66,11 @@ const noop = { rebuild() {}, destroy() {} };
  * @property {(mx: CanvasRenderingContext2D, tx: CanvasRenderingContext2D, item: any) => void} paint
  * @property {string[]} [attributes]   attributes whose mutation should rebuild
  * @property {number} [padding]        extra css px items are bucketed with
+ * @property {HTMLElement} [root]      the part of the page the layer covers (default: the body). A
+ *                                     scoped root carries the host inside it, so the layer scrolls,
+ *                                     clips and stacks as that element does; it must be positioned
+ * @property {number} [debounce]       ms a change waits before a rebuild (default 120); a scoped
+ *                                     layer under live typing wants about a frame
  */
 
 /** @param {LayerConfig} cfg */
@@ -75,7 +80,8 @@ export function createLayer(cfg) {
   const maxTex = probe.getParameter(probe.MAX_TEXTURE_SIZE);
   probe.getExtension("WEBGL_lose_context")?.loseContext();
 
-  const root = document.body;
+  const root = cfg.root ?? document.body;
+  const scoped = root !== document.body;
   const docEl = document.documentElement;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   const perf = (window.__gl ??= {})[cfg.id] = { buildMs: 0, collectMs: 0, rasterMs: 0, tiles: 0, items: 0, contexts: 0 };
@@ -93,7 +99,7 @@ export function createLayer(cfg) {
   host.setAttribute("data-gl-host", "");
   host.setAttribute("aria-hidden", "true");
   host.style.cssText = `position:absolute;top:0;left:0;pointer-events:none;overflow:hidden;z-index:${cfg.z}`;
-  document.body.appendChild(host);
+  root.appendChild(host);
 
   function bucketize() {
     buckets = new Map();
@@ -132,7 +138,7 @@ export function createLayer(cfg) {
     };
 
     const tile = {
-      i: -1, th: 0, cv, lost: false, start: 0,
+      i: -1, th: 0, cv, lost: false, start: 0, sig: "",
       load(i, th, settleFromZero) {
         tile.i = i; tile.th = th;
         const mhC = th + 2 * PAD, ty = i * TILE_H - PAD;
@@ -177,14 +183,30 @@ export function createLayer(cfg) {
       },
     };
     cv.addEventListener("webglcontextlost", (e) => { e.preventDefault(); tile.lost = true; });
-    cv.addEventListener("webglcontextrestored", () => { tile.lost = false; scheduleBuild(); });
+    cv.addEventListener("webglcontextrestored", () => { tile.lost = false; tile.sig = ""; scheduleBuild(); });
     host.appendChild(cv);
     return tile;
   }
 
+  /** everything a tile's textures are made from: its size, the page's, and each word as it was
+   *  painted (null where an item holds something that can't be read back, as a Path2D: never skipped) */
+  const sigOf = (i, th) => {
+    let k = `${th}:${docW}:${dpr}`;
+    for (const it of buckets.get(i) || []) {
+      k += "\n";
+      for (const f in it) {
+        const v = it[f];
+        if (v === null || typeof v !== "object") k += `${v},`;
+        else if (Array.isArray(v) || Object.getPrototypeOf(v) === Object.prototype) k += `${Object.values(v).join(" ")},`;
+        else return null;
+      }
+    }
+    return k;
+  };
   function wanted() {
-    const lo = Math.max(0, Math.floor((scrollY - MARGIN) / TILE_H)), hi = Math.floor((scrollY + innerHeight + MARGIN) / TILE_H);
-    const vlo = Math.max(0, Math.floor(scrollY / TILE_H)), vhi = Math.floor((scrollY + innerHeight) / TILE_H);
+    const top = scoped ? -root.getBoundingClientRect().top : scrollY;   // the window's top, in the layer's px
+    const lo = Math.max(0, Math.floor((top - MARGIN) / TILE_H)), hi = Math.floor((top + innerHeight + MARGIN) / TILE_H);
+    const vlo = Math.max(0, Math.floor(top / TILE_H)), vhi = Math.floor((top + innerHeight) / TILE_H);
     return { lo, hi, vlo, vhi };
   }
   function sync(force = false) {
@@ -192,15 +214,22 @@ export function createLayer(cfg) {
     const now = performance.now();
     for (const [i, t] of active) {
       const th = Math.min(TILE_H, docH - i * TILE_H);
-      if (i < lo || i > hi || th <= 0 || !buckets.get(i)?.length) { t.cv.style.display = "none"; free.push(t); active.delete(i); }
-      else if (force) { t.load(i, th, false); t.draw(now); }
+      if (i < lo || i > hi || th <= 0 || !buckets.get(i)?.length) { t.cv.style.display = "none"; free.push(t); active.delete(i); t.sig = ""; }
+      else if (force) {
+        // a tile whose words are all as they were is drawn from the same textures: only the
+        // tiles a change touched (under live typing, the one the letter went down in) are raised again
+        const sig = sigOf(i, th);
+        if (sig !== null && sig === t.sig) t.start = now - 3000;
+        else { t.load(i, th, false); t.sig = sig; }
+        t.draw(now);
+      }
     }
     for (let i = lo; i <= hi; i++) {
       const th = Math.min(TILE_H, docH - i * TILE_H);
       if (th <= 0 || active.has(i) || !buckets.get(i)?.length) continue;
       const t = free.pop() || createTile();
       if (!t) continue;
-      t.load(i, th, first); t.draw(now); active.set(i, t);
+      t.load(i, th, first); t.sig = sigOf(i, th); t.draw(now); active.set(i, t);
     }
     perf.tiles = active.size;
   }
@@ -221,26 +250,41 @@ export function createLayer(cfg) {
 
   function build() {
     const t1 = performance.now();
-    docW = docEl.clientWidth; docH = Math.max(docEl.scrollHeight, 1);
+    docW = scoped ? root.clientWidth : docEl.clientWidth; docH = Math.max(scoped ? root.scrollHeight : docEl.scrollHeight, 1);
     dpr = Math.min(devicePixelRatio || 1, 2, maxTex / Math.max(docW, 1));
     host.style.width = docW + "px"; host.style.height = docH + "px";
     perf.rasterMs = 0;
     const tc = performance.now(); items = cfg.collect(root, host); perf.items = items.length; perf.collectMs = performance.now() - tc;
     bucketize();
     sync(true);
-    if (first) { docEl.classList.add(cfg.readyClass); first = false; }
-    perf.buildMs = performance.now() - t1;
+    if (first) { docEl.classList.add(cfg.readyClass); if (scoped) root.setAttribute("data-inked", ""); first = false; }
+    perf.buildMs = performance.now() - t1; lastBuild = performance.now();
     for (const k of ["buildMs", "collectMs", "rasterMs"]) perf[k] = +perf[k].toFixed(2);
     kick();
   }
-  function scheduleBuild() { clearTimeout(timer); timer = window.setTimeout(build, 120); }
+  // a change waits for the page to settle (a burst of edits is one rebuild); under live typing
+  // (a short debounce) it is a steady beat instead, so the ink keeps up with the keys
+  const wait = cfg.debounce ?? 120;
+  let lastBuild = 0;
+  function scheduleBuild() {
+    if (wait >= 60) { clearTimeout(timer); timer = window.setTimeout(build, wait); return; }
+    if (timer) return;
+    timer = window.setTimeout(() => { timer = 0; build(); }, Math.max(0, wait - (performance.now() - lastBuild)));
+  }
 
   const onScroll = () => { sync(); kick(); };
   addEventListener("scroll", onScroll, { passive: true });
   document.addEventListener("visibilitychange", kick);
   const ro = new ResizeObserver(() => { if (roReady) scheduleBuild(); }); ro.observe(root);
-  const inHost = (n) => (n instanceof Element ? n : n.parentElement)?.closest("[data-gl-host]");
+  // a layer's own host, or a part of the page that animates its own DOM (data-gl-skip: the hero's
+  // live typing), never asks for a rebuild
+  // (a scoped layer is the one that covers such a part, so only its own host is ignored)
+  const ignore = scoped ? "[data-gl-host]" : "[data-gl-host],[data-gl-skip]";
+  const inHost = (n) => (n instanceof Element ? n : n.parentElement)?.closest(ignore);
   const mo = new MutationObserver((m) => { if (m.some((r) => !inHost(r.target))) scheduleBuild(); });
+  // what is read at a rebuild (an opacity, a colour) can still be on its way: look again when it lands
+  const landed = (e) => { if (!inHost(e.target) && /opacity|color/.test(e.propertyName)) scheduleBuild(); };
+  root.addEventListener("transitionend", landed);
   mo.observe(root, { childList: true, subtree: true, characterData: true, ...(cfg.attributes ? { attributes: true, attributeFilter: cfg.attributes } : {}) });
   const scheme = matchMedia("(prefers-color-scheme: dark)"); scheme.addEventListener("change", scheduleBuild);
   const themeMo = new MutationObserver(scheduleBuild); themeMo.observe(docEl, { attributes: true, attributeFilter: ["data-theme"] });
@@ -252,10 +296,11 @@ export function createLayer(cfg) {
     destroy() {
       alive = false; cancelAnimationFrame(raf); clearTimeout(timer); offSurface();
       removeEventListener("scroll", onScroll); ro.disconnect(); mo.disconnect(); themeMo.disconnect();
+      root.removeEventListener("transitionend", landed);
       scheme.removeEventListener("change", scheduleBuild); document.fonts?.removeEventListener("loadingdone", scheduleBuild);
       document.removeEventListener("visibilitychange", kick);
       host.querySelectorAll("canvas").forEach((c) => /** @type {WebGLRenderingContext} */ (c.getContext("webgl"))?.getExtension("WEBGL_lose_context")?.loseContext());
-      host.remove(); docEl.classList.remove(cfg.readyClass);
+      host.remove(); docEl.classList.remove(cfg.readyClass); if (scoped) root.removeAttribute("data-inked");
     },
   };
 }

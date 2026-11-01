@@ -1,0 +1,32 @@
+/* PageCurl's own layer: above the page while a sheet is being turned, nothing otherwise.
+   The back of the turned corner (flap) is the stock seen from behind, a shade deeper, and
+   is cut to shape by the view transition (app/curl.css); the hand rides above it. */
+.curl {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  contain: strict;
+}
+.curl[data-on] { display: block; }
+
+.flap {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--paper) 70%, white 30%) 0%, transparent 60%),
+    var(--paper-deep);
+  visibility: hidden; /* until the pull: the transition takes it whole and cuts it there */
+}
+.curl[data-pull] .flap { visibility: visible; }
+
+.hand {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+/* their view-transition-names are set from the script: a module would rename them */

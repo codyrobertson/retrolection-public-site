@@ -1,6 +1,12 @@
-import { Sections } from "@/components/sections";
-import { getHome, getSite } from "@/lib/content";
+import Contact from "@/components/Contact";
+import Experience from "@/components/Experience";
+import TypingPlate from "@/components/TypingPlate";
+import { workItems } from "@/components/WorkPlate";
+import { getHome, getProjects, getSite } from "@/lib/content";
 import { buildMetadata } from "@/lib/seo";
+
+/** lines on the home sheet: the featured work first, then the rest as the projects list has it */
+const ON_SHEET = 9;
 
 export async function generateMetadata() {
   const [home, site] = await Promise.all([getHome(), getSite()]);
@@ -10,6 +16,13 @@ export async function generateMetadata() {
 }
 
 export default async function Home() {
-  const home = await getHome();
-  return <Sections sections={home.sections} />;
+  const projects = await getProjects();
+  const sheet = [...projects.filter((p) => p.featured), ...projects.filter((p) => !p.featured)].slice(0, ON_SHEET);
+  return (
+    <>
+      <TypingPlate work={workItems(sheet)} more={projects.length} />
+      <Experience />
+      <Contact />
+    </>
+  );
 }

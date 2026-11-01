@@ -1,6 +1,26 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "dev", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev"], "port": 3000 }
+    {
+      "name": "dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "hero-harness",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        ".harness",
+        "-p",
+        "3010"
+      ],
+      "port": 3010
+    }
   ]
 }

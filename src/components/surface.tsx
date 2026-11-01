@@ -40,9 +40,7 @@ export function Surface() {
     };
   }, []);
 
-  return (
-    <button type="button" className="surface-toggle" data-surface-toggle aria-pressed={mode === "digital"} aria-label="Switch between analog and digital surface">
-      {mode === "analog" ? "Analog → Digital" : "Digital → Analog"}
-    </button>
-  );
+  // the page stays analog: no switch on screen for now (html[data-surface] still drives it)
+  void mode;
+  return null;
 }

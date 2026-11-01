@@ -1,0 +1,75 @@
+/* The masthead: the wordmark, and the links the hands type when they're pointed at (SiteNav).
+   It stays put over every page, and turns over with it (PageCurl). */
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: var(--masthead);
+  background: var(--paper);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 7%, transparent);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: clamp(20px, 3vw, 40px);
+  padding: 0 var(--gutter);
+}
+
+.wordmark {
+  display: block;
+  color: var(--ink);
+  text-decoration: none;
+}
+.wordmark:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 4px; }
+
+.logo { display: block; height: 22px; width: auto; }
+
+/* the links: quiet until pointed at, when a rule draws in under them from the left */
+.nav {
+  justify-self: end;
+  display: flex;
+  gap: clamp(18px, 2.6vw, 34px);
+  font-size: 14px;
+}
+.nav a {
+  padding: 4px 0;
+  color: var(--ink-2);
+  text-decoration: none;
+  background: linear-gradient(currentColor, currentColor) no-repeat 0 100% / 0 1px;
+  transition: color 0.2s ease, background-size 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.nav a:hover { color: var(--ink); background-size: 100% 1px; }
+.nav a:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 4px; }
+.out { display: inline-block; margin-left: 0.2em; font-size: 0.85em; transition: transform 0.2s ease; }
+.nav a:hover .out { transform: translate(1px, -1px); }
+
+.contact {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  white-space: nowrap;
+  padding: 0 15px;
+  border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+  border-radius: 999px;
+  font-size: 13.5px;
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.contact:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.contact:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 3px; }
+
+@media (max-width: 720px) {
+  .nav { gap: 16px; font-size: 13px; }
+  .nav a:nth-child(3), .nav a:nth-child(4) { display: none; }
+  .contact { height: 30px; padding: 0 12px; font-size: 12.5px; }
+}
+/* the links give way one at a time, Work last; "Get in touch" always stays, on one line */
+@media (max-width: 480px) {
+  .masthead { gap: 16px; }
+  .logo { height: 19px; }
+  .nav a:nth-child(2) { display: none; }
+}
+@media (max-width: 359px) {
+  .nav { display: none; }
+  .masthead { grid-template-columns: auto auto; justify-content: space-between; }
+}
