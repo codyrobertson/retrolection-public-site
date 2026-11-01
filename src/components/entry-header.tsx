@@ -8,9 +8,10 @@ type Props = {
   meta?: readonly (string | null | undefined)[];
   cover?: string | null;
   coverAlt?: string | null;
+  url?: string | null;
 };
 
-export function EntryHeader({ title, summary, date, meta = [], cover, coverAlt }: Props) {
+export function EntryHeader({ title, summary, date, meta = [], cover, coverAlt, url }: Props) {
   const items = [date && formatDate(date), ...meta].filter(Boolean);
   return (
     <header className={styles.pageHeader}>
@@ -21,6 +22,7 @@ export function EntryHeader({ title, summary, date, meta = [], cover, coverAlt }
           {items.map((m) => (
             <span key={m}>{m}</span>
           ))}
+          {url && <a href={url}>{new URL(url).hostname.replace(/^www\./, "")} ↗</a>}
         </p>
       )}
       {cover && (

@@ -1,12 +1,14 @@
 ---
 title: "Polyient"
-summary: "The polyient.io site, plus an AI-training consultation page."
+summary: "Polyient's public site with its own content admin, plus an AI-training page I took from a 7.6s LCP to 1.2s by loading less."
 discipline: design
 status: active
 date: 2026-01-15
 role: "Design Engineer"
 client: "Polyient"
 url: "https://polyient.io"
+cover: /images/projects/polyient/cover.webp
+coverAlt: "The Polyient home page hero: Value at the Technical Frontier. in heavy black type on off-white, a teal button, and the top of a black and white dither shader band"
 tags:
   - "Website"
   - "Brand"
@@ -17,4 +19,39 @@ seo:
   description: ''
   noindex: false
 ---
-The current website for Polyient, the Web3 incubator where I was creative director, rebuilt with Lighthouse and design-quality passes, plus an unlisted page for AI-training consultations.
+I design and build Polyient's public site. This page covers two pieces of it. The main site came together in January and February 2026, with an admin so the team can edit portfolio content without a deploy. In October I added an unlisted page for AI-training consultations, and that's where the calls worth reading about happened. The first pass was designed without opening the brand file, and the real colors had to go back in. Then Lighthouse put the page at a 7.6 second LCP, and the fix was loading less, not tuning anything.
+
+## An admin before a redesign
+
+On January 27 the first design system went in: a paper texture, a logo marquee, a component system for portfolio companies, and a carousel to show them. The next day I added an admin on Supabase and Drizzle with a Tiptap editor, so portfolio content gets edited there instead of in code.
+
+On February 3 I threw out the paper-texture look and redesigned the site as something more institutional, with a Three.js dither shader in the hero. The inquiry form got wired to Supabase and Resend on February 6. February 9 was content.
+
+{% Figure src="/images/projects/polyient/hero-paper-texture-jan.webp" alt="The late-January Polyient hero: Building, Backing and Partnering With Exceptional Teams Since 2018 in heavy type over a pale blue paper texture, with glossy tile icons between the words" caption="The paper-texture hero from late January. On February 3 it was replaced by the dither-shader hero at the top of this page." width="wide" frame="browser" /%}
+
+## The pass that skipped the brand file
+
+The training page started October 21. The first pass was monochrome and editorial, and it got rejected. Polyient already had a Pencil file with exact colors and type, and that pass was designed without opening it. So the real values went back in: primary `#08C2D2`, secondary `#D0ECF6`, text `#231F20`, neutral `#D4D9D9`, set in Roobert and Sharp Grotesk.
+
+Once the colors were right there were two more passes. One was a refinement after looking at 21st.dev. The other was a type-only version where a single statement carries the page.
+
+{% Gallery images=[{src: "/images/projects/polyient/training-first-pass.webp", alt: "First pass of the training page: AI training. Built around your work. in black and muted green on off-white, with stacked sage-green cards on the right"}, {src: "/images/projects/polyient/training-shipped.webp", alt: "The training page as it went live: AI training for your team, a black consultation button with a cyan icon, and a photo of a notebook on a cyan surface"}] columns="2" frame="browser" caption="Left: the first pass, built without the brand file. Right: the page after the brand colors and the performance work." /%}
+
+The page uses the two real instructor photos and no stock. The brand voice is written down (understated, dry, anti-hype, with a banned-word list), so the copy had rules to check against. I pulled the adjectives and put in one concrete exercise instead: drafting a client email.
+
+## 7.6 seconds to 1.2
+
+The first Lighthouse run on the live page put LCP at 7.6 seconds. That's slop. About two hours later it was 1.2.
+
+| Run, Oct 21 (mobile, simulated) | Performance | LCP | FCP |
+|---|---|---|---|
+| 21:32 | 0.71 | 7.6s | 2.1s |
+| 23:47 to 23:49 | 0.99 to 1.0 | 1.2 to 1.3s | |
+
+Accessibility, best practices and SEO were 1.0 in every run.
+
+The cause was the admin. Its layout registered five Roobert font preloads, and the public page was getting all five when it needed fewer. So I cut the fonts down to the weights the page actually uses, gave the logos real display sizes, turned off prefetch for the home page, and marked the hero image as priority.
+
+The cost is in the type. If I want another weight later, I have to add it on purpose.
+
+All of that went out the same day, across seven PRs (#2 to #8). Back in January there's also a design doc for an MCP that keeps shadcn components and Pencil design files in sync.

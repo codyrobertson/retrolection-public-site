@@ -1,11 +1,12 @@
 ---
 title: ApeIn
-summary: >-
-  An NFT collection and cross-chain game world, with a gacha system for 3D ape parts and a pipeline that renders randomized 3D NFTs in the browser.
+summary: "An NFT collection that grew into Isle of Motu, a cross-chain game world. I co-founded it and designed the gacha-style Ape Maker, its design system and the art direction."
 discipline: design
 status: retired
 role: Co-founder & Creative Director
 client: Isle of Motu
+cover: /images/projects/apein/cover.webp
+coverAlt: "A rendered 3D ape in a pirate hat and eye patch beside a laptop showing the Ape Maker, on a yellow background"
 tags:
   - Web3
   - 3D
@@ -17,16 +18,36 @@ seo:
   description: ''
   noindex: false
 ---
-## The system
+ApeIn started as an NFT collection and grew into Isle of Motu, a cross-chain GameFi world with three titles. I was co-founder and creative director. The Figma files run from February 2021 to December 2023.
 
-ApeIn was a whole system, not just a collection: the creative concept, the economic model, and the technical execution had to work together.
+When I say I want to be known for "seeing the whole system: the creative concept, the economic model, the technical execution," ApeIn is the example I mean.
 
-I designed a gacha-style monetization model in which each ape body part came in material rarities, then built the pipeline to make it real. ApeIn had the first design system to render randomized 3D NFTs in the browser, fed by a Blender asset pipeline that randomized the parts inside the app.
+{% Figure src="/images/projects/apein/welcome-to-ape-island.webp" alt="Title screen: a wooden sign reading Welcome To Ape Island under an Expansion Season ribbon, with a 3D ape in a knit-textured head and an Enter Ape Island button, over a dark island backdrop" caption="The title screen for the Ape Island expansion season." width="wide" /%}
 
-## Isle of Motu
+## Rolling an ape
 
-ApeIn grew into Isle of Motu, a cross-chain GameFi world with three titles, including Jungle Rumble, a tokenized PVP idle brawler built in Unity.
+The center of it was the Ape Maker. You don't buy a fixed picture. You roll an ape.
 
-I had never made a game. I had three months to learn, hire a team, and plan, then six months to build, on a $100K budget. We shipped a full turn-based Unity game.
+On the roll screen a 3D ape stands in the middle. Each body part (head, arms, legs, torso) rolled on its own and shows a star level from one to three and a material, like Wooly, Tinker or Galactic. The parts add up to a rarity for the whole ape. Under it are two choices: buy the ape in front of you, or hit "Make Another?" and spend credits on a new roll.
 
-{% Callout tone="note" text="Full case study coming soon." /%}
+{% Figure src="/images/projects/apein/ape-maker-roll.webp" alt="The Ape Maker roll screen: a 3D ape in the center, each body part labeled with one to three stars and a material such as Wooly, Tinker or Galactic, a stats panel on the left, a rarity dial bottom left, and Make Another and Buy Now buttons" caption="One roll. Each part shows its own stars and material, and together they set the ape's rarity. Credit and rarity figures are blurred until I confirm they weren't mock values." width="wide" /%}
+
+## 3D parts, rendered in the browser
+
+I taught myself Blender to make the parts. They're modeled in Blender, the app picks them at random, and the assembled ape renders in the browser. As far as I know, it was the first design system built to render randomized 3D NFTs in the browser. The first version of that design system is dated March 2021, a month after the first Ape Maker flow.
+
+{% Gallery images=[{src: "/images/projects/apein/sol-far-out-moss-ape.webp", alt: "A rendered 3D ape with a mossy head and white fur legs on a green and blue sunburst"}, {src: "/images/projects/apein/sol-lumbering-virgil-ready.webp", alt: "A rendered 3D ape in a galaxy material, purple and blue with stars, next to the text Lumbering Virgil is ready for the Summer of Love"}] columns="2" caption="Two rolled apes rendered from the parts: moss and galactic materials." /%}
+
+## No game experience, $100K, nine months
+
+When ApeIn turned into Isle of Motu, I'd never made a game. I had three months to learn, hire a team and plan, then six months to build, on a $100K budget. We shipped a Unity game in that window. One of the three titles, Jungle Rumble, was a tokenized PVP idle brawler.
+
+The look was a cartoon tropical island with pirates, wooden-sign UI and a mascot who explains things.
+
+{% Gallery images=[{src: "/images/projects/apein/onboarding-capt-poly-snow.webp", alt: "Onboarding sign on a snowy background: Capt Poly welcomes the player to Ape Island, next to an ape whose head part is marked Cosmic"}, {src: "/images/projects/apein/onboarding-capt-poly.webp", alt: "The same Welcome Traveler onboarding sign on a sand background, with a green ape whose head part is Liberty"}, {src: "/images/projects/apein/generate-again.webp", alt: "An ape card on a snowy mountain at night, with its part stars listed underneath and Generate Again and Buy This Ape buttons"}] columns="3" caption="Wooden-sign UI, with Capt Poly as the guide. Variants for different seasons and islands." /%}
+
+{% Figure src="/images/projects/apein/meet-your-mate.webp" alt="A wooden-framed modal from Capt Poly titled Meet Your Mate, introducing Professor Monkey-Wrench, with Not This Time and Buy Now buttons" caption="The guide shows up in modals too." width="narrow" /%}
+
+{% Gallery images=[{src: "/images/projects/apein/sol-summer-of-love-logo-lockup.webp", alt: "Summer of Love campaign art: a peace-sign ape logo in a cream oval on a red, blue and orange sunburst"}, {src: "/images/projects/apein/sol-things-heating-up-hippie-ape.webp", alt: "Things Are Heating Up teaser: a rendered ape with long blonde hair and a pink flower on a sunburst"}, {src: "/images/projects/apein/sol-silly-clements-ready.webp", alt: "Campaign card: Silly Clements is ready for the Summer of Love, with a mossy rendered ape on an orange background"}, {src: "/images/projects/apein/sol-ape-in-presents-summer-of-love.webp", alt: "Title card reading Ape.In Presents Summer Of Love over cartoon clouds and stripes"}] columns="2" caption="Summer of Love, a seasonal event campaign for Ape Island, using the same rendered apes." /%}
+
+ApeIn and Isle of Motu are retired. The Figma files still hold unfinished work: "Finished Works" pages with nothing exported, and a Jungle Rumble UI file last touched in December 2023.

@@ -1,6 +1,8 @@
 ---
 title: "Can It Run OpenClaw?"
-summary: "A hardware compatibility directory and benchmark for running OpenClaw AI agents on 80+ devices."
+summary: "A directory of 80+ devices and whether they can run OpenClaw or its forks, scored by ClawBench, a Docker benchmark that simulates the hardware."
+cover: /images/projects/can-it-run-openclaw/cover.webp
+coverAlt: "The Can It Run OpenClaw? homepage: a blue nautical hero with a device search box and filters for SBCs, desktops, laptops, cloud and microcontrollers"
 discipline: design-code
 status: hobby
 date: 2026-02-14
@@ -17,6 +19,32 @@ seo:
   description: ''
   noindex: false
 ---
-A directory that answers one question: can this device run OpenClaw, and how well? It covers more than 80 devices and includes ClawBench, a benchmark for OpenClaw agent forks.
+[Can It Run OpenClaw?](https://canitrunopenclaw.com) answers one question per device: can it run OpenClaw, or one of its forks, and how well? It covers 80+ devices and 10+ forks, with community verdicts and ratings, and a benchmark called ClawBench that scores each fork. I built it solo over three days in February 2026. 44 commits, with Claude as co-author on the commits.
 
-Related work: microClaw, a Rust host, ESP32-S3 firmware and a sandboxed Claude tool-loop runner, and Moltwork, an experiment in agents selling services to other agents.
+Stack: Next.js 16, Neon Postgres and Drizzle, Neon Auth, Tailwind 4, PostHog, Vercel.
+
+{% Figure src="/images/projects/can-it-run-openclaw/top-devices.webp" alt="A grid of six device cards: two cloud VPS sizes, an AWS Graviton3 instance, Raspberry Pi Zero 2 W, Pine A64+ and Raspberry Pi 3B+, each with price, RAM and CPU tags and a Runs Great badge" caption="Device cards lead with price and RAM, then the verdict band." width="wide" frame="browser" /%}
+
+## Simulating the hardware
+
+I wasn't going to buy 80-plus devices, so ClawBench simulates them. Each fork runs in a Docker container capped with `--memory` and `--cpus` to match the target device. On top of that there's a CPU performance factor (Cortex-A53 at 0.08, A76 at 0.22, M3 at 1.0) and an I/O profile for microSD, eMMC, SSD or NVMe.
+
+So the scores are simulations, and the throttle factors are estimates. The capability checks (messaging, browser, code execution, memory, files, search, MCP, tool use) come from reading each fork's code, not from running it.
+
+Microcontrollers aren't benchmarked at all. ESP32, Arduino and RP2040 boards run bare metal, and Docker can't simulate that accurately. They stay in the directory with an editorial verdict instead of a score.
+
+{% Figure src="/images/projects/can-it-run-openclaw/forks.webp" alt="Eight fork cards: Moltworker, ZeroClaw, MimiClaw, PicoClaw, Nanobot, NanoClaw, IronClaw and OpenClaw, each with its language, minimum memory, feature tags and lines of code" caption="The forks range from an 8MB C build for a $5 chip to the original TypeScript agent." width="wide" frame="browser" /%}
+
+The first harness lasted a few hours. That same evening it was replaced with one that does real clone, install, disk and startup measurements. The commit message says "no fakes."
+
+## One number, with the weights shown
+
+Each fork gets a score from 0 to 100, and the weights are on the page: latency 30, capabilities 40, size 20, build 10. The bands are Runs Great, OK, Barely and Won't. One number sorts the leaderboard, and showing the weights lets people argue with how it's calculated. By the last commit there were 161 result files, from OpenClaw (55) down to MimiClaw (4).
+
+{% Figure src="/images/projects/can-it-run-openclaw/clawbench-scoring.webp" alt="How ClawBench Works: four steps (containerize, build, measure, score), a scoring breakdown of capabilities 40, latency 30, size 20 and build success 10, and verdict bands from Won't Run to Runs Great" caption="The scoring breakdown and verdict bands, published next to the results." width="wide" frame="browser" /%}
+
+{% Figure src="/images/projects/can-it-run-openclaw/clawbench-fork-summary.webp" alt="The ClawBench page header and fork performance summary: one card per fork with average score, cold start, memory, device count and score range" caption="Per-fork averages above the full leaderboard, captured from the live site." width="wide" frame="browser" /%}
+
+The design doc called for SQLite and GitHub login. On day two I moved to Neon Postgres and Neon Auth so I could deploy on Vercel, review submissions in an admin, and run a benchmark queue. That's a heavier setup than a directory usually needs. The business model was 888 programmatic SEO pages, plus affiliate links through a `/go/` redirect that logs clicks.
+
+The last commit was February 16, and it's a hobby project now. It sits next to two related experiments: microClaw (a Rust host, ESP32-S3 firmware and a sandboxed Claude tool-loop runner) and Moltwork (agents selling services to other agents).

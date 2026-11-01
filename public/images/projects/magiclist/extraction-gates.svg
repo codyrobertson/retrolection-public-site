@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" font-family="system-ui, sans-serif">
+  <rect width="1200" height="620" fill="#f6f2e9"/>
+  <text x="60" y="76" font-size="30" font-weight="600" fill="#171717">How a filing's fields get extracted, November 20</text>
+  <text x="60" y="110" font-size="18" fill="#6b6b6b">Regex goes first. A model only sees the filing if regex fails one of three gates.</text>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#171717"/></marker></defs>
+  <g fill="none" stroke="#171717" stroke-width="2">
+    <rect x="60" y="170" width="220" height="110" rx="10"/>
+    <rect x="340" y="150" width="440" height="300" rx="10" stroke="#2563eb" stroke-width="3"/>
+    <rect x="840" y="150" width="300" height="110" rx="10"/>
+    <rect x="840" y="320" width="300" height="130" rx="10"/>
+    <path d="M280 225H332" marker-end="url(#a)"/>
+    <path d="M780 205H832" marker-end="url(#a)"/>
+    <path d="M780 385H832" marker-end="url(#a)"/>
+  </g>
+  <text x="84" y="220" font-size="22" font-weight="600" fill="#171717">Regex</text>
+  <text x="84" y="250" font-size="16" fill="#6b6b6b">on the OCR text</text>
+  <text x="364" y="192" font-size="22" font-weight="600" fill="#171717">Three gates</text>
+  <text x="572" y="192" font-size="14" fill="#6b6b6b">first change</text>
+  <text x="680" y="192" font-size="14" fill="#2563eb">later that day</text>
+  <g font-size="17" fill="#171717">
+    <text x="364" y="244">Required fields present</text>
+    <text x="364" y="312">Average confidence</text>
+    <text x="364" y="380">Completeness</text>
+  </g>
+  <g font-size="14" fill="#6b6b6b">
+    <text x="364" y="266">recorder number, address, sale date</text>
+  </g>
+  <g font-size="22" font-weight="600">
+    <text x="590" y="246" fill="#171717">yes</text><text x="680" y="246" fill="#2563eb">yes</text>
+    <text x="590" y="314" fill="#171717">85%</text><text x="680" y="314" fill="#2563eb">70%</text>
+    <text x="590" y="382" fill="#171717">80%</text><text x="680" y="382" fill="#2563eb">60%</text>
+  </g>
+  <text x="364" y="426" font-size="14" fill="#6b6b6b">Lower bars send fewer filings to a paid model.</text>
+  <text x="864" y="196" font-size="20" font-weight="600" fill="#171717">All gates pass</text>
+  <text x="864" y="226" font-size="16" fill="#6b6b6b">Keep the regex fields.</text>
+  <text x="864" y="364" font-size="20" font-weight="600" fill="#171717">Any gate fails</text>
+  <text x="864" y="394" font-size="16" fill="#6b6b6b">First change: Claude.</text>
+  <text x="864" y="418" font-size="16" fill="#2563eb">Later: free models first,</text>
+  <text x="864" y="440" font-size="16" fill="#2563eb">then Claude.</text>
+  <text x="60" y="540" font-size="16" fill="#6b6b6b">October 27 had already tried a model writing regex per field, then Claude on every filing, both on the same day.</text>
+</svg>

@@ -1,9 +1,11 @@
 ---
 title: "DealKept"
-summary: "An always-on AI assistant for real estate teams that catches every promise made to a client across calls, texts and email, and turns it into a one-click follow-up."
+summary: "An always-on agent for real estate teams that tracks what was promised to each client. Sixteen days of building, and a name detector that caught more names but failed a precision gate, so I didn't ship it."
 discipline: design-code
 status: hobby
 date: 2026-09-22
+cover: /images/projects/dealkept/cover.webp
+coverAlt: "DealKept landing page: You promised. We remembered. A waitlist form, Reid the robin, and the top of the Today screen in a browser frame"
 role: "Founder"
 client: ""
 url: "https://dealkept.com"
@@ -18,18 +20,78 @@ seo:
   description: ''
   noindex: false
 ---
-## What it does
+DealKept was an experiment with one shape of AI product: an agent that runs in the background and only shows a human what needs a human. It read a real estate team's calls, texts and email, worked out what had been promised to each client, ranked the follow-ups and drafted the replies.
 
-DealKept was an experiment in a particular shape of AI product: an always-on agent that works in the background and only surfaces what needs a human. It listens across a team's calls, texts and email, works out what was promised to each client, ranks the follow-ups, and lets the agent act with one click. It's for US real estate teams of 2 to 10 people, and it is deliberately not a CRM.
+I was the founder and the only person making decisions. Claude agents wrote the code in parallel over 16 days. The hardest problem was privacy. Every model call carried client names, so I built a small name detector to swap them out first. A fine-tuned version caught more names, but it failed a precision gate I'd set before the final scoring run, so I didn't ship it.
 
-The brand is built around Reid, a robin mascot, with master poses, expressions, animation frames and stickers produced from a versioned image-generation prompt library.
+The realtor approved each draft with one click, or texted back YES or UNDO. It was for US teams of 2 to 10 people, and it was deliberately not a CRM. My note from day one: "TC is an app in itself, and building a CRM sucks."
 
-## How it's built
+{% Figure src="/images/projects/dealkept/mobile-hero.webp" alt="DealKept landing page on a phone: the headline, a work email field, a Join the waitlist button and Reid perched on a phone showing a drafted email to a client" caption="The landing page on a phone, with a drafted follow-up under Reid." width="narrow" frame="phone" /%}
 
-A Cloudflare-native TypeScript monorepo (Workers, Durable Objects, D1, Queues, Workflows, Vectorize) using Effect, Hono and oRPC. Ninety architecture decision records, and a rule that every screen passes design review before CI will ship it.
+Each agent worked on one PR, and a coordinator agent merged and deployed. 740 commits on main, September 22 to October 7, 2026.
 
-## The privacy model
+## Client names were going to the model
 
-Client messages are full of names, so I trained a small name detector to run inside a Cloudflare Worker: a 6-layer BERT distilled from a commercial PII model plus GLiNER, about 15 MB at 4-bit. It lifted recall on third-party names from 88.7% to 94.9%, but precision on non-Latin text fell from 92.1% to 83.5%, so it isn't shipped yet.
+The first privacy rule shipped right away: every model call goes to a zero-data-retention provider, fails closed if it can't, and records which provider it used. That's a contract, not a technical guarantee. So the next step was to swap people's names for tokens like `⟦person:id⟧` before text reached the big LLM. Tokens instead of blacking names out, so the model could still tell that two messages were about the same person.
 
-{% Callout tone="note" text="Full case study coming soon." /%}
+That swapper, still behind a flag, found people two ways: the team's own contacts, and pattern rules. Neither catches a name it has never seen. "Hi, this is" followed by a stranger's name went to the model untouched. So did signature blocks and "Borrower: Lastname, Firstname."
+
+The fix was a small name detector in its own Cloudflare Worker. The model is Rampart, an openly licensed 14.7 MB PII model. It uses about half a second of CPU per chunk of text and enough memory that it would have crowded the main pipeline, which is why it got a Worker to itself. It shipped behind a flag, off.
+
+Fault-injection tests found the bugs that mattered. A hung call had no deadline, chunk boundaries could cut a name in half, and calls hung under load until the concurrency design was replaced with a lease-based queue.
+
+## Three tries at a better detector
+
+Two numbers matter from here on. Recall is the share of real names the detector catches; a miss is a leak. Precision is the share of things it flags that really are names; a false flag hides a deal detail the LLM needed.
+
+A benchmark across 5,238 documents put Rampart against Presidio, four GLiNER models and OpenAI's privacy filter. Rampart plus rules was still the best single detector on our own text. I tried three ways to add GLiNER, a larger open entity model, anyway.
+
+GLiNER didn't fit in a Worker at all. In a Cloudflare Container it worked, with a cold start around 20 seconds and about $41 a month at pilot load. It caught more names. It also tokenised a lot of text it should have left alone.
+
+The third try kept the same 14.7 MB model and fine-tuned Rampart on everything either Rampart or GLiNER flagged. For a privacy layer a miss costs more than a false flag, so the union made sense as the teacher. The training run cost $0.76. On our own test set, recall on third-party names went from 88.7% to 94.9%. Precision on that set fell from 92.1% to 83.5%, mostly because the new model started tagging Chinese, Korean and Indian-script text as names. It flagged 61% of Chinese place names. Rampart flagged 6%.
+
+## The gate
+
+On September 29, before the final scoring run, I set the gate. Person precision of at least 95% on the public ai4privacy benchmark. No more than 5% of the business data we meant to keep could get tokenised. Zero overlap between training and test data. Anything that passed would be ranked by recall. An independent scorer ran it, not the agents that built the candidates.
+
+The verdict came back September 30:
+
+| Candidate | Precision | Kept data tokenised | Recall | Gate |
+|---|---|---|---|---|
+| Rampart + rules (production) | 95.7% | 2.9% | 88.7% | baseline |
+| GLiNER in a Container | 88.1% | 10.5% | 94.9% | fail |
+| Fine-tuned Rampart, v3 | 86.1% | 4.1% | 93.8% | fail |
+
+Both rejected. The ADR's line is "recall only ranks candidates that pass." A model that leaks fewer names but tokenises 10% of the deal details makes the downstream LLM worse at its actual job. Production kept Rampart plus rules. The container was never built, and the privacy flags stayed off.
+
+The scorer also caught that v3's precision number wasn't blind. Its training negatives had been picked using the benchmark's own error counts. That could only have pushed the number up, so the fail stood. It also meant the old test set had no honest blind slice left.
+
+## The next attempt failed before it was scored
+
+I still wanted a name model that beat Rampart. My instruction on September 30 was that it "needs to be SOTA." The next try changed the training loss instead of the model, penalising false flags harder, on English and Spanish realtor text, with every data source's licence checked first.
+
+It tripped the overlap gate before scoring: two test documents shared a sentence with the training data. The corpus got rebuilt with 1,006 documents dropped. Then a calibration step turned out to be measuring the wrong copy of the model's weights, so it reported 4.4% recall for a model that was really at 89%.
+
+On WNUT-17, a public benchmark for messy text like tweets, this version scored 0.414. Plain Rampart with rules scores 0.459. So it was worse than the model it was meant to replace. A rebuilt version was in progress when my sources stop.
+
+It also got me a stricter rule for any "state of the art" claim. WNUT-17's test set only has 414 names in it, so a one-point lead is inside the noise. A claim now needs a paired statistical test and a single scoring pass per test set.
+
+## Ninety ADRs and a CI bill
+
+Most of the code was agent-written, so I wanted rules a tool would enforce instead of rules someone had to remember. The repo has 90 architecture decision records. Lint, dependency checks, architecture tests and CI gates enforce them, and changing a rule needs a new ADR. The UI kit uses closed scales: an off-scale class like `p-7` generates no CSS at all. That came from the design boards, which had drifted to 9 corner radii and 22 font sizes before the kit locked them.
+
+The gates cost real money. About 13 jobs per PR on GitHub's hosted runners ran up hundreds of dollars. I moved every job to Ubicloud, with a test that fails if one moves back. Even then each check fanned out to about 17 runners, so the heavy suite now runs only on release. The ADR is clear about what that costs: a broken main gets found at the next release, not at merge.
+
+## The judge loop and my own eyes
+
+Every UI screen had to pass a review loop before CI would ship it. Sonnet agents built the screen, and a fresh Opus judge scored each round against 14 UX criteria without seeing the builder's reasoning.
+
+The Today screen ran 8 rounds and never got the two passes in a row it needed. I accepted round 8 at the cap. Then I looked at it and hated how dark it was, and the rows had no borders. The background went near-white and the rows got 1px hairlines. The rubric had no criterion for either thing, so the judge never flagged them.
+
+{% Figure src="/images/projects/dealkept/today-screen.webp" alt="DealKept Today screen on fixture data: a list grouped into Needs you now, Overdue and Due today, with a wire-fraud warning open on the right asking the agent to call the number on file before marking it verified" caption="The Today screen from the round-8 review folder, on fixture data. The wire-fraud item keeps Done and Dismiss off until the agent verifies by phone." width="wide" frame="browser" /%}
+
+{% Figure src="/images/projects/dealkept/reid-poses.webp" alt="Eighteen master drawings of Reid, an orange and brown robin: three-quarter expressions from concerned to proud, a wink, plus front, side and back views" caption="Reid's master poses. Stickers, onboarding panels and animation frames were generated from these and a versioned prompt library." width="wide" /%}
+
+## Where it stopped
+
+The last commit was October 7. The plan had been one pilot team using it daily within about six weeks; work stopped at day 16. No candidate cleared the privacy gate. Production still runs Rampart plus rules.

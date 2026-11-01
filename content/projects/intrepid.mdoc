@@ -1,9 +1,11 @@
 ---
 title: "Intrepid"
-summary: "A record of how an AI wrote a contract (what it read, where it hesitated, what it took back), built so lawyers can follow its reasoning."
+summary: "A research prototype that replays how an AI drafted a contract, clause by clause, so a lawyer can follow what it read, where it hesitated and what it took back."
 discipline: design-code
 status: hobby
 date: 2026-08-28
+cover: /images/projects/intrepid/cover.webp
+coverAlt: "Intrepid showing a Master Services Agreement drafted by Qwen3-8B: a document list on the left, the contract in the middle with a tick rail, and a panel on the right listing what a check looks for"
 role: "Solo"
 client: ""
 url: "https://intrepid-pied.vercel.app"
@@ -18,16 +20,52 @@ seo:
   description: ''
   noindex: false
 ---
-## The idea
+Intrepid is a research prototype, not a product. It replays one recorded run of Qwen3-8B, an open-weights model, drafting a Master Services Agreement. A lawyer with no machine-learning vocabulary can see what the model read, where it hesitated, which part of the matter file each clause leaned on, and what it wrote and then took back.
 
-Intrepid is a research prototype, not a product. Most AI-safety tools hand you a verdict: hallucinated or not. Intrepid shows lawyers the path instead. You step through how a model drafted a contract, clause by clause: what it read, where it hesitated and what it took back. There's no play button and no ML jargon on screen.
+I built it solo in three days, August 28 to 30, 2026, directing a set of AI agents. 31 commits. The call that defined it came a few hours in, when I dropped the hallucination checker it started as and made it show the process instead. After that, the screen could only say what a measurement backed, and the measured numbers came out smaller than the demo's.
 
-It's built on one real, measured run of Qwen3-8B on an A100, read through a published sparse autoencoder. The rule: the interface never claims something the data can't back.
+## I dropped the hallucination checker
 
-## Details
+The first brief was a pitch demo: the draft looks flawless, and Intrepid catches the hallucination anyway. A few hours in, I changed it. Plenty of vendors already ship hallucination checkers, and a checker hands a lawyer a red flag and nothing to do with it. A lot of legal drafting can't be verified either way. My note at the time: "The question is not is the ai right or wrong. In law, many of the times this is not verifiable. Its what is the ai thinking, how did it get there."
 
-- One clause cited an authority that didn't exist; 8 of 12 redraws from the same starting point did the same.
-- Support for each claim is shown in three states: measured, undetermined, or nothing carried.
-- I turned down a 2.06× speedup because it caused four false alarms, and a 1.26× speedup because it reordered the evidence on 11 of 22 clauses.
+So the product became showing the process. I tried a Marey train-schedule chart, ten interaction models and a sidebar rail. It got convoluted fast, and I cut it down to one component that had to get the effect right.
 
-Built with Next.js 16, React 19, Tailwind v4 and a Python capture pipeline on Modal.
+## No play button
+
+That component is a scrub rail. You hover, drag or click along the timeline, and the document shows the run at that point. An earlier version had play and pause and replayed at the recorded pace. I took the transport out, because a lawyer reading a transcript isn't watching a film.
+
+The words got the same treatment. A test fails the build if the generated copy says "entropy", "logit", "softmax", "SAE" or a handful of other lab words. The comment on that test says that vocabulary makes a partner stop reading and decide the tool wasn't built for them. The numbers are all still there, in the evidence panel and in each data file's header.
+
+{% Figure src="/images/projects/intrepid/selection-menu.webp" alt="Clause 3.1 selected in the measured run, with a menu offering Watch it being written, What else it could have been and See into the activations, and a timeline on the right describing each step in plain words" caption="Select a clause and the menu offers the run behind it. The right panel describes each step in plain words: which two words were live and at what odds, with no lab vocabulary." width="wide" frame="browser" /%}
+
+## The real numbers came out smaller
+
+The first version ran on hand-written sample data, and every finding in it read clean. I didn't trust that. The rule the project ended up with is that the interface never claims anything the data can't back. If a skeptical ML person asks "how do you know that?", the answer has to be a measurement. An audit of every on-screen claim marked two as unsupported: anything about what the model "intended" or "believed", and the model's raw word probabilities shown as "confidence". Both came out.
+
+Then I replaced the hand-written data with a real capture of Qwen3-8B on a Modal A100 GPU. A capture takes about seven minutes.
+
+The hand-written demo said the model was 96% sure of an invented legal authority in clause 4.2. In the measured run I had it redraw that clause 12 times from the same point. 8 of the 12 cited an authority, no two cited the same one, and none of them appear in the matter file. The screen now says 67% and shows the 12-row table right under it.
+
+There's a caveat on that, and the project docs say it plainly. In an earlier run I sharpened clause 4.2's instructions to ask for a citation the matter file can't answer. The model was invited to fill a gap, so the finding is what it filled it with, not that it filled it.
+
+The real runs were also quieter than the demo. Across three earlier runs, the model's revision pass made two edits, both punctuation. The dramatic late rewrites in the hand-written version never happened.
+
+Each clause also gets a support reading: how much its wording depends on the matter file. It's measured by deleting each chunk of the file and seeing how much the model's output changes. Support has three states, measured, undetermined or nothing carried, so a weak null result never shows up looking like a finding.
+
+{% Gallery images=[{src: "/images/projects/intrepid/hand-written-96.webp", alt: "Early version on hand-written data: clause 4.2 cites an invented case and the panel says This case does not exist, 96% sure"}, {src: "/images/projects/intrepid/measured-67.webp", alt: "Measured run: a dialog titled This authority was invented, then taken back out, 67% sure, with a table of the 12 redraws and the authority each one named"}] columns="2" frame="browser" caption="Left: hand-written demo data, 96% sure. Right: the measured run, 67% sure, with all 12 redraws listed under it." /%}
+
+## Two speedups that didn't make it
+
+I pushed hard for speed: speculative decoding, caching the model's internal state, anything that made it feel live. A runtime study measured each idea against the output that actually shipped.
+
+- Masking a chunk of the matter file instead of deleting it made the support measurement 2.06x faster. It also pushed 4 of 22 clauses across the alert line, every one toward a false alarm. In a tool whose whole claim is that its alarms are earned, that rules it out.
+- Switching to a faster attention kernel for the passes that don't read attention was 1.26x faster on the A100. It saved 5 seconds and reordered the supporting evidence on 11 of 22 clauses. Reverted.
+
+The study also records its own mistake. It first called the kernel switch "no display change by construction". That was an assumption, and it was wrong. The pattern across all of it: the big savings on this pipeline are big because they change the math the model is doing, and that math is what the lawyer is being shown. What survived adds up to about 5% of the run.
+
+## What's still thin
+
+- The sparse autoencoder is in the pipeline, not on the screen. Each capture runs a published one on layer 18 of the model, but its output is a feature number with no honest plain-English version, so it stays in the capture file. The heatmap readers see is attention over the matter file, by layer and word.
+- Nothing checks whether a cited case exists. It only checks that it's absent from the file.
+- The margin notes, where the model describes its own state in English, are off by default. The hook they depend on is a reimplementation I can't verify, and a wrong hook doesn't throw an error. It produces fluent English about nothing.
+- Live inference was added at the very end. Public deployments keep it off until there's a spend cap and auth.

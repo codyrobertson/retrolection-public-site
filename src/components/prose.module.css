@@ -1,11 +1,12 @@
-.prose {
+/* Markdoc renders the body inside an <article>; that is the grid. */
+.prose > article {
   display: grid;
   grid-template-columns: [full-start] minmax(var(--gutter), 1fr) [wide-start] minmax(0, 8rem) [narrow-start] min(var(--measure), 100% - 2 * var(--gutter)) [narrow-end] minmax(0, 8rem) [wide-end] minmax(var(--gutter), 1fr) [full-end];
   row-gap: 1.25em;
   line-height: 1.65;
 }
 
-.prose > * {
+.prose > article > * {
   grid-column: narrow;
 }
 
@@ -19,10 +20,10 @@
 .prose blockquote { border-left: 2px solid var(--border); padding-left: 1em; color: var(--muted); }
 .prose figcaption { margin-top: 0.5em; font-size: 0.875rem; font-family: var(--font-small); color: var(--muted); }
 
-.prose > .narrow { grid-column: narrow; }
-.prose > .wide { grid-column: wide; }
-.prose > .full { grid-column: full; }
-.prose > .full img { border-radius: 0; width: 100%; }
+.prose > article > .narrow { grid-column: narrow; }
+.prose > article > .wide { grid-column: wide; }
+.prose > article > .full { grid-column: full; }
+.prose > article > .full img { border-radius: 0; width: 100%; }
 
 .video {
   display: block;
@@ -40,3 +41,53 @@
   border-left: 3px solid var(--accent);
 }
 .callout[data-tone="warning"] { border-left-color: #d97706; }
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+.gallery[data-columns="3"] { --cols: 3; }
+.gallery[data-columns="4"] { --cols: 4; }
+@media (max-width: 40rem) {
+  .gallery { --cols: 2; gap: 0.75rem; }
+  .gallery[data-columns="2"] { --cols: 1; }
+}
+.gallery img { display: block; width: 100%; }
+
+.frame {
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px -16px rgb(0 0 0 / 0.18);
+}
+.prose .frame img { display: block; width: 100%; border-radius: 0; }
+.chrome {
+  display: block;
+  height: 1.75rem;
+  border-bottom: 1px solid var(--border);
+  background:
+    radial-gradient(circle at 0.9rem 50%, #e5484d 0.22rem, transparent 0.24rem),
+    radial-gradient(circle at 1.6rem 50%, #f5a524 0.22rem, transparent 0.24rem),
+    radial-gradient(circle at 2.3rem 50%, #30a46c 0.22rem, transparent 0.24rem),
+    var(--surface);
+}
+.frame[data-frame="phone"] {
+  border-radius: 1.75rem;
+  border-width: 0.4rem;
+  border-color: #1c1c1c;
+  max-width: 22rem;
+  margin-inline: auto;
+}
+
+/* Tall screens shouldn't fill a whole viewport at wide width. */
+.prose figure > img,
+.prose p > img {
+  display: block;
+  max-height: 80vh;
+  width: auto;
+  margin-inline: auto;
+}
+.gallery img { max-height: 80vh; object-fit: contain; }

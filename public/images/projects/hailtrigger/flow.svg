@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" font-family="system-ui, sans-serif">
+  <rect width="1200" height="600" fill="#f6f2e9"/>
+  <text x="60" y="80" font-size="30" font-weight="600" fill="#171717">From storm to signed job, one address the whole way</text>
+  <text x="60" y="114" font-size="18" fill="#6b6b6b">Every step carries the same address, so a booking can be traced back to the postcard that caused it.</text>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#171717"/>
+    </marker>
+  </defs>
+  <g font-size="19" fill="#171717" text-anchor="middle">
+    <rect x="60" y="230" width="130" height="90" rx="10" fill="none" stroke="#171717" stroke-width="2"/>
+    <text x="125" y="270">Storm</text><text x="125" y="296" font-size="15" fill="#6b6b6b">hail + wind</text>
+    <rect x="220" y="230" width="130" height="90" rx="10" fill="none" stroke="#171717" stroke-width="2"/>
+    <text x="285" y="270">Score</text><text x="285" y="296" font-size="15" fill="#6b6b6b">exposure + roof</text>
+    <rect x="380" y="230" width="130" height="90" rx="10" fill="none" stroke="#171717" stroke-width="2"/>
+    <text x="445" y="270">Pick homes</text><text x="445" y="296" font-size="15" fill="#6b6b6b">contractor</text>
+    <rect x="540" y="230" width="130" height="90" rx="10" fill="#2563eb"/>
+    <text x="605" y="270" fill="#ffffff">Postcard</text><text x="605" y="296" font-size="15" fill="#dbe6fd">its own QR</text>
+    <rect x="700" y="230" width="130" height="90" rx="10" fill="none" stroke="#171717" stroke-width="2"/>
+    <text x="765" y="270">Scan</text><text x="765" y="296" font-size="15" fill="#6b6b6b">homeowner</text>
+    <rect x="860" y="230" width="130" height="90" rx="10" fill="none" stroke="#171717" stroke-width="2"/>
+    <text x="925" y="270">Booking</text><text x="925" y="296" font-size="15" fill="#6b6b6b">inspection</text>
+    <rect x="1020" y="230" width="130" height="90" rx="10" fill="none" stroke="#171717" stroke-width="2"/>
+    <text x="1085" y="270">Signed job</text><text x="1085" y="296" font-size="15" fill="#6b6b6b">attributed</text>
+  </g>
+  <g stroke="#171717" stroke-width="2" marker-end="url(#a)">
+    <line x1="190" y1="275" x2="218" y2="275"/>
+    <line x1="350" y1="275" x2="378" y2="275"/>
+    <line x1="510" y1="275" x2="538" y2="275"/>
+    <line x1="670" y1="275" x2="698" y2="275"/>
+    <line x1="830" y1="275" x2="858" y2="275"/>
+    <line x1="990" y1="275" x2="1018" y2="275"/>
+  </g>
+  <line x1="125" y1="400" x2="1085" y2="400" stroke="#2563eb" stroke-width="3"/>
+  <g stroke="#2563eb" stroke-width="2" stroke-dasharray="4 5">
+    <line x1="125" y1="320" x2="125" y2="400"/><line x1="285" y1="320" x2="285" y2="400"/>
+    <line x1="445" y1="320" x2="445" y2="400"/><line x1="605" y1="320" x2="605" y2="400"/>
+    <line x1="765" y1="320" x2="765" y2="400"/><line x1="925" y1="320" x2="925" y2="400"/>
+    <line x1="1085" y1="320" x2="1085" y2="400"/>
+  </g>
+  <text x="605" y="440" font-size="20" fill="#2563eb" text-anchor="middle" font-weight="600">one address</text>
+  <text x="60" y="530" font-size="16" fill="#6b6b6b">Two users: contractor staff in a dense dashboard (storm to postcard), homeowners on a phone (scan onward).</text>
+</svg>

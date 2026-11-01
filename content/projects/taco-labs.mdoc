@@ -1,9 +1,11 @@
 ---
 title: "Taco Labs"
-summary: "My prototype label for quick AI product bets: a gamified parenting app, an AI love-story book generator, a DeFi research agent and more."
+summary: "My label for fast, solo AI product prototypes: a Duolingo-style parenting app, an illustrated love-story book generator, a DeFi research agent and a few smaller mocks."
 discipline: design
 status: retired
 date: 2025-07-22
+cover: /images/projects/taco-labs/cover.webp
+coverAlt: "Taco Labs brand sheet: the orange and black wordmark, square color lockups, the taco mascot, and a set of pill and square buttons on cream"
 role: "Founder"
 client: ""
 tags:
@@ -16,13 +18,46 @@ seo:
   description: ''
   noindex: false
 ---
-## What it was
+Taco Labs is the name I put on quick AI product bets. The main code sprint was summer 2025. Level Up Your Kid was a gamified parenting app, pitched as Duolingo for parenting. LoveStory generated personalized, illustrated love-story books. ARMA was a DeFi research agent. Smaller mocks sat around those: an AI health coach, a website-testing bot driven by personas, and a computer-vision test bench.
 
-Taco Labs was the name I shipped prototypes under in summer 2025: fast, solo product bets to see what stuck.
+Most of it never left the mock stage. What's worth showing is how the mocks were built: a written set of rules for faking an app convincingly, and one manifest file that generated every image in it.
 
-- **Level Up Your Kid**: a gamified parenting app, pitched as Duolingo for parenting.
-- **LoveStory**: a generator for personalized, illustrated love-story books.
-- **ARMA**: a DeFi research agent.
-- Smaller mocks: an AI health coach, a persona-driven website-testing bot and a computer-vision test bench.
+The label has its own brand too: a cream background, an orange primary and a green accent, a taco mark in solid and regular weights, and pill and square buttons with hover states.
 
-Most were mocks and spikes; the point was speed and learning, not shipping.
+{% Gallery images=[{src: "/images/projects/taco-labs/brand-logo-stack.webp", alt: "Taco Labs wordmark in orange and black, the mark with the taco character, three square color lockups in yellow, green and blue, and the taco mascot giving a thumbs-up"}, {src: "/images/projects/taco-labs/brand-buttons.webp", alt: "Button system on a cream background: dark, dark outline, elevated, orange primary and green accent buttons in pill and square shapes, with hover states and a taco icon in solid and regular weights"}] columns="2" caption="The label's marks and button system." /%}
+
+{% Figure src="/images/projects/taco-labs/brand-tacoicons.webp" alt="Tacoicons: twelve taco characters in orange and in black, holding a wrench, with a light bulb, at a laptop, with a briefcase, in a graduation cap and in a top hat" caption="Tacoicons, the label's spot illustrations." width="wide" /%}
+
+{% Figure src="/images/projects/taco-labs/brand-palette.webp" alt="Color scales for gray, blue, red, orange, yellow, green and a warm Tortilla neutral, each with numbered steps and a marked base color" caption="Color scales, including a warm neutral called Tortilla." width="wide" /%}
+
+## Rules for a fake app
+
+Level Up Your Kid was built for one five-minute investor demo, and the brief says so. iOS only. Five screens at most. No backend, just local storage. Hardcoded data that looks like 90 days of real use. It has to work in airplane mode.
+
+Two more docs set the rules. A "don't do" list banned real API calls, auth, databases, cloud services and state libraries. An anti-patterns list banned what makes a demo look fake: lorem ipsum, stock photos, random progress numbers, a generic "Welcome, User!"
+
+So the dashboard shows a parent at Level 12 on a 47-day streak with 3,750 XP. Every one of those numbers is invented, so it reads like a family three months in. The PRD's retention and conversion targets were goals too. Nothing was measured.
+
+## Borrowing Duolingo's look
+
+I didn't give the parenting app its own identity. I borrowed Duolingo's. The creative direction says "Duolingo meets modern parenting" and "Apple meets Nintendo." The palette is Duolingo's green, blue, purple and orange. Buttons are chunky with hard drop shadows, corners are 12px, touch targets are 44px, and content stops at 400px wide.
+
+The tone rules come in pairs: "friendly but not childish," "scientific but not clinical," "encouraging but not preachy." None of that palette is mine.
+
+{% Gallery images=[{src: "/images/projects/taco-labs/levelup-child-info.webp", alt: "Level Up Your Kid onboarding: a form asking for the child's name and age, with an XP counter at the top"}, {src: "/images/projects/taco-labs/levelup-first-win-celebration.webp", alt: "A celebration screen asking Do you feel it?, with a purple card about the transformation moment and a yellow card imagining six months ahead"}, {src: "/images/projects/taco-labs/levelup-launch.webp", alt: "Final onboarding screen with a large orange number 1 and a final systems check list of completed setup steps"}] columns="3" frame="phone" caption="Level Up Your Kid onboarding, rendered from the mock. Everything on these screens is hardcoded." /%}
+
+## One file for every picture
+
+Every illustration and photo in the parenting app comes from one TOML manifest. It compiles to a TypeScript asset map, and a CLI generates the files from the manifest's prompts: FLUX Kontext for images, Veo 3 Fast for video, both through Replicate. A script checks the manifest for anything not generated yet. A 355-line style dictionary keeps the prompts consistent. The manifest says what to make, and the dictionary says how it should look.
+
+It made about 14 illustrations for domains, onboarding, personas and badges, plus persona backgrounds, family hero photos and milestone photos. It also made the testimonial profile photos. Those are AI-generated people, and anything shown here gets labeled that way. I reused the manifest approach for the health coach mock.
+
+{% Gallery images=[{src: "/images/projects/taco-labs/badge-color-master.webp", alt: "Generated badge illustration: a rainbow medal labeled Color Mastery, Completed"}, {src: "/images/projects/taco-labs/badge-milestone-collector.webp", alt: "Generated badge illustration: a green shield with a treasure chest and a Milestone Achieved banner"}, {src: "/images/projects/taco-labs/badge-social-butterfly.webp", alt: "Generated badge illustration: a pink round badge with a butterfly and the words Social Skills"}] columns="3" caption="Badges generated from the manifest's prompts. All AI-generated." /%}
+
+## Testing with made-up people
+
+The persona testing bot was a tool for the label, not a product. A planner model turns a synthetic persona card into test goals. A vision-language model then drives a headless browser through Playwright, deciding what to click from screenshots.
+
+LoveStory and ARMA had more real code behind them. LoveStory has a PDF pipeline for a 16-page 6x9 book, with 12, 17 and 10 passing tests across its suites. ARMA was FastAPI with a terminal UI, Postgres on Neon and Exa for search, and its commits span six days in August 2025.
+
+Taco Labs is retired. The parenting app never had a backend, by design. ARMA got a real database, but nothing in its repo shows a launch.
