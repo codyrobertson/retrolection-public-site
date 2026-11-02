@@ -3,6 +3,9 @@ title: "ReelsVault"
 summary: "Saved Instagram Reels, cut into searchable hooks, proof points and CTAs. A free desktop app on your own keys, and a planned paid cloud version."
 cover: /images/projects/reelsvault/cover.webp
 coverAlt: "The ReelsVault web app home: Your Reels, Organized, a field for pasting Instagram reel URLs, and a row of recent reels"
+art: /images/projects/reelsvault/art.jpg
+artAlt: "A film strip cut in three and taped down over transcript columns, with scissors; one frame is orange."
+loop: /videos/projects/reelsvault/loop.mp4
 discipline: design-code
 status: hobby
 date: 2026-01-31
@@ -28,6 +31,8 @@ It started as a local Python pipeline: yt-dlp, faster-whisper, and GPT-4o-mini o
 
 ## Chunks, not videos
 
+{% Spot src="/images/projects/reelsvault/spot-sliced-loaf.webp" alt="A loaf of bread cut into neat slices on a board with a few crumbs; one slice is orange-red." side="right" /%}
+
 The unit of search is a chunk, not a reel. Each reel splits into six types: hook, proof, CTA, objection, transition and story, and each type has subtypes like pattern_interrupt and curiosity_gap. You search for hooks and you get hooks back, not the whole video one is buried in.
 
 {% Figure src="/images/projects/reelsvault/web-search.webp" alt="Search results for hook framework: separate cards for a hook, a proof point, a CTA and a story, each with its subtype and a line on why it works, beside a grid of related reels" caption="Results come back as typed chunks with a subtype, not as whole videos. Semantic, full-text and visual search sit in the top right." width="wide" frame="browser" /%}
@@ -36,11 +41,15 @@ Later it got vision: keyframe extraction, scene understanding and CLIP embedding
 
 ## Free on your keys, paid in the cloud
 
+{% Spot src="/images/projects/reelsvault/spot-key-and-cloud.webp" alt="A single house key on a ring next to a small cloud that has a coin slot in it; the key is orange-red." side="left" /%}
+
 The pricing decision shaped the architecture. The desktop app is free and you bring your own API keys. The cloud version was planned at $15 a month flat for 100 reels, billed through Polar. The design doc estimated about $0.01 of API cost per reel and roughly $75 a month in fixed infrastructure, which puts break-even at six to eight paying users. Those are projections from the plan, not measurements.
 
 Splitting it that way meant two codebases for the same features. The desktop logic was reimplemented behind HTTP for the cloud, and a separate sync design had to reconcile the two in both directions, with each side processing on its own. The pipeline also moved off Python. The repo is now a Tauri and Cargo workspace that uses SQLite directly for chat, stats and search. The README still documents the old FastAPI version.
 
 ## Instagram is the weak point
+
+{% Spot src="/images/projects/reelsvault/spot-weak-link.webp" alt="A chain of paper links where one link is thin and fraying; the weak link is orange-red." side="right" /%}
 
 Downloads need a logged-in Instagram session, so one expired session stops the whole product. The plans spend a lot of effort on that: noticing when auth breaks, sending the user a throttled alert, and keeping the session alive. It's recurring manual ops for an input Instagram controls.
 

@@ -3,6 +3,9 @@ title: "RingDesk"
 summary: "A self-serve AI receptionist for pest-control shops. Owners edit a call-flow diagram and the prompt is compiled from it."
 cover: /images/projects/ringdesk/cover.webp
 coverAlt: "The RingDesk landing page hero: AI receptionist that books every job, 24/7, with a laptop showing a bookings dashboard"
+art: /images/projects/ringdesk/art.jpg
+artAlt: "A rotary phone whose cord loops into a flowchart over a call log, with a beetle on the receiver; one box is orange."
+loop: /videos/projects/ringdesk/loop.mp4
 discipline: design-code
 status: hobby
 date: 2026-03-17
@@ -21,6 +24,8 @@ seo:
 ---
 RingDesk answers the phone for service businesses. An owner signs up, lays out a call flow in a visual editor and gets a phone number. The agent picks up 24/7, qualifies the lead, books through Cal.com, sends a text notification, and hands off to a person when it should. I built it solo between March 17 and May 19, 2026: 450 commits, with agents working from specs and plans.
 
+{% Spot src="/images/projects/ringdesk/spot-desk-bell-ant.webp" alt="An old-fashioned desk bell on a small counter, a tiny ant walking toward it; the bell is orange-red." side="right" /%}
+
 Stack: SvelteKit 2 and Svelte 5, Drizzle, Tailwind 4, Vapi for voice, Twilio for SMS, OpenAI, Stripe, Cal.com.
 
 The first vertical was pest control. The spec's reasons were that it has the simplest call flow, the calls are urgent, and owners already pay for answering services.
@@ -28,6 +33,8 @@ The first vertical was pest control. The spec's reasons were that it has the sim
 {% Figure src="/images/projects/ringdesk/owner-dashboard.webp" alt="The owner dashboard for a demo pest-control account: calls today, leads captured, appointments, links to start a training call or edit call flows, and a list of recent calls with one-line summaries" caption="The owner's view, on seeded demo data. Edit call flows sits one click from the call log." width="narrow" frame="browser" /%}
 
 ## The diagram is the source, the prompt is compiled
+
+{% Spot src="/images/projects/ringdesk/spot-pattern-to-ribbon.webp" alt="A sheet of dotted pattern shapes feeding into a hand-crank pasta machine that rolls out one long ribbon; the ribbon is orange-red." side="left" /%}
 
 Owners edit a diagram, not a prompt. The node graph (greeting, identify need, router and so on) compiles on the server into the Vapi system prompt and tool definitions, and every save recompiles and pushes it. That keeps the call logic in something I can diff and test, and the compiler has its own test suite.
 
@@ -42,6 +49,8 @@ Billing changed early. The spec was written around Polar, and two days in it was
 {% Figure src="/images/projects/ringdesk/pest-control-page.webp" alt="The generated industry page AI Receptionist for Pest Control Businesses, with a list of everyday challenges and a section on why pest-control shops need one" caption="One of the 40 generated industry pages." width="wide" frame="browser" /%}
 
 ## Checking the marketing against the code
+
+{% Spot src="/images/projects/ringdesk/spot-megaphone-tape.webp" alt="A small paper megaphone and a toolbox side by side, a tape measure stretched between them; the tape is orange-red." side="right" /%}
 
 A May 8 audit compared what the public site promised with what the code actually did. It flagged three things as critical: a /reviews page with eight made-up reviews and review schema markup, a homepage case study with hardcoded numbers, and integrations (Google Calendar, ServiceTitan, Jobber, HubSpot) advertised with no connector behind them. The testimonials came off the homepage. That left a thinner landing page, with nothing on it the code couldn't back up. The voice-samples section came off on May 19.
 

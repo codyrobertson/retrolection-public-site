@@ -1,18 +1,38 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" font-family="system-ui, sans-serif">
-  <rect width="1200" height="600" fill="#f6f2e9"/>
-  <text x="60" y="76" font-size="30" font-weight="600" fill="#171717">Where the pipeline stalled</text>
-  <text x="60" y="110" font-size="18" fill="#6b6b6b">From the November 13 gap analysis and the later status notes.</text>
-  <text x="60" y="180" font-size="20" font-weight="600" fill="#171717">1,098 documents on November 13</text>
-  <rect x="60" y="200" width="638" height="56" fill="#2563eb"/>
-  <rect x="698" y="200" width="442" height="56" fill="#d97706"/>
-  <text x="76" y="236" font-size="18" fill="#ffffff" font-weight="600">647 went through OCR (58.9%)</text>
-  <text x="714" y="236" font-size="18" fill="#ffffff" font-weight="600">451 never ran OCR (41.1%)</text>
-  <text x="60" y="290" font-size="16" fill="#6b6b6b">The saga was never triggered for documents created before November 12. The backfill only got through stage two.</text>
-  <text x="60" y="370" font-size="20" font-weight="600" fill="#171717">County GIS lookups that timed out</text>
-  <text x="60" y="420" font-size="16" fill="#6b6b6b">before</text>
-  <rect x="140" y="396" width="713" height="40" fill="#d97706"/>
-  <text x="869" y="423" font-size="20" font-weight="600" fill="#171717">about 66%</text>
-  <text x="60" y="484" font-size="16" fill="#6b6b6b">after</text>
-  <rect x="140" y="460" width="324" height="40" fill="#d97706"/>
-  <text x="480" y="487" font-size="20" font-weight="600" fill="#171717">about 30%</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" font-family="inherit">
+  <text x="60" y="40" font-size="16" fill="currentColor" fill-opacity=".6">From the November 13 gap analysis and the later status notes.</text>
+  <!-- 1,098 documents, one bar split at 647 / 451 (1080px = 1,098) -->
+  <rect x="698" y="116" width="442" height="32" data-marker="#e2552f" style="fill:#e2552f"/>
+  <g fill="none" stroke="currentColor" stroke-width="1.5">
+    <rect x="60" y="116" width="638" height="32" data-pen="3b" data-hatch="45 6"/>
+    <rect x="60" y="116" width="638" height="32"/>
+    <rect x="698" y="116" width="442" height="32"/>
+    <!-- GIS timeouts, before to after: slopegraph, y = 540 - pct * 3 -->
+    <g data-pen="9h">
+      <path d="M200 326V470"/>
+      <path d="M520 326V470"/>
+    </g>
+    <path d="M200 342L520 450" data-w="1.3"/>
+    <circle cx="200" cy="342" r="5" data-pen="3b" data-hatch="45 2 cross"/>
+    <circle cx="520" cy="450" r="5" data-pen="3b" data-hatch="45 2 cross"/>
+    <circle cx="200" cy="342" r="6"/>
+    <circle cx="520" cy="450" r="6"/>
+  </g>
+  <g fill="currentColor">
+    <text x="60" y="96" font-size="20" font-weight="600">1,098 documents on November 13</text>
+    <g font-size="18" font-weight="600">
+      <text x="60" y="178">647 went through OCR (58.9%)</text>
+      <text x="698" y="178">451 never ran OCR (41.1%)</text>
+    </g>
+    <text x="60" y="212" font-size="16" fill-opacity=".6">The saga was never triggered for documents created before November 12. The backfill only got through stage two.</text>
+
+    <text x="60" y="290" font-size="20" font-weight="600">County GIS lookups that timed out</text>
+    <g font-size="20" font-weight="600">
+      <text x="184" y="349" text-anchor="end">about 66%</text>
+      <text x="536" y="457">about 30%</text>
+    </g>
+    <g font-size="16" fill-opacity=".6" text-anchor="middle">
+      <text x="200" y="498">before</text>
+      <text x="520" y="498">after</text>
+    </g>
+  </g>
 </svg>

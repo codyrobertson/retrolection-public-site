@@ -6,6 +6,9 @@ status: hobby
 date: 2026-08-13
 cover: /images/projects/tinyimage/cover.webp
 coverAlt: "A page of six photos with the extension running: three AI-generated images blurred with red AI 100% badges, three real photos of puppies, a church and a stereo with green real badges"
+art: /images/projects/tinyimage/art.jpg
+artAlt: "A magnifier with an orange rim over a framed landscape breaking into pixels, beside three medals, two crossed out."
+loop: /videos/projects/tinyimage/loop.mp4
 role: "Solo"
 client: ""
 url: "https://github.com/codyrobertson/instant-ai-seek"
@@ -26,6 +29,8 @@ I built it solo in five days, August 13 to 18, 2026. An agent loop wrote and ran
 
 ## Everything runs in the browser
 
+{% Spot src="/images/projects/tinyimage/spot-snow-globe-gear.webp" alt="A small paper snow globe with a tiny tree and a tiny gear sealed inside; the gear is orange-red." side="right" /%}
+
 The extension finds every image that's 64px or bigger and scores it locally on WebGPU, with WASM as the fallback. There's no cloud inference, no API and no local server. The model downloads once, then it works with the internet off. Every image gets a confidence score, and anything at 65% or higher counts as AI.
 
 That meant the model had to be small enough to bundle and fast enough to run on every image on a page. Everything else followed from that.
@@ -41,6 +46,8 @@ Early on I told it overfitting was really bad, and so was gaming the metric inst
 Training moved off my laptop on day one. ConvNeXt was taking 5 to 11 minutes an epoch on the M2 and pinning the CPU. On a DGX Spark it took 29 seconds.
 
 ## False win one: a leak that didn't change the number
+
+{% Spot src="/images/projects/tinyimage/spot-boot-on-line.webp" alt="A fishing line pulling an old boot out of the water instead of a fish; the bobber is orange-red." side="left" /%}
 
 The first clean-looking result was 0.9933 balanced accuracy on a sealed 300-image test set. An advisor review found the 150 real photos in that set came from a dataset split that training had also used. So the 0.9933 couldn't be trusted.
 
@@ -62,7 +69,7 @@ On August 17 the agent reported a confirmed breakthrough. A second classifier on
 
 An audit found the real images came from two data batches and the fakes from one. The new classifier was learning which batch an image came from. A clean re-measure across batches gave a gain of 0.002, which is noise. I retracted it the same day and deleted the artifact. Then I told the loop to run the advisor before every new experiment, not just at junctions.
 
-{% Figure src="/images/projects/tinyimage/false-wins-ledger.svg" alt="Ledger of three apparent wins and what checking showed: 0.9933 held after a clean retrain; 0.9867 locally fell to 36.3% and 4.0% AI caught on public benchmarks, then 88.0% and 60.8% with public training data; a claimed 0.809 to 0.981 lift was really 0.002 and was retracted. Below, four experiments that lost." caption="Blue held up after checking. Amber failed the check or lost." width="wide" /%}
+{% Figure src="/images/projects/tinyimage/false-wins-ledger.svg" alt="Ledger of three apparent wins and what checking showed: 0.9933 held after a clean retrain; 0.9867 locally fell to 36.3% and 4.0% AI caught on public benchmarks, then 88.0% and 60.8% with public training data; a claimed 0.809 to 0.981 lift was really 0.002 and was retracted. Below, four experiments that lost." caption="Slate marks held up after checking. Red marks failed the check or lost." width="wide" /%}
 
 ## Things that lost
 
@@ -91,6 +98,8 @@ What the headline numbers actually measure:
 {% Figure src="/images/projects/tinyimage/badges-in-page.webp" alt="A test page of six photos with the extension running: three AI-generated images blurred with red AI 100% badges, three real photos with green real badges" caption="The extension from the repo on a local test page, using images from its own sealed test set, which is the easy case. The badge shows the AI score, so real 0% means a 0% chance of AI. None of these landed in the amber middle band." width="wide" frame="browser" /%}
 
 ## Not solved
+
+{% Spot src="/images/projects/tinyimage/spot-missing-piece.webp" alt="A nearly finished jigsaw of plain slate and cream pieces with one piece missing; the outline of the empty gap is orange-red." side="right" /%}
 
 The false-AI rate was supposed to be 1% or less. It's 4.55%. So I added a third state instead of pretending: anything scoring between 35% and 65% gets an amber `?` and never blurs. That's a product change, not a better model, and the report calls it mitigated, not solved.
 

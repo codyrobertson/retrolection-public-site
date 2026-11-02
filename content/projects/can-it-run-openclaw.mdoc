@@ -3,6 +3,9 @@ title: "Can It Run OpenClaw?"
 summary: "A directory of 80+ devices and whether they can run OpenClaw or its forks, scored by ClawBench, a Docker benchmark that simulates the hardware."
 cover: /images/projects/can-it-run-openclaw/cover.webp
 coverAlt: "The Can It Run OpenClaw? homepage: a blue nautical hero with a device search box and filters for SBCs, desktops, laptops, cloud and microcontrollers"
+art: /images/projects/can-it-run-openclaw/art.jpg
+artAlt: "A row of tagged devices sits on a benchmark spec sheet; an orange claw pops out of one screen."
+loop: /videos/projects/can-it-run-openclaw/loop.mp4
 discipline: design-code
 status: hobby
 date: 2026-02-14
@@ -21,11 +24,15 @@ seo:
 ---
 [Can It Run OpenClaw?](https://canitrunopenclaw.com) answers one question per device: can it run OpenClaw, or one of its forks, and how well? It covers 80+ devices and 10+ forks, with community verdicts and ratings, and a benchmark called ClawBench that scores each fork. I built it solo over three days in February 2026. 44 commits, with Claude as co-author on the commits.
 
+{% Spot src="/images/projects/can-it-run-openclaw/spot-catalogue-drawer.webp" alt="A small wooden card-catalogue drawer pulled open, packed with tiny blank tag cards; one tag sticks up in orange-red." side="right" /%}
+
 Stack: Next.js 16, Neon Postgres and Drizzle, Neon Auth, Tailwind 4, PostHog, Vercel.
 
 {% Figure src="/images/projects/can-it-run-openclaw/top-devices.webp" alt="A grid of six device cards: two cloud VPS sizes, an AWS Graviton3 instance, Raspberry Pi Zero 2 W, Pine A64+ and Raspberry Pi 3B+, each with price, RAM and CPU tags and a Runs Great badge" caption="Device cards lead with price and RAM, then the verdict band." width="wide" frame="browser" /%}
 
 ## Simulating the hardware
+
+{% Spot src="/images/projects/can-it-run-openclaw/spot-box-in-costume.webp" alt="A plain cardboard box wearing a paper mask cut in the shape of a laptop, pretending to be another machine; a single orange-red power cord trails from it." side="left" /%}
 
 I wasn't going to buy 80-plus devices, so ClawBench simulates them. Each fork runs in a Docker container capped with `--memory` and `--cpus` to match the target device. On top of that there's a CPU performance factor (Cortex-A53 at 0.08, A76 at 0.22, M3 at 1.0) and an I/O profile for microSD, eMMC, SSD or NVMe.
 
@@ -38,6 +45,8 @@ Microcontrollers aren't benchmarked at all. ESP32, Arduino and RP2040 boards run
 The first harness lasted a few hours. That same evening it was replaced with one that does real clone, install, disk and startup measurements. The commit message says "no fakes."
 
 ## One number, with the weights shown
+
+{% Spot src="/images/projects/can-it-run-openclaw/spot-float-and-sinkers.webp" alt="A single fishing float bobbing above a cluster of lead sinkers of different sizes hanging visibly on threads beneath it; the float is orange-red." side="right" /%}
 
 Each fork gets a score from 0 to 100, and the weights are on the page: latency 30, capabilities 40, size 20, build 10. The bands are Runs Great, OK, Barely and Won't. One number sorts the leaderboard, and showing the weights lets people argue with how it's calculated. By the last commit there were 161 result files, from OpenClaw (55) down to MimiClaw (4).
 
