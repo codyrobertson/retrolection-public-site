@@ -67,7 +67,8 @@ const noop = { rebuild() {}, destroy() {} };
  * @property {boolean} [metaNearest]   sample meta without filtering (for angles/ids)
  * @property {boolean} animated        redraw visible tiles at 30fps
  * @property {"analog" | "digital"} [gate] draw only in this surface mode
- * @property {(root: HTMLElement, host: HTMLElement) => any[]} collect  items need numeric y,h
+ * @property {(root: HTMLElement, host: HTMLElement, changes: { full: boolean, dirty: Set<Element> }) => any[]} collect  items need numeric y,h;
+ *   `changes` says whether all that changed since the last collect is in `dirty` (the elements the DOM changed in)
  * @property {(mx: CanvasRenderingContext2D, tx: CanvasRenderingContext2D) => void} begin  called per tile before painting
  * @property {(mx: CanvasRenderingContext2D, tx: CanvasRenderingContext2D, item: any) => void} paint
  * @property {string[]} [attributes]   attributes whose mutation should rebuild
@@ -311,23 +312,29 @@ export function createLayer(cfg) {
     for (const [i, tile] of active) if (i >= vlo && i <= vhi && !tile.lost) tile.draw(now);
   });
   const kick = () => { if (cfg.animated && !raf && alive) raf = requestAnimationFrame(loop); };
-  // the lights' front moved (or the page under it): every tile made is drawn again, if it is over them at all
+  // the lights' front moved (or the page under it): a tile it crossed is drawn again. The edge is hard, so a
+  // tile wholly above (or below) both where it was and where it is now looks as it did, and is left alone
   const offNight = onNight(() => {
     if (!alive) return;
     const y = nightIn(origin()), was = nightY;
     nightY = y;
-    const lo = Math.min(y, was), hi = Math.max(y, was);
+    const lo = Math.min(y, was) - 4, hi = Math.max(y, was) + 4;
     if (hi < -60 || lo > docH + 60) return;
     const now = performance.now();
-    for (const tile of active.values()) if (!tile.lost) tile.draw(now);
+    for (const tile of active.values()) {
+      if (tile.lost || tile.i * TILE_H + tile.th + PAD < lo || tile.i * TILE_H - PAD > hi) continue;
+      tile.draw(now);
+    }
   });
 
   // a layer gated to the other surface draws nothing, so it makes no tiles (their contexts and programs are most of
   // a page's start) until the surface turns, or is turning, to its own
   const needed = () => !cfg.gate || (cfg.gate === "digital" ? !!(surface.from || surface.to) : !surface.from || !surface.to);
   let waiting = false;
+  // what has changed since the last build: only the DOM, in these elements, or anything (a size, the lights, a font)
+  let full = true, dirty = new Set();
   function build() {
-    if (!needed()) { waiting = true; return; }
+    if (!needed()) { waiting = true; full = true; return; }
     waiting = false;
     const t1 = performance.now();
     docW = scoped ? root.clientWidth : docEl.clientWidth; docH = Math.max(scoped ? root.scrollHeight : docEl.scrollHeight, 1);
@@ -338,7 +345,8 @@ export function createLayer(cfg) {
     const paper = getComputedStyle(root).getPropertyValue("--paper").trim(), hex = /^#([\da-f]{6})$/i.exec(paper);
     drawnDark = hex && parseInt(hex[1].slice(0, 2), 16) + parseInt(hex[1].slice(2, 4), 16) + parseInt(hex[1].slice(4), 16) < 384 ? 1 : 0;
     nightY = nightIn(origin());
-    const tc = performance.now(); items = cfg.collect(root, host); perf.items = items.length; perf.collectMs = performance.now() - tc;
+    const changes = { full, dirty }; full = false; dirty = new Set();
+    const tc = performance.now(); items = cfg.collect(root, host, changes); perf.items = items.length; perf.collectMs = performance.now() - tc;
     bucketize();
     sync(true);
     reveal();
@@ -358,35 +366,45 @@ export function createLayer(cfg) {
     const beat = Math.max(wait, 3 * (perf.buildMs || 0));
     timer = window.setTimeout(() => { timer = 0; build(); }, Math.max(0, beat - (performance.now() - lastBuild)));
   }
+  const buildAll = () => { full = true; scheduleBuild(); };
 
   const onScroll = () => { sync(); kick(); };
   addEventListener("scroll", onScroll, { passive: true });
   document.addEventListener("visibilitychange", kick);
-  const ro = new ResizeObserver(() => { if (roReady) scheduleBuild(); }); ro.observe(root);
+  const ro = new ResizeObserver(() => { if (roReady) buildAll(); }); ro.observe(root);
   // a layer's own host, or a part of the page that animates its own DOM (data-gl-skip: the hero's
   // live typing), never asks for a rebuild
   // (a scoped layer is the one that covers such a part, so only its own host is ignored)
   const ignore = scoped ? "[data-gl-host]" : "[data-gl-host],[data-gl-skip]";
   const inHost = (n) => (n instanceof Element ? n : n.parentElement)?.closest(ignore);
-  const mo = new MutationObserver((m) => { if (m.some((r) => !inHost(r.target))) scheduleBuild(); });
+  const mo = new MutationObserver((m) => {
+    let any = false;
+    for (const r of m) {
+      if (inHost(r.target)) continue;
+      const el = r.target instanceof Element ? r.target : r.target.parentElement;
+      if (el) dirty.add(el); else full = true;
+      any = true;
+    }
+    if (any) scheduleBuild();
+  });
   // what is read at a rebuild (an opacity, a colour) can still be on its way: look again when it lands
   // (a transition's opacity or colour, or a keyframe entrance: a button fading in as it renders)
-  const landed = (e) => { if (!inHost(e.target) && (e.type === "animationend" || /opacity|color/.test(e.propertyName))) scheduleBuild(); };
+  const landed = (e) => { if (!inHost(e.target) && (e.type === "animationend" || /opacity|color/.test(e.propertyName))) buildAll(); };
   root.addEventListener("transitionend", landed);
   root.addEventListener("animationend", landed);
   mo.observe(root, { childList: true, subtree: true, characterData: true, ...(cfg.attributes ? { attributes: true, attributeFilter: cfg.attributes } : {}) });
-  const scheme = matchMedia("(prefers-color-scheme: dark)"); scheme.addEventListener("change", scheduleBuild);
-  const themeMo = new MutationObserver(scheduleBuild); themeMo.observe(docEl, { attributes: true, attributeFilter: ["data-theme", "data-theme-moving"] });   // and again once the fade has landed
-  document.fonts?.addEventListener("loadingdone", scheduleBuild);
+  const scheme = matchMedia("(prefers-color-scheme: dark)"); scheme.addEventListener("change", buildAll);
+  const themeMo = new MutationObserver(buildAll); themeMo.observe(docEl, { attributes: true, attributeFilter: ["data-theme", "data-theme-moving"] });   // and again once the fade has landed
+  document.fonts?.addEventListener("loadingdone", buildAll);
   document.fonts.ready.then(() => { if (!alive) return; build(); roReady = true; });
 
   return {
-    rebuild: build,
+    rebuild: () => { full = true; build(); },
     destroy() {
       alive = false; cancelAnimationFrame(raf); clearTimeout(timer); cancelAnimationFrame(tickF); clearTimeout(tickT); offSurface(); offNight();
       removeEventListener("scroll", onScroll); ro.disconnect(); mo.disconnect(); themeMo.disconnect();
       root.removeEventListener("transitionend", landed); root.removeEventListener("animationend", landed);
-      scheme.removeEventListener("change", scheduleBuild); document.fonts?.removeEventListener("loadingdone", scheduleBuild);
+      scheme.removeEventListener("change", buildAll); document.fonts?.removeEventListener("loadingdone", buildAll);
       document.removeEventListener("visibilitychange", kick);
       host.querySelectorAll("canvas").forEach((c) => /** @type {WebGLRenderingContext} */ (c.getContext("webgl"))?.getExtension("WEBGL_lose_context")?.loseContext());
       host.remove(); docEl.classList.remove(cfg.readyClass); if (scoped) root.removeAttribute("data-inked");

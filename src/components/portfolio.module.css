@@ -77,14 +77,14 @@
   inset: -24px;
   background-image: radial-gradient(circle at 12px 12px, rgb(26 25 23 / 0.13) 1px, transparent 1.5px);
   background-size: 24px 24px;
-  will-change: transform;
 }
 
 .plane {
   position: absolute;
   inset: 0 auto auto 0;
-  will-change: transform;
 }
+.view[data-moving] :is(.plane, .dots) { will-change: transform; }
+.view[data-away] .plane { display: none; }
 
 .print {
   position: absolute;
@@ -95,6 +95,7 @@
   border-radius: 4px;
   -webkit-user-drag: none;
 }
+.print[data-off] { content-visibility: hidden; }
 .print img {
   display: block;
   width: 100%;

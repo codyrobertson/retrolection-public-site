@@ -30,24 +30,41 @@ export default function PortfolioCanvas({ prints, width }: { prints: Print[]; wi
     if (!el || !pl || !dt) return;
     const items = [...pl.children] as HTMLElement[];
     const wrapped = items.map(() => [NaN, NaN]);
+    const off = items.map(() => false);
     let cell = 0, W = 0, vw = 0, vh = 0;
     let ox = 0, oy = 0, vx = 0, vy = 0;
-    let raf = 0, last = 0, seen = false, held = false;
+    let raf = 0, last = 0, seen = false, held = false, still = 0;
 
+    // live, each print is placed in px rather than in cells: a print's own variables, multiplied out in its
+    // style, made every print (and all in it) a style of its own, restyled one by one each time the lights changed
     const measure = () => {
       cell = parseFloat(getComputedStyle(el).getPropertyValue("--cell")) || 280;
       W = width * cell; vw = el.clientWidth; vh = el.clientHeight;
+      prints.forEach((p, i) => {
+        const s = items[i].style;
+        for (const v of ["--x", "--y", "--w", "--h"]) s.removeProperty(v);
+        s.left = `${p.x * cell}px`; s.top = `${p.y * cell}px`; s.width = `${p.w * cell}px`; s.height = `${p.h * cell}px`;
+      });
     };
+    // the board is a layer of its own only while it moves: at rest, a layer under the prints made each
+    // of them a layer too (forty-odd), and the compositor worked over all of them on every frame of the page's scroll
     const place = () => {
-      pl.style.transform = `translate3d(${ox}px, ${oy}px, 0)`;
+      if (!still) el.dataset.moving = "true";
+      clearTimeout(still); still = window.setTimeout(() => { still = 0; delete el.dataset.moving; }, 400);
+      pl.style.transform = `translate(${ox}px, ${oy}px)`;
       const m = (v: number) => ((v % PITCH) + PITCH) % PITCH - PITCH;
-      dt.style.transform = `translate3d(${m(ox)}px, ${m(oy)}px, 0)`;
+      dt.style.transform = `translate(${m(ox)}px, ${m(oy)}px)`;
       for (let i = 0; i < prints.length; i++) {
         const p = prints[i];
         const kx = Math.ceil((-ox - MARGIN - (p.x + p.w) * cell) / W);
         const H = p.ph * cell, ky = Math.ceil((-oy - MARGIN - (p.y + p.h) * cell) / H);
         const w = wrapped[i];
         if (w[0] !== kx || w[1] !== ky) { w[0] = kx; w[1] = ky; items[i].style.transform = `translate(${kx * W}px, ${ky * H}px)`; }
+        // past the window's edge a print is only its box: what is in it is not styled, laid out or painted,
+        // so the lights changing restyle the twenty in sight rather than all six hundred elements of the board
+        const l = ox + p.x * cell + kx * W, t = oy + p.y * cell + ky * H;
+        const o = l > vw + MARGIN || l + p.w * cell < -MARGIN || t > vh + MARGIN || t + p.h * cell < -MARGIN;
+        if (o !== off[i]) { off[i] = o; items[i].toggleAttribute("data-off", o); }
       }
     };
     const frame = (t: number) => {
@@ -107,7 +124,9 @@ export default function PortfolioCanvas({ prints, width }: { prints: Print[]; wi
     ox = -(W - vw) / 2; oy = -0.35 * cell;   // opened partway down, so it reads as running on above too
     place();
     el.dataset.live = "true";
-    const io = new IntersectionObserver(([en]) => { seen = en.isIntersecting; if (seen) run(); });
+    // far from the window, the prints are taken out altogether: laid out they are each a layer of their own,
+    // and the compositor works over every one of them on every frame of the scroll above, unseen
+    const io = new IntersectionObserver(([en]) => { seen = en.isIntersecting; el.toggleAttribute("data-away", !seen); if (seen) run(); }, { rootMargin: "60% 0px" });
     io.observe(el);
     const ro = new ResizeObserver(() => { measure(); wrapped.forEach((w) => (w[0] = w[1] = NaN)); place(); });
     ro.observe(el);
@@ -120,7 +139,7 @@ export default function PortfolioCanvas({ prints, width }: { prints: Print[]; wi
     on.forEach(([t, f, o]) => el.addEventListener(t, f, o));
     document.addEventListener("visibilitychange", vis);
     return () => {
-      cancelAnimationFrame(raf); io.disconnect(); ro.disconnect();
+      cancelAnimationFrame(raf); clearTimeout(still); io.disconnect(); ro.disconnect();
       on.forEach(([t, f, o]) => el.removeEventListener(t, f, o));
       document.removeEventListener("visibilitychange", vis);
     };
@@ -137,6 +156,7 @@ export default function PortfolioCanvas({ prints, width }: { prints: Print[]; wi
             className={styles.print}
             data-own={p.own}
             draggable={false}
+            aria-label={p.title}
             tabIndex={p.own ? 0 : -1}
             {...(p.own ? {} : { target: "_blank", rel: "noopener noreferrer" })}
             style={{ "--x": p.x, "--y": p.y, "--w": p.w, "--h": p.h } as React.CSSProperties}

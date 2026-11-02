@@ -90,7 +90,7 @@ async function hand() {
   const SPREAD = (args.spread ?? '0.06,0,0.1,0.18').split(',').map(Number);   // each finger's spread from the middle: a relaxed hand, the fingers loosely together
   const REST = {
     wrist: [0.03, +(args.dev ?? -0.6), +(args.pron ?? 0)], arch: +(args.arch ?? 0.22),
-    thumb: [+(args.thumb ?? 0.2), +(args.tabd ?? 0.25), +(args.topp ?? -0.6), +(args.tmcp ?? 0.4), +(args.tip ?? 0)],   // tucked under the index, not thrown out to the side
+    thumb: [+(args.thumb ?? 0.2), +(args.tabd ?? -1), +(args.topp ?? -0.6), +(args.tmcp ?? 0.4), +(args.tip ?? 0)],   // lying along the index: seen from above, any abduction swings it under the palm
     f: [[0.14, 0.30, 0.16, 0.14], [0.20, 0.40, 0.26, 0.03], [0.24, 0.46, 0.30, 0.06], [0.32, 0.54, 0.38, 0.16]]
       
       .map(([m, p, d], i) => [m * CURL, p * CURL * +(args.pipk ?? 1), d * CURL * +(args.dipk ?? 0.5), +(args.abd ?? 1) * SPREAD[i]]),
@@ -285,7 +285,7 @@ async function hand() {
         ink[i] = 1 - (1 - ink[i]) * (1 - a);
       }
     }
-    if (+(args.groove ?? 0)) {                          // a hairline of shadow where one digit lies against the next
+    if (+(args.groove ?? 1)) {                          // a hairline of shadow where one digit lies against the next
       const gv = new Float32Array(HS * HS);
       const own = (x, y) => { const id = i0[((y / div) | 0) * dw + ((x / div) | 0)]; return id >= 0 ? owner[id] : -2; };
       for (let y = 0; y < HS - 1; y++) for (let x = 0; x < HS - 1; x++) {
@@ -301,7 +301,7 @@ async function hand() {
     if (armMask) for (let i = 0; i < body.length; i++) body[i] = Math.max(body[i], armMask[i]);
     // a light warm graphite wash over the whole hand, so it is paper and not a white cutout: heavier
     // on the side away from the light (down and toward the thumb), with the paper's tooth and a fine stipple
-    if (+(args.skin ?? 0)) {
+    if (+(args.skin ?? 1)) {
       let bx0 = HS, bx1 = 0, by0 = HS, by1 = 0;
       for (let y = 0; y < HS; y++) for (let x = 0; x < HS; x++) if (body[y * HS + x]) { if (x < bx0) bx0 = x; if (x > bx1) bx1 = x; if (y < by0) by0 = y; if (y > by1) by1 = y; }
       const lx = -0.35, ly = 0.94, p0 = bx0 * lx + by0 * ly, p1 = bx1 * lx + by1 * ly, lo = Math.min(p0, bx1 * lx + by0 * ly, bx0 * lx + by1 * ly), hi = Math.max(p1, bx1 * lx + by0 * ly, bx0 * lx + by1 * ly);
@@ -741,31 +741,38 @@ function wood() {
   const R = (a, b) => a + (b - a) * rnd();
   // a stroke at x, and one a tile either side, so what runs off one edge comes in at the other
   const wrap = (pts, o) => { for (const dx of [-WW, 0, WW]) g.stroke(pts.map(([x, y]) => [x + dx, y]), { ...o, phase: ph }); ph++; };
+  // noise that repeats along the tile (round a circle in x), so the veneer has no seam where it tiles
+  const TAU = 2 * Math.PI;
+  const per = (x, o, r = 3) => noise.fbm(r * Math.cos((TAU * x) / WW), r * Math.sin((TAU * x) / WW), o) - 0.5;
   const seams = [0.36 * WH, 0.74 * WH];
-  for (const y of seams) wrap(Array.from({ length: 193 }, (_, i) => [i * (WW / 192), y + (noise.fbm(i * 0.03, y, 0.5) - 0.5) * 2.2]), { grade: PEN.gradeAt(3), tone: 0.8, passes: 2, taper: 0, weight: 1.1, wobble: 0.4, jitter: 0.3 });
+  for (const y of seams) wrap(Array.from({ length: 193 }, (_, i) => [i * (WW / 192), y + per(i * (WW / 192), y, 6) * 2.2]), { grade: PEN.gradeAt(3), tone: 0.8, passes: 2, taper: 0, weight: 1.1, wobble: 0.4, jitter: 0.3 });
   const planks = [[-30, seams[0]], [seams[0], seams[1]], [seams[1], WH + 30]];
+  // flat-sawn figure: grain lines at uneven spacing that pinch toward the plank's heart into a
+  // cathedral (sharp on one side, drawn out on the other), wander a little, and come and go along
+  // their length, as grain does under a finish, rather than ruled streaks the width of the page
   planks.forEach(([y0, y1], pi) => {
-    const n = Math.round(R(22, 27));
-    for (let k = 0; k < n; k++) {
-      // denser near a seam: bias the line's row toward the plank's edges
-      let t = rnd(); if (rnd() < 0.4) t = rnd() < 0.5 ? rnd() * 0.18 : 1 - rnd() * 0.18;
-      const base = y0 + (y1 - y0) * t, amp = R(3, 9), f = R(0.0025, 0.005), off = k * 3.1 + pi * 17;
-      let x = R(0, 120);
-      while (x < WW + 120) {
-        const len = R(160, 520), seg = [];
-        for (let u = 0; u <= len; u += 12) seg.push([x + u, base + amp * (noise.fbm((x + u) * f + off, pi, 1.2) - 0.5)]);
-        if (seg.length > 1) wrap(seg, { grade: PEN.gradeAt(R(0.6, 1.4)), tone: R(0.4, 0.75), passes: 1, taper: 0.85, weight: R(0.7, 1.1), wobble: 0.6, jitter: 0.4 });
-        x += len + R(10, 40);
+    const top = Math.max(y0, 0), bot = Math.min(y1, WH), hgt = bot - top;
+    const cx = R(0.15, 0.85) * WW, cy = top + hgt * R(0.35, 0.65), dir = rnd() < 0.5 ? -1 : 1;
+    const long = R(420, 700), short = long * R(0.12, 0.22), D = hgt * R(0.32, 0.45);
+    for (let L = top - 10 + R(0, 8), li = 0; L < bot + 10; L += R(5, 16) * (rnd() < 0.15 ? 2.4 : 1), li++) {
+      const d = L - cy, o = pi * 13.1 + li * 1.73, gap = R(30, 170), tail = rnd() < 0.3, tone = R(0.28, 0.58), weight = R(0.6, 0.95), grade = PEN.gradeAt(R(0.5, 1.2));
+      let seg = [];
+      const flush = () => { if (seg.length > 2) wrap(seg, { grade, tone, passes: 1, taper: 0.7, weight, wobble: 0.6, jitter: 0.35 }); seg = []; };
+      for (let x = 0; x <= WW; x += 8) {
+        // the lines nearer the heart than D close into nested arches: each meets its twin across the heart at a
+        // crown, the inner ones' crowns further on, and opens out behind it; the ones further out only swell past
+        const dx = (x - cx) * dir, q = Math.abs(d) / D;
+        const crown = -short + long * Math.max(0, 1 - q) * 0.9;
+        // behind the crown, a few of the rings before run on straight, and give out a little short of it
+        if (q < 1 && dx < crown && (!tail || dx > crown - gap)) { flush(); continue; }
+        const open = q >= 1 ? 1 + 0.12 * Math.exp(-((dx / long) ** 2)) : dx < crown ? 1 : Math.min(1, Math.sqrt((dx - crown) / (long * 0.45)));
+        const y = cy + d * open + 5 * per(x, o) * open + 1.4 * per(x, o + 50, 11);
+        const on = per(x, o + 90, 2) > -0.14 && y > y0 + 2 && y < y1 - 2;   // the line fades out and back
+        if (on) seg.push([x, y]); else flush();
       }
+      flush();
     }
   });
-  // two knots, each a few nested ovals bent by the grain
-  for (const [kx, ky, kr] of [[430, 0.55 * WH, 20], [1180, 0.18 * WH, 14]]) {
-    for (let i = 1; i <= 5; i++) {
-      const r = kr * (i / 5), ring = Array.from({ length: 41 }, (_, j) => { const a = (j / 40) * Math.PI * 2; return [kx + r * 1.7 * Math.cos(a) * (1 + 0.1 * Math.sin(a * 3 + i)), ky + r * 0.8 * Math.sin(a)]; });
-      wrap(ring, { grade: PEN.gradeAt(0.9), tone: 0.55, passes: 1, taper: 0.4, weight: 0.8, wobble: 0.5, close: true });
-    }
-  }
   const cov = coverage(g);
   writeMask('wood-ink', cov, WW * XW, WH * XW, 55, 70);
   meta.wood = { w: WW, h: WH };
