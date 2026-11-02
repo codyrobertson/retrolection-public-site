@@ -11,7 +11,7 @@ import { PASTE } from "@/lib/typing/scene";
 import AsciiBox from "./AsciiBox";
 import { BOARD_EVENT, TYPE_EVENT } from "./SiteNav";
 import TunePanel, { loadTuned, type Metric, type Params } from "./TunePanel";
-import WorkIndex, { FULL, type WorkItem } from "./WorkIndex";
+import WorkIndex, { FULL, NUM, type WorkItem } from "./WorkIndex";
 import styles from "./typing.module.css";
 
 // Plate 01. Nothing here is pre-rendered: the hands are solved and drawn in workers while
@@ -112,7 +112,6 @@ export type Hero = { eyebrow?: string; heading: string; subheading?: string; lin
 const stampOnce = () => stampFor(stampOf);
 const typedBefore = () => visit()?.phase === "typed";
 const SAID_MAX = 40;                     // the reader's line keeps its last this many characters
-const EXIT_MS = 1700;                      // the hands taking the board away, or bringing it back
 const LIGHTS_MS = 900;                     // the page going dark (or light): globals.css --theme-time
 
 /**
@@ -223,6 +222,7 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
   const [ready, setReady] = useState(false);
   const [said, setSaid] = useState("");                     // what the hands have typed for the reader
   const [rows, setRows] = useState<Record<string, number>>({}); // how much of each line of the index is on the sheet
+  const [cur, setCur] = useState("");                       // ...and the line the hands are typing
   // ...and the lines typed earlier this visit, there whole from the start
   const seenRows = useSyncExternalStore(noop, rowsBefore, () => NO_ROWS);
   const sheetRows = useMemo(() => {
@@ -245,10 +245,10 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
   const sched = useRef<Sched | null>(null);
   // the last scene's layers, let go once the new one is on screen
   const retired = useRef<Layer[]>([]);
-  /** where the drawing on the desk starts, CSS px down it (as last painted): what follows the sheet is cut there */
-  const inkTop = useRef(0);
+  /** how far the board is down from its place, CSS px (as last painted): what is under it is cut there */
+  const drop = useRef(0);
   const layout = useRef<Layout | null>(null);
-  const stage = useRef({ w: 0, h: 0, room: 0, phone: false, bw: 0, lh: 18, platen: 0 });
+  const stage = useRef({ w: 0, h: 0, room: 0, phone: false, bw: 0, lh: 18, platen: 0, pin: 0 });
   const played = useRef("");                // the scene the performance is under way in, to pick it up again
   const frameIdx = useRef(0);
   const visible = useRef(true);
@@ -330,7 +330,7 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
       // is drawn up into it, and comes out from under the board as the hands take it away
       document.documentElement.style.setProperty("--tail", getComputedStyle(scene).paddingBottom);
       const lh = parseFloat(getComputedStyle(box ?? el).lineHeight) || 18;
-      stage.current = { w, h, room, phone, bw, lh, platen: at };
+      stage.current = { w, h, room, phone, bw, lh, platen: at, pin: top };
       const dpr = window.devicePixelRatio || 1;
       const next = Math.min(1.35, Math.max(0.45, Math.round(((bw * dpr) / KB_W1) * 20) / 20));
       setX((x) => (Math.abs(next - x) >= 0.1 ? next : x));
@@ -437,9 +437,8 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
       }
     }
     for (const { l, off } of hands) ctx.drawImage(l.bitmap, l.x + off[0], l.y + off[1]);
-    // the top of what is drawn (board or hands, with a hand's shadow above it), in px down the desk
-    const top = Math.min(board.y + by, ...hands.map(({ l, off }) => l.y + off[1])) - L.pxPerMm * 2;
-    inkTop.current = ((P.y + top) * canvas.clientHeight) / P.H;
+    const s = sched.current;
+    drop.current = Math.max(0, by - (s ? s.frames[s.loop[0]].kb[1] : 0)) / P.k;
     if (retired.current.length && !retired.current.includes(board)) {
       for (const l of retired.current) l.bitmap.close();
       retired.current = [];
@@ -526,53 +525,91 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
 
   // The clock: poses at the schedule's rate; a pose that is not drawn yet is held, never
   // skipped; between poses, positions are eased on every display frame. The sheet scrolls as
-  // a page does: each line of the index is typed as it comes up past the platen, and once the
-  // sheet's foot is past it, the hands take the board away (and bring it back if the reader
-  // scrolls back down to it), on their own time, not the scroll's.
+  // a page does, and two things follow it:
+  //
+  //   the index   each line, as it comes up past the platen, waits its turn (its number there
+  //               at once) and the hands type it, its strokes drawn before it is up. They keep
+  //               one line in hand: with another coming up, the one waiting is simply there (as
+  //               the bio is pasted) and the one being typed is hurried; so is one that leaves
+  //               the window before it is done.
+  //   the board   the way out is the scroll's: from the sheet's foot at the platen to a window
+  //               further on, the hands reach up, take the board's far edge and pull it down
+  //               the page (scene.js `exit`), eased a little behind the scroll, never on a
+  //               clock of their own. What follows the sheet (Experience) comes out at the
+  //               platen, as the next sheet would, and is shown down to the board's top edge.
   useEffect(() => {
-    let raf = 0, last = performance.now(), acc = 0, shown = "", exiting = false, resume = 0, q = 0, away = false, told = "", seenAt = "";
+    let raf = 0, last = performance.now(), acc = 0, shown = "", exiting = false, resume = 0, q = 0, dark = false, told = "", seenAt = "";
+    // how far up the lights are, 0..1, at their own pace: the drawing is graphite on paper, and is
+    // only ever as there as they are (it goes as they go down, and comes back as they come up)
+    let lit = 1;
     // the lines of the index that have come up past the platen (this visit: typed once, they stay)
     const up = new Set<string>(rowsBefore());
     const Lv = live.current;
+    let rowQ: string[] = [];                                  // up, waiting for the hands, in the order they came
+    let ahead = "";                                           // the next line to come up: its strokes are drawn before it does
+    let rush = false;                                         // the line being typed has left the window: finish it quick
+    const plans = new Map<string, Frame[] | null>();          // a line's strokes (null: asked for)
+    const drawn = new Set<string>();
     // what the reader's keys and the index's lines had drawn: let go once nothing is waiting to type
     const liveKeys = new Set<string>();
     const letLiveGo = () => {
       const s = sched.current;
-      if (!s || Lv.cur || Lv.queue.length || Lv.asking) return;
-      const { keep } = planOf(s);
-      for (const k of liveKeys) if (!keep.has(k)) release(k);
-      liveKeys.clear();
+      if (!s || Lv.cur || Lv.queue.length || Lv.asking || rowQ.length) return;
+      const { keep } = planOf(s), hold = new Set<string>();
+      plans.get(ahead)?.forEach((fr, j) => layersOf(fr, j).forEach(([ty, r]) => hold.add(keyOf(ty, r))));
+      for (const k of liveKeys) if (!keep.has(k) && !hold.has(k)) { release(k); liveKeys.delete(k); }
+      for (const id of drawn) if (id !== ahead) drawn.delete(id);
     };
-    const wantLive = (frames: Frame[]) => frames.forEach((fr, j) => layersOf(fr, j).forEach(([ty, r]) => { liveKeys.add(keyOf(ty, r)); want(ty, r, -4); }));
+    const wantLive = (frames: Frame[], pri = -4) => frames.forEach((fr, j) => layersOf(fr, j).forEach(([ty, r]) => { liveKeys.add(keyOf(ty, r)); want(ty, r, pri); }));
     const whole = (row?: string) => { if (row) { setRows((m) => ({ ...m, [row]: FULL })); markRows([row]); } };
-    /** the hands' strokes for `text` asked for; typed, in turn, from the loop */
+    const titleOf = (id: string) => (sceneRef.current?.querySelector<HTMLElement>(`[data-row="${id}"]`)?.dataset.label ?? "").slice(NUM);
+    /** a line's strokes, asked for once (they take a millisecond or two; drawing them takes the time) */
+    const planFor = (id: string) => {
+      if (plans.has(id)) return plans.get(id) ?? null;
+      plans.set(id, null);
+      pool.current?.get("schedule", { text: titleOf(id), live: true }, -5).then((ls: { frames: Frame[] }) => plans.set(id, ls.frames), () => plans.delete(id));
+      return null;
+    };
+    const drawRow = (id: string, pri: number) => {
+      const F = planFor(id);
+      if (F && !drawn.has(id)) { drawn.add(id); wantLive(F, pri); }
+    };
+    /** the hands' strokes for the reader's `text` asked for; typed, in turn, from the loop */
     const ask = (text: string, extra: Partial<Live>) => {
       Lv.asking = true;
       pool.current!.get("schedule", { text, live: true }, -5).then((ls: { frames: Frame[] }) => {
-        // the board went while these were asked for: a line of the index is there whole
-        if (!Lv.open) { whole(extra.row); return; }
+        if (!Lv.open) return;
         wantLive(ls.frames);
         Lv.queue.push({ frames: ls.frames, text, ...extra });
       }, () => {}).finally(() => { Lv.asking = false; });
     };
-    /** the sheet's foot went past the platen, by scrolling or by a jump (a link to the contact form) */
-    const goAway = () => {
-      if (!away) away = true;
+    /** the hands put down what they were typing, and every line waiting is there whole */
+    const dropAll = () => {
+      whole(Lv.cur?.row); Lv.queue.forEach((lv) => whole(lv.row)); rowQ.forEach((id) => whole(id));
+      rowQ = []; Lv.pending = ""; Lv.queue = []; Lv.cur = null; rush = false; setCur("");
+      if (Lv.said) { Lv.said = ""; setSaid(""); }
+      letLiveGo();
     };
+    const board = (away: boolean) => {
+      const v = away ? "away" : "up";
+      if (told === v) return;
+      told = v;
+      document.documentElement.dataset.board = v;
+      window.dispatchEvent(new CustomEvent(BOARD_EVENT, { detail: away }));
+    };
+
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick);
       const s = sched.current, scene = sceneRef.current, plate = plateRef.current, dt = Math.min(64, now - last);
+      lit = clamp01(lit + ((document.documentElement.dataset.theme === "dark" ? -1 : 1) * dt) / LIGHTS_MS);
       if (!visible.current || !scene || !plate) {
-        // far down the page (the desk out of sight above), it is night whatever the clock missed,
-        // and the board is away: back up to it, the hands bring it back as they would from a scroll
+        // far down the page (the desk out of sight above), the board is away and it is night
+        // (or day again, over the contact form); back up, the hands bring the board back with the scroll
         if (scene && scene.getBoundingClientRect().bottom < 0) {
           lights(dawn() ? "light" : "dark");
           const next = scene.nextElementSibling as HTMLElement | null;
           if (next?.style.clipPath) next.style.clipPath = "";
-          if (s && !reducedRef.current) {
-            goAway(); q = 1;
-            if (told !== "away") { told = "away"; document.documentElement.dataset.board = "away"; window.dispatchEvent(new CustomEvent(BOARD_EVENT, { detail: true })); }
-          }
+          if (s && !reducedRef.current) { if (q < 1 && !exiting) dropAll(); q = 1; dark = true; exiting = true; board(true); }
         }
         last = now;
         return;
@@ -582,57 +619,71 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
       const note = scene.querySelector<HTMLElement>(`.${styles.note}`), foot = note ? note.getBoundingClientRect().bottom : 0;
       // what follows the sheet, read with the rest before anything is written this frame
       const next = scene.nextElementSibling as HTMLElement | null, nextBox = next?.getBoundingClientRect(), day = dawn();
+      const canType = !!s && !!pool.current && playingRef.current && handsDoneRef.current && q === 0;
 
-      // the lines come up past the platen: the newest is typed, if the hands are free; any others
-      // that came up with it (a quick scroll) are simply there, as the bio is pasted. Looked for
-      // only when the sheet has moved (a scroll, a resize, a tab of the index), not every frame.
+      // the lines against the platen: looked at only when the sheet has moved (a scroll, a
+      // resize, a tab of the index), not every frame
       const at = `${Math.round(platenY)}:${Math.round(foot)}`;
       if (!still && at !== seenAt) {
         seenAt = at;
-        const fresh: string[] = [];
+        const fresh: string[] = [], gone = new Set<string>(), top = Math.max(0, platenY - st.platen) + 8;
+        let nextUp = "";
         for (const r of scene.querySelectorAll<HTMLElement>("[data-row]")) {
-          const id = r.dataset.row!;
-          if (!up.has(id) && r.getBoundingClientRect().bottom < platenY + 1) { up.add(id); fresh.push(id); }
+          const id = r.dataset.row!, b = r.getBoundingClientRect().bottom;
+          if (!up.has(id)) {
+            if (b < platenY + 1) { up.add(id); fresh.push(id); }
+            else nextUp ||= id;
+          } else if (b < top) gone.add(id);
         }
         if (fresh.length) {
-          const free = !!s && !!pool.current && playingRef.current && handsDoneRef.current && q === 0 && !Lv.cur && !Lv.queue.length && !Lv.asking && !Lv.pending;
-          const typing = free ? fresh[fresh.length - 1] : null;
-          setRows((m) => { const n = { ...m }; for (const id of fresh) n[id] = id === typing ? 0 : FULL; return n; });
-          markRows(fresh.filter((id) => id !== typing));
-          if (typing) {
-            const label = scene.querySelector<HTMLElement>(`[data-row="${typing}"]`)?.dataset.label ?? "";
-            ask(label.slice(0, 16), { row: typing });
-          }
+          if (canType) {
+            // the hands keep one line in hand: one waiting already, and it is there whole
+            const waiting = [...rowQ, ...fresh], keep = waiting.slice(-1);
+            waiting.slice(0, -1).forEach(whole);
+            rowQ = keep;
+            setRows((m) => ({ ...m, [keep[0]]: NUM }));
+            planFor(keep[0]);
+          } else fresh.forEach(whole);
         }
+        // out of the window above before their turn: there whole; the one under way, hurried
+        if (gone.size) {
+          const left = rowQ.filter((id) => gone.has(id));
+          if (left.length) { rowQ = rowQ.filter((id) => !gone.has(id)); left.forEach(whole); }
+          rush = !!Lv.cur?.row && gone.has(Lv.cur.row);
+        }
+        if (nextUp !== ahead) { ahead = nextUp; if (ahead && canType) planFor(ahead); }
+      }
+      // the next line's strokes drawn while it is still on its way up, the first in the queue first
+      if (canType) {
+        if (rowQ[0] && !drawn.has(rowQ[0])) drawRow(rowQ[0], -4);
+        else if (ahead && !drawn.has(ahead) && !rowQ.length) drawRow(ahead, -3);
       }
 
-      // the way out, keyed to the sheet's foot: past the platen, and the board goes; back down
-      // under it (by more than a line or two, so it never dithers), and the board comes back
-      if (!away && foot < platenY - st.lh * 0.5) away = true;
-      else if (away && foot > platenY + st.lh * 2) away = false;
-      q = still || !s ? 0 : clamp01(q + ((away ? 1 : -1) * dt) / EXIT_MS);
-      const gone = q > 0.55 ? "away" : "up";
-      if (told !== gone) {
-        told = gone;
-        document.documentElement.dataset.board = gone;
-        window.dispatchEvent(new CustomEvent(BOARD_EVENT, { detail: gone === "away" }));
-      }
-      if (!away) lights("light", still);
-      else if (still || gone === "away") lights(day ? "light" : "dark", still);
+      // the way out: how far the sheet's foot is past the platen, over the window the board
+      // has to go through, eased a little behind the scroll
+      // (measured from where the platen is pinned: at the scene's end the desk goes up with it,
+      // and the board is gone before it does)
+      const pinned = Math.max(platenY, st.pin + st.platen);
+      const past = pinned - st.lh * 0.5 - foot, span = Math.max(220, (innerHeight - pinned) * 0.9);
+      const target = still || !s ? 0 : clamp01(past / span);
+      q += (target - q) * (1 - Math.exp(-dt / 90));
+      if (Math.abs(target - q) < 0.002) q = target;
+      // the lights: down as the board nears the foot of the window, and up as soon as the
+      // scroll turns back for it (the scroll's place, not the board's, which trails it)
+      dark = still ? past > 0 : dark ? target > 0.8 : target > 0.9;
+      board(still ? past > 0 : q > 0.55);
+      lights(dark && !day ? "dark" : "light", still);
       Lv.open = q === 0;
-      // Nothing of the sheet shows under the board: it is cut at the board's top edge, which
-      // goes down the window with the board as the hands take it away.
+      // Nothing of the sheet, or of what follows it, shows under the board: both are cut at the
+      // platen, and below it by as far as the board has gone down the page (as last drawn)
       if (note) {
-        const edge = platenY + (innerHeight + 40 - platenY) * smoothstep(clamp01((q - 0.12) / 0.6));
+        const edge = platenY + (still ? 0 : drop.current);
         const cut = still || q >= 1 ? 0 : Math.max(0, Math.round(foot - edge));
         const v = cut ? `inset(0 0 ${cut}px 0)` : "";
         if (note.style.clipPath !== v) note.style.clipPath = v;
-        // and what follows the sheet, up in the board's room, is under the board until it goes
         if (next && nextBox) {
           const r = nextBox;
-          // cut where the drawing starts (the hands stand above the board, and are open graphite)
-          const line = Math.min(edge, platenY - st.platen + inkTop.current);
-          const off = still || q >= 1 || r.top > innerHeight ? 0 : Math.min(Math.round(r.height), Math.max(0, Math.round(r.bottom - line)));
+          const off = still || q >= 1 || r.top > innerHeight ? 0 : Math.min(Math.round(r.height), Math.max(0, Math.round(r.bottom - edge)));
           const w = off ? `inset(0 0 ${off}px 0)` : "";
           if (next.style.clipPath !== w) next.style.clipPath = w;
         }
@@ -648,16 +699,9 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
       }
       const canvas = canvasRef.current;
       if (q > 0) {
-        if (!exiting) {
-          exiting = true; resume = frameIdx.current;
-          // what was being typed goes with the board: the reader's line, and any line of the index whole
-          whole(Lv.cur?.row); Lv.queue.forEach((lv) => whole(lv.row));
-          Lv.pending = ""; Lv.queue = []; Lv.cur = null;
-          if (Lv.said) { Lv.said = ""; setSaid(""); }
-          letLiveGo();
-        }
+        if (!exiting) { exiting = true; resume = frameIdx.current; dropAll(); }
         // the board goes off the foot of the window as drawn; only its last few frames thin out
-        if (canvas) { canvas.style.transition = "none"; canvas.style.opacity = String(1 - smoothstep(clamp01((q - 0.88) / 0.12))); }
+        if (canvas) { canvas.style.transition = "none"; canvas.style.opacity = String(Math.min(lit, 1 - smoothstep(clamp01((q - 0.78) / 0.2)))); }
         const E = s.exit, f = q * (E.length - 1), i0 = Math.floor(f), i1 = Math.min(E.length - 1, i0 + 1), a = f - i0;
         const key = frameKey("x", i0, E[i0], E[i1], a, size, 3);
         if (shown !== key) {
@@ -674,48 +718,64 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
         last = now;
         return;
       }
-      if (exiting) {
-        exiting = false; frameIdx.current = resume; acc = 0; shown = "";
-        if (canvas) { canvas.style.transition = ""; canvas.style.opacity = ""; }
+      if (exiting) { exiting = false; frameIdx.current = resume; acc = 0; shown = ""; seenAt = ""; }
+      if (canvas && canvas.style.transition === "none") {
+        if (lit < 1) canvas.style.opacity = String(lit);
+        else { canvas.style.transition = ""; canvas.style.opacity = ""; }
       }
       // the reader's keys: their strokes asked for a few at a time, then typed from the loop
-      // and back into it, each letter landing in the box (or on its line of the index) as its key goes down
+      // and back into it, each letter landing in the box as its key goes down
       if (Lv.pending && !Lv.asking && pool.current) {
         const chunk = Lv.pending.slice(0, 16), fresh = Lv.fresh;
         Lv.pending = Lv.pending.slice(16);
         Lv.fresh = false;
         ask(chunk, { fresh });
       }
-      if (!Lv.cur && Lv.queue.length && frameIdx.current >= loop0) {
-        Lv.cur = { ...Lv.queue.shift()!, i: 0, shown: 0 }; acc = 0;
-        wantLive(Lv.cur.frames);       // anything let go since it was asked for is asked for again
-        if (Lv.cur.fresh) { Lv.said = ""; setSaid(""); }
+      // the next thing to type, from the loop: the reader's keys first, then the index's queue
+      if (!Lv.cur && frameIdx.current >= loop0) {
+        if (Lv.queue.length) {
+          Lv.cur = { ...Lv.queue.shift()!, i: 0, shown: 0 }; acc = 0;
+          wantLive(Lv.cur.frames);       // anything let go since it was asked for is asked for again
+          if (Lv.cur.fresh) { Lv.said = ""; setSaid(""); }
+        } else if (rowQ.length) {
+          const id = rowQ[0], F = planFor(id);
+          if (F) {
+            rowQ.shift(); drawRow(id, -4); rush = false;
+            Lv.cur = { frames: F, text: titleOf(id), row: id, i: 0, shown: 0 }; acc = 0;
+            setCur(id);
+          }
+        }
       }
-      acc = Math.min(acc + dt, step * 2);
       last = now;
       if (Lv.cur) {
         const C = Lv.cur, F = C.frames;
-        if (acc >= step) {
-          if (C.i + 1 >= F.length) { acc -= step; C.i = F.length; }
-          else if (isReady(F[C.i + 1], C.i + 1)) { C.i++; acc -= step; }
-          else acc = step;
+        // a line of the index is typed briskly, and faster with others waiting (or when it has gone by)
+        const sp = C.row ? 1.35 * (rowQ.length ? 2 : 1) * (rush ? 2 : 1) : 1, stp = step / sp;
+        acc = Math.min(acc + dt, stp * 2);
+        if (acc >= stp) {
+          if (C.i + 1 >= F.length) { acc -= stp; C.i = F.length; }
+          else if (isReady(F[C.i + 1], C.i + 1)) { C.i++; acc -= stp; }
+          else acc = stp;
         }
         const n = C.i >= F.length ? C.text.length : F[C.i].typed ?? 0;
         if (n > C.shown) {
           const was = C.shown;
           C.shown = n;
-          if (C.row) { const id = C.row; setRows((m) => ({ ...m, [id]: n })); }
+          if (C.row) { const id = C.row; setRows((m) => ({ ...m, [id]: NUM + n })); }
           else { Lv.said = (Lv.said + C.text.slice(was, n)).slice(-SAID_MAX); setSaid(Lv.said); }
         }
         if (C.i < F.length) {
-          const nx = F[Math.min(F.length - 1, C.i + 1)], a = Math.min(1, acc / step), key = frameKey("live", C.i, F[C.i], nx, a, size, 2);
+          const nx = F[Math.min(F.length - 1, C.i + 1)], a = Math.min(1, acc / stp), key = frameKey("live", C.i, F[C.i], nx, a, size, 2);
           if (shown !== key && paint(F[C.i], nx, a, C.i)) shown = key;
           return;
         }
         whole(C.row);
-        Lv.cur = null; frameIdx.current = loop0; shown = "";      // the last frame leads into the loop's first
+        if (C.row) setCur("");
+        Lv.cur = null; rush = false; frameIdx.current = loop0; shown = "";      // the last frame leads into the loop's first
         letLiveGo();
+        if (rowQ.length) return;                             // straight on to the next line, from the same pose
       }
+      acc = Math.min(acc + dt, step * 2);
       let i = frameIdx.current;
       if (acc >= step) {
         const next = i + 1 >= N ? loop0 : i + 1;
@@ -843,7 +903,7 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
           </p>
           {/* the platen: the hero's foot, where the sheet goes into the machine */}
           <div className={styles.platen} aria-hidden />
-          {!!work.length && <WorkIndex items={work} total={more} typed={sheetRows} all={reduced} />}
+          {!!work.length && <WorkIndex items={work} total={more} typed={sheetRows} cur={cur} all={reduced} />}
         </AsciiBox>
         {tune && (
           <TunePanel

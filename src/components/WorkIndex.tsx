@@ -17,7 +17,8 @@ export const FULL = 1e6;
 // narrows to only it
 const TABS: [Filter, string][] = [["all", "All"], ["design", "Design"], ["code", "Code"], ["design-code", "Design + Code"]];
 const shows = (f: Filter, d: Discipline) => f === "all" || d === f || (d === "design-code" && f !== "design-code");
-const NUM = 4;                              // "01  ": the number and its gap, set in the box's mono
+/** "01  ": the number and its gap, set in the box's mono; there as soon as the line is up, before its name is typed */
+export const NUM = 4;
 
 /**
  * Plate 02 is the rest of the hero's sheet: the work, as an index the hands type as each line
@@ -28,7 +29,7 @@ const NUM = 4;                              // "01  ": the number and its gap, s
  * browser has one).
  */
 /** a line of the index: drawn again only when its own count of letters moves, not at each of the hero's */
-const Row = memo(function Row({ t, n }: { t: WorkItem; n: number | undefined }) {
+const Row = memo(function Row({ t, n, caret }: { t: WorkItem; n: number | undefined; caret: boolean }) {
   const state = n === undefined ? "under" : n >= t.label.length ? "done" : "typing";
   return (
     <li style={{ viewTransitionName: `tile-${t.slug}` } as CSSProperties}>
@@ -37,11 +38,11 @@ const Row = memo(function Row({ t, n }: { t: WorkItem; n: number | undefined }) 
         <span className={styles.typed} aria-hidden>
           {[...t.label].map((ch, j) => (
             <Fragment key={j}>
-              {state === "typing" && j === n && <span className={styles.caret} />}
+              {caret && j === n && <span className={styles.caret} />}
               <span className={j < NUM ? styles.num : styles.ch} data-on={n !== undefined && j < n}>{ch}</span>
             </Fragment>
           ))}
-          {state === "typing" && (n ?? 0) >= t.label.length && <span className={styles.caret} />}
+          {caret && (n ?? 0) >= t.label.length && <span className={styles.caret} />}
         </span>
         <span className={styles.meta} aria-hidden>{t.meta}</span>
         <span className={styles.status} aria-hidden>{t.status}</span>
@@ -51,7 +52,7 @@ const Row = memo(function Row({ t, n }: { t: WorkItem; n: number | undefined }) 
   );
 });
 
-export default memo(function WorkIndex({ items, total = items.length, typed, all }: { items: WorkItem[]; total?: number; typed: Record<string, number>; all: boolean }) {
+export default memo(function WorkIndex({ items, total = items.length, typed, cur = "", all }: { items: WorkItem[]; total?: number; typed: Record<string, number>; cur?: string; all: boolean }) {
   const [filter, setFilter] = useState<Filter>("all");
   const pick = (f: Filter) => {
     if (f === filter) return;
@@ -83,7 +84,7 @@ export default memo(function WorkIndex({ items, total = items.length, typed, all
         ))}
       </div>
       <ol ref={list} className={styles.rows}>
-        {shown.map((t) => <Row key={t.slug} t={t} n={all ? FULL : typed[t.slug]} />)}
+        {shown.map((t) => <Row key={t.slug} t={t} n={all ? FULL : typed[t.slug]} caret={!all && cur === t.slug} />)}
       </ol>
       {total > items.length && (
         <p className={styles.more}>
