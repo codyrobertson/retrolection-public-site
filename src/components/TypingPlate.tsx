@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPool, STALE } from "@/lib/typing/pool";
 import { DEFAULTS } from "@/lib/typing/scene";
 import { markRows, markTyped, stampFor, touch, visit } from "@/lib/typing/session";
@@ -251,10 +251,9 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
   const stage = useRef({ w: 0, h: 0, room: 0, phone: false, bw: 0, lh: 18, platen: 0 });
   const played = useRef("");                // the scene the performance is under way in, to pick it up again
   const frameIdx = useRef(0);
-  const visible = useRef(true);
   const playingRef = useRef(false);
   // the reader's keys: waiting to be scheduled, scheduled and waiting their turn, being typed
-  const live = useRef({ pending: "", asking: false, queue: [] as Live[], cur: null as (Live & { i: number; shown: number }) | null, said: "", open: false, fresh: false, label: "" });
+  const live = useRef({ pending: "", asking: false, queue: [] as Live[], cur: null as (Live & { i: number; shown: number }) | null, said: "", open: false, fresh: false, label: "", gen: 0 });
   const shade = useRef<{ pattern: CanvasPattern | null; cache: WeakMap<Layer, { c: HTMLCanvasElement; m: number }> }>({ pattern: null, cache: new WeakMap() });
   const reducedRef = useRef(false);
   const handsDoneRef = useRef(false);
@@ -282,6 +281,7 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
       const s = sched.current;
       SHARED.frame = frameIdx.current;
       SHARED.pool?.drop();
+      pool.current = null;
       // the opening's drawings go with the plate; the board, the loop and the way out wait for the reader
       if (s) { const { keep } = planOf(s); for (const k of [...SHARED.done.keys()]) if (!keep.has(k)) release(k); }
       SHARED.bye = window.setTimeout(() => { SHARED.pool?.dispose(); SHARED.pool = null; SHARED.poolFor = ""; }, LINGER_MS);
@@ -291,8 +291,9 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
   // The desk (the plate) is pinned over the sheet, which scrolls as any page does. The platen is
   // the hero's foot as the page opens: the sheet goes into the machine there, and the board has
   // the room under it. Resolution follows the stage: device px across the board, capped where
-  // drawing gets slow.
-  useEffect(() => {
+  // drawing gets slow. Measured before the first paint (and again on a return to the page), not
+  // a frame later from the observer: what follows the sheet is laid out against it.
+  useLayoutEffect(() => {
     const el = plateRef.current, scene = sceneRef.current;
     if (!el || !scene) return;
     const box = scene.querySelector<HTMLElement>(`.${styles.note}`), ruled = box?.querySelector<HTMLElement>(`.${styles.box}`);
@@ -342,9 +343,9 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
     // a short window holds the desk at its least height and pins it higher (its `top`), which
     // moves with the window's height while the desk's size does not
     window.addEventListener("resize", measure);
+    measure();
     return () => {
       ro.disconnect(); window.removeEventListener("resize", measure);
-      document.documentElement.style.removeProperty("--tail");
       const next = scene.nextElementSibling as HTMLElement | null;
       if (next) next.style.clipPath = "";
     };
@@ -355,7 +356,10 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
     const key = keyOf(type, req);
     if (done.current.has(key) || !pool.current) return;
     pool.current.get(type, req, pri).then(
-      (out: Layer) => done.current.set(key, out),
+      (out: Layer) => {
+        done.current.set(key, out);
+        if (!pool.current && !(sched.current && planOf(sched.current).keep.has(key))) release(key);
+      },
       (err: unknown) => { if ((err as Error)?.message !== STALE.message) console.error(err); },
     );
   }, []);
@@ -457,7 +461,7 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
     const P = pool.current;
     if (!P || !X || !stamp) return;
     let alive = true;
-    const t = setTimeout(async () => {
+    const run = async () => {
       setBusy(true);
       setMetrics(null);
       setCheck(null);
@@ -502,35 +506,33 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
       } finally {
         if (alive) setBusy(false);
       }
-    }, tune ? 60 : 0);
-    return () => { alive = false; clearTimeout(t); };
+    };
+    // a microtask, not a timer: the workers start on the scene in the same turn as the layout
+    const t = tune ? window.setTimeout(run, 60) : 0;
+    if (!tune) queueMicrotask(() => { if (alive) void run(); });
+    return () => { alive = false; window.clearTimeout(t); };
   }, [params, X, tune, want, prime, text, stamp]);
 
-  // play from the top when asked to (the ?tune panel's play)
-  const primed = useRef(false);
-  useEffect(() => {
+  // play from the top when asked to (the ?tune panel's play): on the click, not in an effect,
+  // which would run again on every return to the page and send the opening back to its start
+  const togglePlay = () => {
     const s = sched.current;
-    if (!primed.current) { primed.current = true; return; }
-    if (!s || !playing || reduced) return;
-    prime(s);
-    frameIdx.current = 0;
-  }, [playing, reduced, prime]);
-
-  useEffect(() => {
-    const el = plateRef.current;
-    if (!el) return;
-    const io = new IntersectionObserver(([e]) => { visible.current = e.isIntersecting; });
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
+    if (!playing && s && !reduced) { prime(s); frameIdx.current = 0; }
+    setPlaying(!playing);
+  };
 
   // The clock: poses at the schedule's rate; a pose that is not drawn yet is held, never
   // skipped; between poses, positions are eased on every display frame. The sheet scrolls as
   // a page does: each line of the index is typed as it comes up past the platen, and once the
   // sheet's foot is past it, the hands take the board away (and bring it back if the reader
   // scrolls back down to it), on their own time, not the scroll's.
-  useEffect(() => {
+  //
+  // Coming in (a load, a link from another page, a return to this one) the first look is taken
+  // before anything is painted: the board is where the scroll puts it and the lights are already
+  // right, with nothing animated to get there; and a reader who came in past the hero has it typed.
+  useLayoutEffect(() => {
     let raf = 0, last = performance.now(), acc = 0, shown = "", exiting = false, resume = 0, q = 0, away = false, told = "", seenAt = "";
+    let first = true, entered = false;
     // the lines of the index that have come up past the platen (this visit: typed once, they stay)
     const up = new Set<string>(rowsBefore());
     const Lv = live.current;
@@ -548,9 +550,10 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
     /** the hands' strokes for `text` asked for; typed, in turn, from the loop */
     const ask = (text: string, extra: Partial<Live>) => {
       Lv.asking = true;
+      const g = Lv.gen;
       pool.current!.get("schedule", { text, live: true }, -5).then((ls: { frames: Frame[] }) => {
-        // the board went while these were asked for: a line of the index is there whole
-        if (!Lv.open) { whole(extra.row); return; }
+        // the board went (or the line was wiped) while these were asked for: a line of the index is there whole
+        if (!Lv.open || g !== Lv.gen) { whole(extra.row); return; }
         wantLive(ls.frames);
         Lv.queue.push({ frames: ls.frames, text, ...extra });
       }, () => {}).finally(() => { Lv.asking = false; });
@@ -559,17 +562,30 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
     const goAway = () => {
       if (!away) away = true;
     };
+    /** the reader came in past the hero (a link down the page, a return scrolled down it): it is typed */
+    const skipped = () => {
+      if (handsDoneRef.current || reducedRef.current) return;
+      markTyped();
+      setTyped(Number.MAX_SAFE_INTEGER);
+      const s = sched.current;
+      if (s) frameIdx.current = Math.max(s.loop[0], frameIdx.current);
+    };
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick);
       const s = sched.current, scene = sceneRef.current, plate = plateRef.current, dt = Math.min(64, now - last);
-      if (!visible.current || !scene || !plate) {
+      const instant = first;
+      first = false;
+      // read, not observed: the first look comes before any observer has said where the desk is
+      const sr = scene?.getBoundingClientRect();
+      if (!scene || !plate || !sr || sr.bottom <= 0 || sr.top >= innerHeight) {
         // far down the page (the desk out of sight above), it is night whatever the clock missed,
         // and the board is away: back up to it, the hands bring it back as they would from a scroll
-        if (scene && scene.getBoundingClientRect().bottom < 0) {
-          lights(dawn() ? "light" : "dark");
-          const next = scene.nextElementSibling as HTMLElement | null;
+        if (sr && sr.bottom <= 0) {
+          lights(dawn() ? "light" : "dark", instant);
+          const next = scene!.nextElementSibling as HTMLElement | null;
           if (next?.style.clipPath) next.style.clipPath = "";
-          if (s && !reducedRef.current) {
+          if (instant) skipped();
+          if (!reducedRef.current) {
             goAway(); q = 1;
             if (told !== "away") { told = "away"; document.documentElement.dataset.board = "away"; window.dispatchEvent(new CustomEvent(BOARD_EVENT, { detail: true })); }
           }
@@ -610,15 +626,23 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
       // under it (by more than a line or two, so it never dithers), and the board comes back
       if (!away && foot < platenY - st.lh * 0.5) away = true;
       else if (away && foot > platenY + st.lh * 2) away = false;
-      q = still || !s ? 0 : clamp01(q + ((away ? 1 : -1) * dt) / EXIT_MS);
+      // the hero gone by on the way in (a link down the page): typed, not played to an empty window
+      // (the scroll to a link's #section may come after this look, so the hash says it too)
+      if (instant && (away || !!location.hash || (scene.querySelector("h1")?.getBoundingClientRect().bottom ?? 1) < 0)) skipped();
+      // until the hands have their schedule, and on the first look with it, the board is where the
+      // scroll says rather than on its way there
+      if (still) q = 0;
+      else if (!s || !entered) q = away ? 1 : 0;
+      else q = clamp01(q + ((away ? 1 : -1) * dt) / EXIT_MS);
+      if (s) entered = true;
       const gone = q > 0.55 ? "away" : "up";
       if (told !== gone) {
         told = gone;
         document.documentElement.dataset.board = gone;
         window.dispatchEvent(new CustomEvent(BOARD_EVENT, { detail: gone === "away" }));
       }
-      if (!away) lights("light", still);
-      else if (still || gone === "away") lights(day ? "light" : "dark", still);
+      if (!away) lights("light", still || instant);
+      else if (still || gone === "away") lights(day ? "light" : "dark", still || instant);
       Lv.open = q === 0;
       // Nothing of the sheet shows under the board: it is cut at the board's top edge, which
       // goes down the window with the board as the hands take it away.
@@ -652,7 +676,7 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
           exiting = true; resume = frameIdx.current;
           // what was being typed goes with the board: the reader's line, and any line of the index whole
           whole(Lv.cur?.row); Lv.queue.forEach((lv) => whole(lv.row));
-          Lv.pending = ""; Lv.queue = []; Lv.cur = null;
+          Lv.pending = ""; Lv.queue = []; Lv.cur = null; Lv.gen++;
           if (Lv.said) { Lv.said = ""; setSaid(""); }
           letLiveGo();
         }
@@ -726,10 +750,16 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
       const key = frameKey("", i, s.frames[i], s.frames[nx], a, size, 2);
       if (shown !== key && paint(s.frames[i], s.frames[nx], a, i)) shown = key;
     };
-    raf = requestAnimationFrame(tick);
+    tick(performance.now());
     const unwatch = watchFade();
-    // off the home page the lights are up, and there is no board to be away
-    return () => { cancelAnimationFrame(raf); unwatch(); lights("light", true); delete document.documentElement.dataset.board; };
+    // off the home page the lights are up, and there is no board to be away; what the hands were
+    // typing is there whole, and nothing asked for before the reader left is typed when they return
+    return () => {
+      cancelAnimationFrame(raf); unwatch(); lights("light", true); delete document.documentElement.dataset.board;
+      whole(Lv.cur?.row); Lv.queue.forEach((lv) => whole(lv.row));
+      Lv.pending = ""; Lv.queue = []; Lv.cur = null; Lv.gen++; Lv.open = false; Lv.label = "";
+      if (Lv.said) { Lv.said = ""; setSaid(""); }
+    };
   }, [paint, arrive, isReady, want, advance]);
 
   // The reader's keys, once the hands have typed the heading and while the board is in place:
@@ -756,7 +786,8 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
         if (L.pending) L.pending = L.pending.slice(0, -1);
         else { L.said = L.said.slice(0, -1); setSaid(L.said); }
       } else if (e.key === "Escape") {
-        L.pending = ""; L.said = ""; setSaid("");
+        L.pending = ""; L.said = ""; setSaid(""); L.queue = []; L.gen++;
+        if (L.cur) L.cur.shown = L.cur.text.length;
       } else if (e.key.length === 1) {
         if (e.key === " ") e.preventDefault();                 // the space bar types, rather than scrolls, while the board is up
         L.pending = (L.pending + e.key).slice(-SAID_MAX); L.label = "";
@@ -768,7 +799,7 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
       const L = live.current, label = String((e as CustomEvent).detail ?? "").slice(0, SAID_MAX);
       if (!L.open || !label) return;
       if (label === L.label && (L.pending || L.asking || L.cur || L.queue.length || L.said === label)) return;
-      L.label = label; L.pending = label; L.fresh = true; L.queue = [];
+      L.label = label; L.pending = label; L.fresh = true; L.queue = []; L.gen++;
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener(TYPE_EVENT, onSay);
@@ -853,7 +884,7 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
             check={check}
             busy={busy}
             playing={playing}
-            onPlay={() => setPlaying(!playing)}
+            onPlay={togglePlay}
             X={X}
           />
         )}
