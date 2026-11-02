@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pencil field guide</title>
+<style>
+@font-face{font-family:Messina;src:url(../../src/fonts/messina-sans-400.woff2);font-weight:400}
+@font-face{font-family:Messina;src:url(../../src/fonts/messina-sans-700.woff2);font-weight:700}
+@font-face{font-family:Inferi;src:url(../../src/fonts/inferi-400.woff2);font-weight:400}
+@font-face{font-family:Inferi;src:url(../../src/fonts/inferi-700.woff2);font-weight:700}
+:root{--background:#f6f2e9;--foreground:#1c1a17;--muted:#6f685c;--paper-wash-a:rgb(255 252 244/.55);--paper-wash-b:rgb(214 196 160/.16)}
+@media (prefers-color-scheme:dark){:root{--background:#0f0f0e;--foreground:#ece8e0;--muted:#a39d92;--paper-wash-a:rgb(255 244 226/.035);--paper-wash-b:rgb(0 0 0/.35);color-scheme:dark}}
+:root[data-theme=light]{--background:#f6f2e9;--foreground:#1c1a17;--muted:#6f685c;--paper-wash-a:rgb(255 252 244/.55);--paper-wash-b:rgb(214 196 160/.16);color-scheme:light}
+:root[data-theme=dark]{--background:#0f0f0e;--foreground:#ece8e0;--muted:#a39d92;--paper-wash-a:rgb(255 244 226/.035);--paper-wash-b:rgb(0 0 0/.35);color-scheme:dark}
+*{box-sizing:border-box;margin:0}
+body{background:var(--background);color:var(--foreground);font-family:Inferi,Georgia,serif;-webkit-font-smoothing:antialiased}
+main{max-width:60rem;margin:0 auto;padding:40px 24px 80px}
+h1{font:700 52px/1.05 Messina,sans-serif;margin-bottom:10px}
+h2{font:700 22px/1.2 Messina,sans-serif;margin:44px 0 12px}
+p{font-size:17px;line-height:1.55;max-width:38rem;margin-bottom:12px}
+.cap{font:12px Messina,sans-serif;color:var(--muted);margin-top:6px}
+.pens{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.spread{display:grid;grid-template-columns:1.25fr 1fr;gap:36px;align-items:end}
+.beans{max-width:15rem;margin-top:28px}
+@media(max-width:700px){.pens,.spread{grid-template-columns:1fr}}
+svg{width:100%;height:auto;display:block}
+</style>
+<link rel="stylesheet" href="../../src/app/ink.css">
+<link rel="stylesheet" href="../../src/app/surface.css">
+</head>
+<body>
+<main>
+  <h1>Pencil field guide</h1>
+  <p>3B graphite for tone, a 9H for the faint construction lines underneath, and a ballpoint over the top. Each illustration is a plain SVG of centerline strokes; the shader supplies the paper, pressure and wobble.</p>
+
+  <h2>Three tools</h2>
+  <div class="pens">
+    <figure>
+      <svg data-illo viewBox="0 0 200 150" role="img" aria-label="Ballpoint samples">
+        <g data-pen="ballpoint">
+          <path d="M14 30 C50 18 80 40 120 26 S170 22 188 30"/>
+          <path d="M14 56 C40 70 60 40 90 58 S150 76 186 52" data-w="1.3"/>
+          <path d="M20 90 q10 -26 22 0 t22 0 t22 0 t22 0 t22 0" data-pass="2"/>
+          <path d="M16 124 L184 120 M22 132 L176 130" data-w=".8"/>
+        </g>
+      </svg>
+      <figcaption class="cap">Ballpoint: pools at the edges, skips on light pressure</figcaption>
+    </figure>
+    <figure>
+      <svg data-illo viewBox="0 0 200 150" role="img" aria-label="3B graphite samples">
+        <g data-pen="3b">
+          <rect data-hatch="55 4" x="14" y="12" width="84" height="56"/>
+          <rect data-hatch="55 3.4 cross" x="106" y="12" width="82" height="56"/>
+          <path d="M16 90 C50 80 80 104 120 92 S170 86 186 96" data-w="1.2"/>
+          <path d="M18 116 C60 108 100 124 184 112" data-w="2.2" data-a=".45"/>
+        </g>
+      </svg>
+      <figcaption class="cap">3B: grain catches the tooth, hatching builds</figcaption>
+    </figure>
+    <figure>
+      <svg data-illo viewBox="0 0 200 150" role="img" aria-label="9H construction lines">
+        <g data-pen="9h">
+          <path d="M10 75 L190 75 M100 8 L100 142"/>
+          <circle cx="100" cy="75" r="56"/>
+          <ellipse cx="100" cy="75" rx="56" ry="20"/>
+          <path d="M44 75 L100 19 L156 75 L100 131 Z"/>
+        </g>
+      </svg>
+      <figcaption class="cap">9H: pale, hard and thin; only the tooth shows it</figcaption>
+    </figure>
+  </div>
+
+  <h2>Plate 1 · cup, glass &amp; beans</h2>
+  <div class="spread">
+    <figure>
+      <svg data-illo viewBox="0 0 360 250" role="img" aria-label="Coffee cup on a saucer with a spoon">
+        <g data-pen="9h">
+          <path d="M180 30 L180 246"/>
+          <path d="M62 104 L298 104"/>
+          <path d="M18 192 L342 192"/>
+          <path d="M98 70 L98 176 M262 70 L262 176"/>
+          <path d="M360 104 L330 104 M360 192 L330 192 M345 98 L345 198" data-w=".8"/>
+          <path d="M114 124 C116 150 130 172 154 184"/>
+        </g>
+        <g data-pen="3b">
+          <ellipse data-hatch="25 3.2" cx="180" cy="111" rx="62" ry="10"/>
+          <path data-hatch="62 3" d="M222 112 C246 130 258 148 250 168 C240 184 224 190 206 191 C228 168 232 140 222 112 Z"/>
+          <path data-hatch="20 3.4" d="M205 192 C250 194 278 194 294 190 C290 206 250 216 210 210 Z"/>
+          <path data-hatch="35 4" d="M32 200 C36 222 112 232 180 232 C248 232 324 222 328 200 C300 218 250 226 180 226 C110 226 60 218 32 200 Z"/>
+        </g>
+        <g data-pen="ballpoint">
+          <path d="M28 192 A152 36 0 0 0 332 192"/>
+          <path d="M28 192 A152 36 0 0 1 104 161"/>
+          <path d="M256 161 A152 36 0 0 1 332 192"/>
+          <path d="M30 196 C34 232 120 242 180 242 C240 242 326 232 330 196" data-w=".9"/>
+          <path d="M80 190 A100 21 0 0 0 280 190" data-w=".8"/>
+          <ellipse cx="180" cy="104" rx="82" ry="19"/>
+          <ellipse cx="180" cy="106" rx="73" ry="15" data-w=".7"/>
+          <path d="M150 110 C160 103 177 103 185 110 C191 117 176 119 170 112" data-w=".8"/>
+          <path d="M98 104 C98 158 128 190 180 191 C232 190 262 158 262 104" data-pass="2"/>
+          <path d="M146 190 C150 200 210 200 214 190" data-w=".8"/>
+          <path d="M260 118 C312 110 322 176 244 169"/>
+          <path d="M256 132 C292 128 294 158 249 157" data-w=".8"/>
+          <path d="M252 216 L316 198"/>
+          <path d="M254 222 L316 204" data-w=".8"/>
+          <ellipse cx="326" cy="198" rx="15" ry="6" transform="rotate(-18 326 198)"/>
+        </g>
+      </svg>
+      <figcaption class="cap">Fig. 1 · Cup and saucer, 5.12pm</figcaption>
+    </figure>
+    <figure>
+      <svg data-illo viewBox="0 0 240 330" role="img" aria-label="Tumbler with two straws">
+        <g data-pen="9h">
+          <path d="M120 14 L120 322"/>
+          <path d="M36 70 L204 70"/>
+          <path d="M62 100 C64 160 68 220 72 270"/>
+        </g>
+        <g data-pen="3b">
+          <path data-hatch="78 4.5" d="M52 150 C80 160 160 160 188 150 C186 190 182 240 176 286 C150 300 90 300 64 286 C58 240 54 190 52 150 Z"/>
+          <ellipse data-hatch="8 3" cx="132" cy="304" rx="88" ry="9"/>
+        </g>
+        <g data-pen="ballpoint">
+          <ellipse cx="120" cy="70" rx="74" ry="11"/>
+          <path d="M46 72 C50 150 56 230 64 288" data-pass="2"/>
+          <path d="M194 72 C190 150 184 230 176 288" data-pass="2"/>
+          <path d="M64 288 C78 301 162 301 176 288"/>
+          <path d="M67 279 C82 291 158 291 173 279" data-w=".7"/>
+          <ellipse cx="120" cy="150" rx="68" ry="9" data-w=".8"/>
+          <g data-w=".6">
+            <path d="M84 82 C86 160 90 240 94 294"/>
+            <path d="M102 84 C103 160 105 240 108 297"/>
+            <path d="M138 84 C137 160 135 240 132 297"/>
+            <path d="M156 82 C154 160 150 240 146 294"/>
+          </g>
+          <path d="M126 80 L174 6"/>
+          <path d="M134 82 L182 12"/>
+          <path d="M126 80 L104 170 M134 82 L112 172" data-w=".8"/>
+        </g>
+      </svg>
+      <figcaption class="cap">Fig. 2 · Tumbler, chai</figcaption>
+    </figure>
+  </div>
+  <figure class="beans">
+    <svg data-illo viewBox="0 0 200 90" role="img" aria-label="Three coffee beans">
+      <g data-pen="3b">
+        <path data-hatch="45 3" transform="translate(48 40) rotate(-24)" d="M-24 0 C-10 8 8 -8 24 0 C22 10 10 16 0 16 C-12 16 -22 10 -24 0 Z"/>
+        <path data-hatch="45 3" transform="translate(116 58) rotate(12)" d="M-24 0 C-10 8 8 -8 24 0 C22 10 10 16 0 16 C-12 16 -22 10 -24 0 Z"/>
+        <path data-hatch="45 3" transform="translate(168 24) rotate(-60)" d="M-24 0 C-10 8 8 -8 24 0 C22 10 10 16 0 16 C-12 16 -22 10 -24 0 Z"/>
+      </g>
+      <g data-pen="ballpoint">
+        <g transform="translate(48 40) rotate(-24)"><ellipse rx="26" ry="16"/><path d="M-24 -2 C-10 -10 8 8 24 0" data-w=".8"/></g>
+        <g transform="translate(116 58) rotate(12)"><ellipse rx="26" ry="16"/><path d="M-24 -2 C-10 -10 8 8 24 0" data-w=".8"/></g>
+        <g transform="translate(168 24) rotate(-60)"><ellipse rx="26" ry="16"/><path d="M-24 -2 C-10 -10 8 8 24 0" data-w=".8"/></g>
+      </g>
+    </svg>
+    <figcaption class="cap">Fig. 3 · Choose your beans</figcaption>
+  </figure>
+
+  <h2>Plate 2 · self portrait</h2>
+  <figure style="max-width:26rem">
+    <svg data-illo data-src="../../public/illos/self.svg" viewBox="0 0 560 747" role="img" aria-label="Sketched self portrait: sunglasses, tousled dark hair, short beard, a small smile"></svg>
+    <figcaption class="cap">Fig. 4 · Self portrait</figcaption>
+  </figure>
+</main>
+<button class="surface-toggle" id="tog" type="button" data-surface-toggle>Analog → Digital</button>
+<script type="module">
+const [{ startInk }, { startPaper }, { startIllos }, sm] = await Promise.all([
+  import("../../src/lib/ink-gl.js"), import("../../src/lib/paper-gl.js"), import("../../src/lib/illo-gl.js"), import("../../src/lib/surface-mode.js")]);
+window.sm = sm; sm.restoreSurfaceMode(); sm.bindSurfaceAttributes();
+window.paper = startPaper(); window.ink = startInk(); window.illos = startIllos();
+const tog = document.getElementById("tog");
+sm.onSurface(() => { tog.textContent = sm.getSurfaceMode() === "analog" ? "Analog → Digital" : "Digital → Analog"; });
+</script>
+</body>
+</html>

@@ -60,6 +60,7 @@ const noop = { rebuild() {}, destroy() {} };
  * @property {number} metaScale        meta map resolution relative to css px
  * @property {boolean} [metaNearest]   sample meta without filtering (for angles/ids)
  * @property {boolean} animated        redraw visible tiles at 30fps
+ * @property {boolean} [live]          with animated: false keeps redrawing only while a tile's 3s draw-on settles (default true)
  * @property {"analog" | "digital"} [gate] draw only in this surface mode
  * @property {(root: HTMLElement, host: HTMLElement) => any[]} collect  items need numeric y,h
  * @property {(mx: CanvasRenderingContext2D, tx: CanvasRenderingContext2D) => void} begin  called per tile before painting
@@ -211,8 +212,9 @@ export function createLayer(cfg) {
       for (const [i, tile] of active) if (i >= vlo && i <= vhi && !tile.lost) tile.draw(now);
       lastDraw = now;
     }
-    if (cfg.animated && !reduced.matches && !document.hidden) raf = requestAnimationFrame(loop);
+    if (cfg.animated && !reduced.matches && !document.hidden && (cfg.live !== false || settling(now))) raf = requestAnimationFrame(loop);
   }
+  const settling = (now) => { for (const t of active.values()) if (now - t.start < 3100) return true; return false; };
   const offSurface = onSurface(() => {
     const { vlo, vhi } = wanted(), now = performance.now();
     for (const [i, tile] of active) if (i >= vlo && i <= vhi && !tile.lost) tile.draw(now);
