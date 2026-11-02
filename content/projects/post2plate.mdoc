@@ -9,6 +9,9 @@ client: ""
 url: "https://post2plate.com"
 cover: /images/projects/post2plate/cover.webp
 coverAlt: "A Post2Plate recipe page on desktop: a full-bleed pasta photo under the title Weeknight Pasta, with Save, Remix and Start Cooking actions"
+art: /images/projects/post2plate/art.jpg
+artAlt: "A phone propped on a mint bowl with a recipe card rising out like steam; one chili is orange."
+loop: /videos/projects/post2plate/loop.mp4
 tags:
   - "AI"
   - "Food"
@@ -28,6 +31,8 @@ I did the product, the brand, a FastAPI and Postgres backend, a Next.js front en
 
 ## Same product, flipped in one day
 
+{% Spot src="/images/projects/post2plate/spot-pancake-flip.webp" alt="A pancake mid-flip above a frying pan, a curved charcoal motion line; the pancake is orange-red." side="right" /%}
+
 The first plan was iOS-first and private by default, aimed at blog creators who already earn ad revenue from recipe sites. Success meant a user importing three recipes in a week.
 
 On May 11 the PRD, the roadmap and the design system all got rewritten in one day. The PRD's own words for the old plan: going after blog-ad revenue was "strategically scary and tactically slow." The better opening was to be the first thing a social-first creator owns. That changed three things.
@@ -46,6 +51,8 @@ Handles come from the social account that sent the DM, so a guest's recipes stay
 
 ## A parser that's allowed to say no
 
+{% Spot src="/images/projects/post2plate/spot-colander-catch.webp" alt="A kitchen colander catching one crumpled paper scrap while flat blank cards fall through underneath; the caught scrap is orange-red." side="left" /%}
+
 The 2025 version of this project, which I threw out, returned a hardcoded pasta recipe whenever an import failed, so the demo always "worked." The rewrite bans that kind of fake success in CI.
 
 The parser got the same treatment. In the first calibration run on 10 posts, 100% of imports produced a saveable recipe, but only 40% matched the hand-checked answers. The model was inventing ingredient lists from promotional captions. So I added a hard refusal: no draft unless the post has at least three named ingredients and two ordered steps. The save rate fell to 50%, which meant it was finally measuring something. The hand labels were wrong too. They'd been written from captions alone while the parser also read the audio transcript, so 7 of the 10 "wrong" answers were really labeling mistakes.
@@ -55,6 +62,8 @@ Eight models went through the same 10 posts and four tied at 100%. The cheapest 
 I also dropped OCR on video text overlays. It mattered on 1 of 61 posts and added cost, plus noise from stickers, on every one. With OCR off and a faster hosted Whisper, the production setup ran all 60 posts for 19 cents.
 
 ## Three scores that were wrong
+
+{% Spot src="/images/projects/post2plate/spot-three-scales.webp" alt="Three small kitchen scales in a row, their needles pointing in different directions; one needle is orange-red." side="right" /%}
 
 Around the parser sit about ten small, cheap models, the kind that count word patterns instead of calling an LLM. They handle things like ingredient roles, substitutions, cooking temperatures and step timing. Their labels came from public recipe datasets, from larger LLMs, and from transcripts of people actually cooking.
 

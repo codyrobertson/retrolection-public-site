@@ -9,6 +9,9 @@ client: ""
 url: "https://cyanium-design-system.vercel.app"
 cover: /images/projects/cyanium/cover.webp
 coverAlt: "The Cyanium docs site hero: Production UI for React teams, with a component preview card showing a toggle, a checkbox, segmented buttons and an email field"
+art: /images/projects/cyanium/art.jpg
+artAlt: "A slate chest of drawers spills buttons, toggles and tiny bar charts over a component spec sheet; one toggle is switched on in orange."
+loop: /videos/projects/cyanium/loop.mp4
 tags:
   - "Design system"
   - "Tokens"
@@ -25,6 +28,8 @@ It didn't start from zero. The first commit is "Ships AlignUI tokens." AlignUI i
 
 ## Real data or nothing
 
+{% Spot src="/images/projects/cyanium/spot-real-bars.webp" alt="Bar-chart blocks cut from newspaper columns beside a hollow outline bar crossed out with a charcoal X; only the tallest real bar is orange-red." side="right" /%}
+
 A design system has to look good in a demo, so its screens need plausible numbers. A real app built on it can never show those numbers to a real customer.
 
 The easy way to get both is to let each component fall back to sample data when nobody passes it anything. Demos work instantly. But the same component in production, missing one prop, also shows sample data, and nobody notices. A payroll widget with a made-up total looks exactly like one with a real total.
@@ -36,6 +41,8 @@ Cyanium doesn't allow that. The `ui` package never imports sample data (the repo
 The cost is setup. You can't drop a kit component into a project and see it working. You wire the props first, every time.
 
 ## Primitives in one package, screens in another
+
+{% Spot src="/images/projects/cyanium/spot-two-parcels.webp" alt="Two paper parcels tied with string, one small parcel full of loose circles, squares and triangles, the other a flat parcel of stacked sheets; the string joining them is orange-red." side="left" /%}
 
 The same line runs through the packages. `ui` holds primitives, the buttons and inputs and other small parts. Anything that composes them into a screen lives in `kits`.
 
@@ -56,6 +63,8 @@ The registry at `registry/cyanium.json` is what the install command reads. If it
 On June 19 I set up design sync to claude.ai/design. Storybook is arranged as a gallery, and per-component previews needed the package layout, so the sync follows the packages. Subagents wrote each component's preview.
 
 ## Who did what
+
+{% Spot src="/images/projects/cyanium/spot-passing-block.webp" alt="Two hands, one drawn in loose charcoal outline and one built from geometric paper shapes, passing a single orange-red block between them." side="right" /%}
 
 The repo and the MIT licence are under my name. Commits carry Cursor as co-author, and subagents wrote the previews. The commits don't say which structural calls were mine and which an agent proposed, so this page doesn't split them yet.
 

@@ -9,6 +9,9 @@ url: ''
 date: 2024-12-01
 cover: /images/projects/dmz/cover.webp
 coverAlt: "Four DMZ app screens: a token feed with live market cap, voice chat, the swap screen and discover"
+art: /images/projects/dmz/art.jpg
+artAlt: "A mitten hand fans coin cards over columns of price ticker; one card flicks out in orange."
+loop: /videos/projects/dmz/loop.mp4
 tags:
   - "Crypto"
   - "Mobile"
@@ -34,6 +37,8 @@ The Figma page for the feed has 40 numbered versions of this one screen. The car
 
 ## Bonding as a ladder
 
+{% Spot src="/images/projects/dmz/spot-coin-ladder.webp" alt="A slim wooden ladder leaning into empty space, small coin discs climbing it rung by rung; the top rung is orange-red." side="right" /%}
+
 On launchpads like this, a new token "bonds" when it hits a market-cap goal, and its liquidity moves to a DEX pool. You can't see that happening, so the screen has to draw it.
 
 DMZ draws it as a ladder. Colored pills stack from $20,000 up to $65,000, each with a percentage, and a marker with the live number (89.5% in the comp) sits between them. The label reads "Goal Is Reach $65k". The file has a component called milestone-markers, used 46 times. At 100% a "Bonding Reached!!" modal pops up with one button: migrate the token, 0.001 SOL.
@@ -44,6 +49,8 @@ The ladder costs space. It sits above the chart and pushes the chart down the sc
 
 ## Swap is a sheet
 
+{% Spot src="/images/projects/dmz/spot-coins-under-sheet.webp" alt="Two coins trading places under a draped cloth sheet, curved charcoal arrows showing the swap; one coin is orange-red." side="left" /%}
+
 Tap the purple TRADE button and a sheet slides up over the token, which stays visible, blurred, behind it. You don't leave for a swap page.
 
 The sheet has an amount-in card, an amount-out card, a slider for how much of your stack to use, one fee line and a green SWAP button. It has its own number pad, so the phone keyboard never comes up over the button. Slippage is one setting that says "Auto" (0.3% in the comp). There's no panel of numbers to tune.
@@ -51,6 +58,8 @@ The sheet has an amount-in card, an amount-out card, a slider for how much of yo
 On these screens, purple opens the sheet and green spends the money. Everything else is dark, with a purple glow and the chart grid drawn in perspective behind the price line.
 
 ## Voice under the chart
+
+{% Spot src="/images/projects/dmz/spot-voice-wave.webp" alt="A jagged charcoal line chart on torn paper with a sound wave rippling underneath it like water; the sound wave is orange-red." side="right" /%}
 
 The site sold DMZ as social: follow friends and top traders, quests, leaderboards, voice rooms on each token. The voice room docks right under the chart instead of getting its own screen. It shows how many people are speaking, an avatar stack, a waveform, and raise-hand and speaker buttons. You can listen and watch the price at the same time.
 

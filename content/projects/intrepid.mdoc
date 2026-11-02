@@ -6,6 +6,9 @@ status: hobby
 date: 2026-08-28
 cover: /images/projects/intrepid/cover.webp
 coverAlt: "Intrepid showing a Master Services Agreement drafted by Qwen3-8B: a document list on the left, the contract in the middle with a tick rail, and a panel on the right listing what a check looks for"
+art: /images/projects/intrepid/art.jpg
+artAlt: "A slate desk lamp casts a mint light cone over a numbered contract; a pen traces its pencil ghost and one clause is struck through in orange."
+loop: /videos/projects/intrepid/loop.mp4
 role: "Solo"
 client: ""
 url: "https://intrepid-pied.vercel.app"
@@ -26,11 +29,15 @@ I built it solo in three days, August 28 to 30, 2026, directing a set of AI agen
 
 ## I dropped the hallucination checker
 
+{% Spot src="/images/projects/intrepid/spot-unplugged-alarm.webp" alt="A small bell alarm clock lying on its side, its cord cut; the cut cord end is orange-red." side="right" /%}
+
 The first brief was a pitch demo: the draft looks flawless, and Intrepid catches the hallucination anyway. A few hours in, I changed it. Plenty of vendors already ship hallucination checkers, and a checker hands a lawyer a red flag and nothing to do with it. A lot of legal drafting can't be verified either way. My note at the time: "The question is not is the ai right or wrong. In law, many of the times this is not verifiable. Its what is the ai thinking, how did it get there."
 
 So the product became showing the process. I tried a Marey train-schedule chart, ten interaction models and a sidebar rail. It got convoluted fast, and I cut it down to one component that had to get the effect right.
 
 ## No play button
+
+{% Spot src="/images/projects/intrepid/spot-paper-footprints.webp" alt="A trail of torn-paper footprints crossing the page one step at a time; one footprint where it paused is orange-red." side="left" /%}
 
 That component is a scrub rail. You hover, drag or click along the timeline, and the document shows the run at that point. An earlier version had play and pause and replayed at the recorded pace. I took the transport out, because a lawyer reading a transcript isn't watching a film.
 
@@ -39,6 +46,8 @@ The words got the same treatment. A test fails the build if the generated copy s
 {% Figure src="/images/projects/intrepid/selection-menu.webp" alt="Clause 3.1 selected in the measured run, with a menu offering Watch it being written, What else it could have been and See into the activations, and a timeline on the right describing each step in plain words" caption="Select a clause and the menu offers the run behind it. The right panel describes each step in plain words: which two words were live and at what odds, with no lab vocabulary." width="wide" frame="browser" /%}
 
 ## The real numbers came out smaller
+
+{% Spot src="/images/projects/intrepid/spot-shrunk-balloon.webp" alt="A large deflated paper balloon lying beside a pin, and a small inflated balloon floating next to it; the small balloon is orange-red." side="right" /%}
 
 The first version ran on hand-written sample data, and every finding in it read clean. I didn't trust that. The rule the project ended up with is that the interface never claims anything the data can't back. If a skeptical ML person asks "how do you know that?", the answer has to be a measurement. An audit of every on-screen claim marked two as unsupported: anything about what the model "intended" or "believed", and the model's raw word probabilities shown as "confidence". Both came out.
 

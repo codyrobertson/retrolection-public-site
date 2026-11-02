@@ -9,6 +9,9 @@ client: "Sedona"
 url: "https://sedona.fun"
 cover: /images/projects/sedona/cover.webp
 coverAlt: "AeroDash component board for trading widgets: a BTC/USDT price ticker, an order entry form, an order book and wallet, position and portfolio cards with hard ink borders and cyan accents"
+art: /images/projects/sedona/art.jpg
+artAlt: "Slate buttes and an oval track around a locked vault, with blob runners racing over a leaderboard; the leader is orange."
+loop: /videos/projects/sedona/loop.mp4
 tags:
   - "AI"
   - "Solana"
@@ -27,6 +30,8 @@ I was creative director and design engineer. I did the brand, the website, the f
 The front end ended up with two design systems: a warm orange one from January, and a dense chrome one for the trading screens that the build checks before a PR lands. I kept the old one instead of deleting it.
 
 ## Zeus, in ten days
+
+{% Spot src="/images/projects/sedona/spot-cloud-bolt.webp" alt="A small naive cloud gripping a single lightning bolt; the bolt is orange-red." side="right" /%}
 
 The kit's first release was July 14, 2025. Then the repo sat quiet for five and a half months. Between January 3 and January 12, 2026 there are 120 commits, 68 of them on January 6: the landing page, SEO, trading components, a swap widget with tests, and a component registry.
 
@@ -52,6 +57,8 @@ AeroDash is also checked by the build. `manifest.ts` is the inventory, `index.ts
 
 ## The risograph plugin
 
+{% Spot src="/images/projects/sedona/spot-riso-roller.webp" alt="Two overlapping paper circles printed slightly off-register, an ink roller resting beside them; the roller is orange-red." side="left" /%}
+
 I wanted charts that look printed, so I had a risograph halftone effect built as a Chart.js plugin. The first version was broken in several places: animation stalled and jumped, the riso line didn't animate at all, and half-wired grid and text drawing broke Chart.js rendering.
 
 The March 17 rewrite plan split it into two lists. Keep the AM halftone tone lookup, the cached paper texture, multiply compositing and 20 performance optimizations. Rebuild everything else from scratch, with one global `printHeadX` driving all of the animation.
@@ -59,6 +66,8 @@ The March 17 rewrite plan split it into two lists. Keep the AM halftone tone loo
 {% Gallery images=[{src: "/images/projects/sedona/riso-early.webp", alt: "Risograph line chart test capture: blue halftone fill under a very faint line, with the config panel on the right"}, {src: "/images/projects/sedona/riso-v2-working.webp", alt: "The v2-working capture of the same chart: halftone fill under a solid printed blue line, config panel on the right"}] columns="2" caption="Test captures from the repo, dummy data. Left: an earlier run where the line barely prints. Right: the v2-working capture after the rewrite." /%}
 
 ## The pitch deck
+
+{% Spot src="/images/projects/sedona/spot-sticky-note-deck.webp" alt="A tall stack of paper slides with one small sticky note on top marked with a charcoal arrow; the sticky note is orange-red." side="right" /%}
 
 In August 2026 I redesigned Sedona's pitch deck, with agents doing the production. The deck is investor material, so none of its content is here, only the direction.
 

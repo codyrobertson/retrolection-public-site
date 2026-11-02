@@ -1,3 +1,6 @@
+import { cacheLife } from "next/cache";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import Markdoc, { type RenderableTreeNode } from "@markdoc/markdoc";
 import React from "react";
 import { getExperiment } from "@/lib/content";
@@ -36,11 +39,21 @@ const components = {
       </aside>
     );
   },
-  Figure({ src, alt, caption, width, frame }: { src: string; alt: string; caption?: string; width: string; frame?: Frame }) {
+  async Figure({ src, alt, caption, width, frame }: { src: string; alt: string; caption?: string; width: string; frame?: Frame }) {
+    const chart = src.endsWith(".svg") && src.startsWith("/") ? await inlineIllo(src, alt) : null;
     return (
       <figure className={styles[width] ?? styles.wide}>
-        <Framed src={src} alt={alt} frame={frame} />
+        {chart ? <div className={styles.chart} dangerouslySetInnerHTML={{ __html: chart }} /> : <Framed src={src} alt={alt} frame={frame} />}
         {caption && <figcaption>{caption}</figcaption>}
+      </figure>
+    );
+  },
+  Spot({ src, alt, side = "right" }: { src: string; alt: string; side?: string }) {
+    // floats beside the section's text; the text wraps the cut-out's silhouette (its alpha), not its box
+    return (
+      <figure className={styles.spot} data-spot data-side={side === "left" ? "left" : "right"} style={{ shapeOutside: `url(${src})` }}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- CMS images have unknown dimensions */}
+        <img src={src} alt={alt} />
       </figure>
     );
   },
@@ -80,6 +93,22 @@ const components = {
   },
 };
 
+/** Local SVG charts go inline as `data-illo` so the pencil and marker shaders draw them (see illo-gl.js).
+    Cached: the file read is I/O, and the page must prerender. */
+async function inlineIllo(src: string, alt: string) {
+  "use cache";
+  cacheLife("max");
+  try {
+    const svg = await readFile(path.join(process.cwd(), "public", src), "utf8");
+    const label = alt.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    return svg
+      .replace(/<\?xml[^>]*>\s*/, "")
+      .replace(/<svg\b([^>]*)>/, (_, a: string) => `<svg${a.replace(/\s(width|height)="[^"]*"/g, "")} data-illo role="img" aria-label="${label}">`);
+  } catch {
+    return null;
+  }
+}
+
 type Frame = "none" | "browser" | "phone";
 
 function Framed({ src, alt, frame = "none" }: { src: string; alt: string; frame?: Frame }) {
@@ -102,6 +131,8 @@ function toVideoEmbed(src: string) {
   return null;
 }
 
-export function MarkdocContent({ tree }: { tree: RenderableTreeNode }) {
-  return <div className={styles.prose}>{Markdoc.renderers.react(tree, React, { components })}</div>;
+/** `story` sets the body as a feature: a narrower serif column, a drop cap, ruled charts and captions. */
+export function MarkdocContent({ tree, variant }: { tree: RenderableTreeNode; variant?: "story" }) {
+  const cls = variant === "story" ? `${styles.prose} ${styles.story}` : styles.prose;
+  return <div className={cls}>{Markdoc.renderers.react(tree, React, { components })}</div>;
 }
