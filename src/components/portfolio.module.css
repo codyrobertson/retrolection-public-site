@@ -1,0 +1,135 @@
+/* After the ledger: the portfolio, on a dotted surface that goes on every way (PortfolioCanvas).
+   Prints are placed in column widths (--x, --y, --h); --cw is a column in px, so the one
+   layout serves every window. */
+.section {
+  position: relative;
+  padding: clamp(40px, 7vh, 88px) 0 0;
+  scroll-margin-top: var(--masthead);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2ch;
+  width: min(var(--sheet, 760px), calc(100% - 2 * var(--gutter)));
+  margin: 0 auto clamp(20px, 3vh, 32px);
+}
+.title {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(30px, 5vw, 52px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.out {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink-2);
+  text-decoration: none;
+  padding: 6px 0;
+  background: linear-gradient(currentColor, currentColor) no-repeat 0 100% / 0 1px;
+  transition: color 0.2s ease, background-size 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.out:hover { color: var(--ink); background-size: 100% 1px; }
+.out:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 3px; }
+
+.view {
+  --cw: 250px;
+  --gap: calc(var(--cw) * 0.08);
+  position: relative;
+  height: clamp(460px, 78svh, 860px);
+  overflow: hidden;
+  background: var(--paper-deep);
+  border-block: 1px solid var(--rule);
+  cursor: grab;
+  touch-action: pan-y;               /* a finger sideways moves the canvas; up and down, the page */
+  user-select: none;
+  -webkit-user-select: none;
+  /* the edges go soft, so the surface reads as going on past them */
+  mask-image:
+    linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent),
+    linear-gradient(transparent, #000 8%, #000 92%, transparent);
+  mask-composite: intersect;
+}
+.view[data-dragging="true"] { cursor: grabbing; }
+.view:focus-visible { outline: 2px solid var(--vermilion); outline-offset: -2px; }
+
+.dots {
+  position: absolute;
+  inset: -22px;
+  background-image: radial-gradient(circle at 11px 11px, var(--ink-3) 1px, transparent 1.6px);
+  background-size: 22px 22px;
+  opacity: 0.45;
+  will-change: transform;
+}
+
+.plane {
+  position: absolute;
+  inset: 0 auto auto 0;
+  will-change: transform;
+}
+
+.print {
+  position: absolute;
+  left: calc(var(--x) * var(--cw));
+  top: calc(var(--y) * var(--cw));
+  width: var(--cw);
+  height: calc(var(--h) * var(--cw));
+  border-radius: 6px;
+  outline-offset: 3px;
+  -webkit-user-drag: none;
+}
+.print img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  border-radius: inherit;
+  background: var(--paper);
+  box-shadow: 0 0 0 1px var(--rule), 0 10px 24px -14px rgb(0 0 0 / 0.35);
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s ease;
+  pointer-events: none;
+}
+.print[data-own="true"] img { box-shadow: 0 0 0 1px var(--ink-3), 0 12px 28px -14px rgb(0 0 0 / 0.45); }
+.print:focus-visible { outline: 2px solid var(--vermilion); }
+
+/* its name, under it, when pointed at */
+.tip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  overflow: hidden;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--ink-2);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .view:not([data-dragging="true"]) .print:hover img { transform: translateY(-3px); box-shadow: 0 0 0 1px var(--ink-3), 0 18px 34px -14px rgb(0 0 0 / 0.45); }
+  .view:not([data-dragging="true"]) .print:hover .tip { opacity: 1; }
+}
+.print:focus-visible .tip { opacity: 1; }
+
+@media (max-width: 640px) {
+  .view { --cw: 168px; height: clamp(420px, 70svh, 640px); }
+}
+
+/* without scripts: the tile as it lies, from its corner */
+@media (scripting: none) {
+  .view { cursor: default; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .print img, .tip { transition: none; }
+}

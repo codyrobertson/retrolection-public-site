@@ -30,6 +30,8 @@ html:root [data-inked] * {
 }
 html:root [data-inked] [data-ink-off],
 html:root [data-inked] [data-ink-off] *,
+html:root [data-inked] [data-ink-skip],
+html:root [data-inked] [data-ink-skip] *,
 html:root [data-inked] input,
 html:root [data-inked] textarea,
 html:root [data-inked] select {

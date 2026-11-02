@@ -852,17 +852,17 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     if (q > 0 && PLAYING.has(M.phase)) M.go("exit", "the sheet's foot past the platen");
     // the lights: down as the board nears the foot of the window, and up as soon as the scroll
     // turns back for it (the scroll's place, not the board's, which trails it)
-    // The lights are the hands': as they pull the board down, night comes down the window after
-    // it (night.js, a front every GL layer and the stock turn their pixels at), all the way down
-    // as the board is gone; only then does the page's theme change, with nothing left in the
-    // light to show it. Brought back up, the front goes back up with it, and the theme is day's
-    // again once the board is in place.
+    // The lights are the hands': the board's top edge is the mask. As they pull it down, night is
+    // everything above that edge (night.js, a front every GL layer and the stock turn their pixels
+    // at), so the dark comes down the window exactly as fast as the board does; once it is gone,
+    // the page's theme changes, with nothing left in the light to show it. Brought back up, the
+    // front goes back up with it, and the theme is day's again once the board is in place.
     board(still ? past > 0 : q > 0.55);
     if (still || page.day) lights(!page.day && past > 0 ? "dark" : "light", still);
     // (no fade when it does: what the GL layers draw has already turned)
     else if (q >= 1) lights("dark", true);
     else if (q <= 0) lights("light", true);
-    else setNight(q * Math.max(winH() + 60, page.platenY + drop));
+    else setNight(page.platenY + drop);
     painted();
     Lv.open = M.phase === "idle" || M.phase === "live";
 

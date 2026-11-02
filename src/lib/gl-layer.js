@@ -358,8 +358,10 @@ export function createLayer(cfg) {
   const inHost = (n) => (n instanceof Element ? n : n.parentElement)?.closest(ignore);
   const mo = new MutationObserver((m) => { if (m.some((r) => !inHost(r.target))) scheduleBuild(); });
   // what is read at a rebuild (an opacity, a colour) can still be on its way: look again when it lands
-  const landed = (e) => { if (!inHost(e.target) && /opacity|color/.test(e.propertyName)) scheduleBuild(); };
+  // (a transition's opacity or colour, or a keyframe entrance: a button fading in as it renders)
+  const landed = (e) => { if (!inHost(e.target) && (e.type === "animationend" || /opacity|color/.test(e.propertyName))) scheduleBuild(); };
   root.addEventListener("transitionend", landed);
+  root.addEventListener("animationend", landed);
   mo.observe(root, { childList: true, subtree: true, characterData: true, ...(cfg.attributes ? { attributes: true, attributeFilter: cfg.attributes } : {}) });
   const scheme = matchMedia("(prefers-color-scheme: dark)"); scheme.addEventListener("change", scheduleBuild);
   const themeMo = new MutationObserver(scheduleBuild); themeMo.observe(docEl, { attributes: true, attributeFilter: ["data-theme", "data-theme-moving"] });   // and again once the fade has landed
@@ -371,7 +373,7 @@ export function createLayer(cfg) {
     destroy() {
       alive = false; cancelAnimationFrame(raf); clearTimeout(timer); cancelAnimationFrame(tickF); clearTimeout(tickT); offSurface(); offNight();
       removeEventListener("scroll", onScroll); ro.disconnect(); mo.disconnect(); themeMo.disconnect();
-      root.removeEventListener("transitionend", landed);
+      root.removeEventListener("transitionend", landed); root.removeEventListener("animationend", landed);
       scheme.removeEventListener("change", scheduleBuild); document.fonts?.removeEventListener("loadingdone", scheduleBuild);
       document.removeEventListener("visibilitychange", kick);
       host.querySelectorAll("canvas").forEach((c) => /** @type {WebGLRenderingContext} */ (c.getContext("webgl"))?.getExtension("WEBGL_lose_context")?.loseContext());

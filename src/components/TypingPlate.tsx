@@ -10,7 +10,7 @@ import { HERO, linesOf, shortcodeOf, stampOf } from "@/lib/typing/text";
 import AsciiBox from "./AsciiBox";
 import { BOARD_EVENT, TYPE_EVENT } from "./SiteNav";
 import TunePanel, { loadTuned, type Metric, type Params } from "./TunePanel";
-import WorkIndex, { FULL, NUM, type WorkItem } from "./WorkIndex";
+import WorkIndex, { FULL, type WorkItem } from "./WorkIndex";
 import styles from "./typing.module.css";
 
 // Plate 01. Nothing here is pre-rendered: the hands are solved and drawn in workers while the
@@ -127,11 +127,11 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
       {
         phase: setPhase,
         typed: setTyped,
-        row: (id, n) => setRows((m) => { const v = n === null ? FULL : NUM + n; return m[id] === v ? m : { ...m, [id]: v }; }),
+        row: (id, n) => setRows((m) => { const v = n === null ? FULL : n; return m[id] === v ? m : { ...m, [id]: v }; }),
         cur: setCur,
         said: setSaid,
         board: (away) => window.dispatchEvent(new CustomEvent(BOARD_EVENT, { detail: away })),
-        title: (id) => (scene.querySelector<HTMLElement>(`[data-row="${id}"]`)?.dataset.label ?? "").slice(NUM),
+        title: (id) => (scene.querySelector<HTMLElement>(`[data-row="${id}"]`)?.dataset.label ?? ""),
         busy: setBusy,
         x: setX,
         configured: (pool, t) => {

@@ -26,17 +26,18 @@ export const nightIn = (top) => Math.max(-1e6, Math.min(1e6, night.y - top));
  * Injected into a composite shader: lights(rgb, y) is the colour as it should look at css px y
  * of the canvas, given uNightY (the front, in the same px) and uDark (1 if the canvas was drawn in
  * the night's colours). Turning is the theme's own mapping, fitted to its tokens: the stock and the
- * ink trade lightness (L' = .998 - .977 L), greys keep the little warmth each theme gives them
- * (chroma goes with lightness), and a colour (the vermilion) keeps its own.
+ * ink trade lightness (L' = .998 - .977 L), a grey takes the warmth both themes give their greys
+ * (whatever tint it had, as the ballpoint's blue-black, is dropped, never blown up into a pale
+ * blue), and a colour (the vermilion) keeps its own.
  */
 export const NIGHT = `uniform float uNightY,uDark;
 vec3 turnTo(vec3 c,float toNight){
   float L=dot(c,vec3(.299,.587,.114)); vec3 ch=c-L;
   float L2=toNight>.5?.998-.977*L:(.998-L)/.977;
   float sat=smoothstep(.05,.2,length(ch));
-  return clamp(L2+ch*mix(clamp(L2/max(L,.04),.2,6.),1.,sat),0.,1.);}
+  return clamp(L2+mix(vec3(.016,-.001,-.045)*L2,ch,sat),0.,1.);}
 vec3 lights(vec3 c,float y){
-  float want=1.-smoothstep(uNightY-56.,uNightY,y);           // a soft edge, the width of a line of type
+  float want=1.-smoothstep(uNightY-1.5,uNightY,y);           // the board's top edge, hard: it is the mask
   float k=abs(want-uDark);
   return k<.002?c:mix(c,turnTo(c,1.-uDark),k);}
 `;

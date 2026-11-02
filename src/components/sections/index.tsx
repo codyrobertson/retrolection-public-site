@@ -43,7 +43,6 @@ const renderers: { [K in Section["discriminant"]]: (props: { value: ValueOf<K> }
   hero({ value }) {
     return (
       <div className={styles.hero}>
-        {value.eyebrow && <p className={styles.eyebrow}>{value.eyebrow}</p>}
         <h1 className={styles.heroHeading}>{value.heading}</h1>
         {value.subheading && <p className={styles.lede}>{value.subheading}</p>}
         {value.links.length > 0 && (

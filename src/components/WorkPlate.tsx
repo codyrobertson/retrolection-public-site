@@ -1,7 +1,7 @@
 import type { Discipline, ProjectStatus } from "@/lib/content";
-import { disciplineLabel, statusLabel } from "@/lib/taxonomy";
 import { ART_BOX, tileArt } from "@/lib/tileArt";
-import type { WorkItem } from "./WorkIndex";
+import shotsBySlug from "@/lib/project-shots.json";
+import type { Shot, WorkItem } from "./WorkIndex";
 import styles from "./work.module.css";
 
 export type WorkRow = {
@@ -15,20 +15,25 @@ export type WorkRow = {
   featured?: boolean;
 };
 
+const SHOTS = shotsBySlug as Record<string, Shot[]>;
+
+/** the summary's first clause: what it is, without the how */
+const oneLiner = (s?: string | null) => (s ?? "").split(/:\s|\s—\s/)[0].replace(/\.$/, "").trim();
+
 /**
- * Plate 02, the work, as lines of the hero's sheet (WorkIndex, typed by TypingPlate): made
- * here, on the server, so each line's mark (its abstract drawing in the plates' graphite) is
- * drawn once, as markup, and never shipped as code.
+ * The work, as lines of the hero's sheet (WorkIndex, typed by TypingPlate): made here, on the
+ * server, so each line's pictures (or, with none, its abstract drawing in the plates' graphite)
+ * are markup, never shipped as code.
  */
 export function workItems(projects: WorkRow[]): WorkItem[] {
-  return projects.map((p, i) => ({
+  return projects.map((p) => ({
     slug: p.slug,
-    label: `${String(i + 1).padStart(2, "0")}  ${p.title}`,
+    label: p.title,
     title: p.title,
-    meta: [disciplineLabel[p.discipline], p.role?.trim()].filter(Boolean).join(" · "),
-    status: statusLabel[p.status],
-    active: p.status === "active",
+    line: oneLiner(p.summary),
+    role: p.role?.trim() || "",
     discipline: p.discipline,
+    shots: (SHOTS[p.slug] ?? []).slice(0, 3),
     art: <Mark slug={p.slug} discipline={p.discipline} active={p.status === "active"} />,
   }));
 }

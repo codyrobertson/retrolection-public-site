@@ -1,11 +1,11 @@
-/* Plate 02: the work, as lines of the hero's sheet (WorkIndex), inside the hero's box and in
-   its type. Each line is typed as it comes up past the platen: its number in the box's mono,
-   its name in the heading's face, then its details, its status, and its mark (the project's
-   abstract drawing in the plates' graphite) as its last letter goes down. The box is the
+/* The work, as lines of the hero's sheet (WorkIndex), inside the hero's box and in its type.
+   Each line is typed as it comes up past the platen: its name in the heading's face, then
+   what it is, the role, and the product's pictures (or with none, its abstract drawing in the
+   plates' graphite) as its last letter goes down. The box is the
    container: lines are laid out by how wide it stands, not the window. */
 .index {
   padding-top: 1.2em;
-  /* arriving here (#work) puts the label just under the masthead, the board up under the first lines */
+  /* arriving here (#work) puts the tabs just under the masthead, the board up under the first lines */
   scroll-margin-top: 84px;
 }
 
@@ -18,44 +18,31 @@
   white-space: nowrap;
 }
 
-.label {
-  display: flex;
-  justify-content: space-between;
-  margin: 0 0 0.6em;
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  color: var(--ink-3);
-}
-
-/* ---- tabs: bracketed when chosen, as a shortcode is ---------------------------------- */
+/* ---- tabs: pills, the chosen one filled ------------------------------------------------ */
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px 4px;
-  margin: 0 -1ch 0.6em;
-  font-size: 13px;
+  gap: 8px;
+  margin: 0 0 1em;
 }
 .tab {
   appearance: none;
   display: inline-flex;
-  align-items: baseline;
-  gap: 1ch;
-  padding: 6px 1ch;
-  border: 0;
+  align-items: center;
+  height: 34px;
+  padding: 0 15px;
+  border: 1px solid rgb(26 25 23 / 0.2);
+  border-radius: 999px;
   background: none;
-  font: inherit;
-  color: var(--ink-3);
+  font-family: var(--sans);
+  font-size: 13.5px;
+  color: var(--ink-2);
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
-.tab::before, .tab::after { color: var(--vermilion); opacity: 0; transition: opacity 0.2s ease; }
-.tab::before { content: "[" / ""; margin-right: -0.4ch; }
-.tab::after { content: "]" / ""; margin-left: -0.4ch; }
-.tab:hover { color: var(--ink); }
-.tab[aria-pressed="true"] { color: var(--ink); }
-.tab[aria-pressed="true"]::before, .tab[aria-pressed="true"]::after { opacity: 1; }
+.tab:hover { border-color: var(--ink); color: var(--ink); }
+.tab[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .tab:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 2px; }
-.count { font-size: 11px; color: var(--ink-3); }
 
 /* the rest of the work, on its own page */
 .more { margin: 1.1em 0 0; font-size: 12px; letter-spacing: 0.02em; }
@@ -73,12 +60,12 @@
 
 .row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto 132px;
-  grid-template-areas: "name meta status mark";
+  grid-template-columns: minmax(0, 1fr) minmax(0, 16ch) 220px;
+  grid-template-areas: "name role pics";
   align-items: center;
-  gap: 0 2.5ch;
-  min-height: 96px;
-  padding: 10px 0;
+  gap: 0 3ch;
+  min-height: 132px;
+  padding: 14px 0;
   border-bottom: 1px dashed var(--rule);
   color: var(--ink);
   text-decoration: none;
@@ -87,11 +74,12 @@
 }
 .row:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 2px; }
 
+/* the name, typed; under it, what it is */
+.name { grid-area: name; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 /* a long name breaks onto a second line rather than being cut: the ink draws every letter */
-.typed { grid-area: name; min-width: 0; white-space: pre-wrap; text-wrap: balance; line-height: 1.12; }
-.num, .ch { opacity: 0; }
-.num[data-on="true"], .ch[data-on="true"] { opacity: 1; }
-.num { font-size: 12px; color: var(--ink-3); }
+.typed { white-space: pre-wrap; text-wrap: balance; line-height: 1.12; }
+.ch { opacity: 0; }
+.ch[data-on="true"] { opacity: 1; }
 .ch {
   font-family: var(--sans);
   font-weight: 600;
@@ -112,37 +100,64 @@
 }
 @keyframes blink { 50% { opacity: 0; } }
 
-/* what comes with a line when its last letter goes down (or with it, pasted): lit for a
-   moment, as the pasted bio is */
-.meta, .status, .thumb { opacity: 0; transition: opacity 0.3s ease; }
-.row[data-state="done"] .meta, .row[data-state="done"] .status, .row[data-state="done"] .thumb { opacity: 1; }
-.row[data-state="done"] .meta { animation: pasted 1.1s ease-out; }
+/* what comes with a line when its last letter goes down (or with it, pasted) */
+.line, .role, .thumb { opacity: 0; transition: opacity 0.3s ease; }
+.row[data-state="done"] .line, .row[data-state="done"] .role, .row[data-state="done"] .thumb { opacity: 1; }
+.row[data-state="done"] .line { animation: pasted 1.1s ease-out; }
 @keyframes pasted { from { background: rgb(212 70 42 / 0.18); } to { background: rgb(212 70 42 / 0); } }
 
-.meta { grid-area: meta; max-width: 30ch; font-size: 12px; line-height: 1.45; color: var(--ink-2); text-align: right; text-wrap: balance; }
-.status { grid-area: status; font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
-.status::before {
-  content: "";
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin-right: 0.8ch;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  vertical-align: 1px;
-}
-.row[data-active="true"] .status::before { background: var(--vermilion); border-color: var(--vermilion); }
+.line { max-width: 52ch; font-family: var(--serif, inherit); font-size: 14.5px; line-height: 1.45; color: var(--ink-2); text-wrap: pretty; }
+.role { grid-area: role; font-family: var(--sans); font-size: 13px; line-height: 1.45; color: var(--ink-2); text-wrap: balance; }
 
-/* the mark, in a little box of its own, its corners the box's */
-.thumb {
-  grid-area: mark;
-  position: relative;
-  aspect-ratio: 4 / 3;
-  border: 1px dashed var(--rule);
+/* the pictures, filed in a folder */
+.thumb { grid-area: pics; position: relative; aspect-ratio: 16 / 11; }
+
+/* the folder, in the hero's pencil (scripts/folder-art.mjs): its back with the tab, the pictures
+   standing in it, the front over their feet; each part the paper under it and the graphite on it,
+   tinted from the theme. Pointed at, the pictures come up out of it and the front leans away */
+.folder { --ease: cubic-bezier(0.2, 0.8, 0.2, 1); position: absolute; inset: 0; perspective: 700px; }
+.back, .front, .paper, .ink { position: absolute; inset: 0; }
+.paper, .ink { -webkit-mask: var(--m) 0 0 / 100% 100% no-repeat; mask: var(--m) 0 0 / 100% 100% no-repeat; }
+.ink { background: var(--ink); }
+.back .paper { --m: url(/folder/back-paper.webp); background: color-mix(in srgb, var(--ink) 7%, var(--paper)); }
+.back .ink { --m: url(/folder/back.webp); }
+.front .paper { --m: url(/folder/front-paper.webp); background: var(--paper); }
+.front .ink { --m: url(/folder/front.webp); }
+.front { transform-origin: 50% 100%; transition: transform 0.5s var(--ease); }
+.row:hover .front { transform: rotateX(-16deg); }
+
+.collage { position: absolute; inset: 15% 7% 4%; }
+.print {
+  position: absolute;
+  display: block;
+  object-fit: cover;
+  object-position: top;
+  background: var(--paper);
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgb(26 25 23 / 0.12), 0 4px 12px -4px rgb(26 25 23 / 0.25);
+  transition: transform 0.5s var(--ease);
 }
-.thumb::before, .thumb::after { content: "+"; position: absolute; z-index: 1; font-size: 11px; line-height: 1; color: var(--ink-3); }
-.thumb::before { top: -6px; left: -3px; }
-.thumb::after { right: -3px; bottom: -6px; }
+.print[data-kind="desktop"] { width: 90%; aspect-ratio: 16 / 10; height: auto; }
+.print[data-i="0"] { left: 0; top: 0; transform: rotate(-1.5deg); }
+.print[data-i="1"] { right: 0; top: 10%; transform: rotate(1.5deg); }
+.print[data-kind="phone"] { right: 3%; left: auto; top: 16%; width: 24%; aspect-ratio: 9 / 19; height: auto; border-radius: 6px; transform: rotate(3deg); }
+.collage[data-n="1"] .print[data-i="0"] { left: 5%; }
+.row:hover .print[data-i="0"] { transform: translate(-4%, -16%) rotate(-4deg); }
+.row:hover .print[data-i="1"] { transform: translate(3%, -12%) rotate(3deg); }
+.row:hover .print[data-kind="phone"] { transform: translate(10%, -14%) rotate(7deg); }
+/* with no pictures, the mark on a sheet of its own */
+.sheet {
+  position: absolute;
+  inset: 0 3% 0;
+  overflow: hidden;
+  background: var(--paper);
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgb(26 25 23 / 0.12);
+  transition: transform 0.5s var(--ease);
+}
+.row:hover .sheet { transform: translateY(-12%); }
+
+
 
 /* the mark: ink strokes that draw themselves in the first time the line is done, and again
    when it is pointed at (lib/pen writes each stroke's offset as it goes); the tone laid in under
@@ -171,37 +186,36 @@
 
 ::view-transition-group(*) { animation-duration: 0.45s; animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
 
-/* a wide box: bigger marks */
+/* a wide box: bigger pictures */
 @container (min-width: 900px) {
-  .row { grid-template-columns: minmax(0, 1fr) auto auto 168px; min-height: 120px; }
+  .row { grid-template-columns: minmax(0, 1fr) minmax(0, 18ch) 260px; min-height: 156px; }
 }
-/* a narrow one: the details go under the name, the mark stays at the end */
+/* a narrow one: the role goes under the name, the pictures stay at the end */
 @container (max-width: 620px) {
   .row {
-    grid-template-columns: minmax(0, 1fr) 92px;
-    grid-template-areas: "name mark" "meta mark" "status mark";
-    gap: 2px 2ch;
+    grid-template-columns: minmax(0, 1fr) 128px;
+    grid-template-areas: "name pics" "role pics";
+    gap: 6px 2ch;
     min-height: 0;
-    padding: 12px 0;
+    padding: 14px 0;
   }
-  .meta { max-width: none; text-align: left; }
+  .line { font-size: 13.5px; }
 }
 @container (max-width: 380px) {
-  .row { grid-template-columns: minmax(0, 1fr) 68px; }
-  .meta { display: none; }
+  .row { grid-template-columns: minmax(0, 1fr) 96px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .stroke, .accent { stroke-dashoffset: 0; }
   .tone { transition: none; opacity: 1; }
-  .meta, .status, .thumb, .art { transition: none; }
-  .row[data-state="done"] .meta { animation: none; }
+  .line, .role, .thumb, .art, .print, .sheet, .front { transition: none; }
+  .row[data-state="done"] .line { animation: none; }
   .caret { animation: none; }
 }
 
 /* without scripts nothing comes up past the platen: the lines and their marks are simply there */
 @media (scripting: none) {
-  .num, .ch, .meta, .status, .thumb { opacity: 1; }
+  .ch, .line, .role, .thumb { opacity: 1; }
   .stroke, .accent { stroke-dashoffset: 0; }
   .tone { opacity: 1; }
 }

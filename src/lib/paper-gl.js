@@ -107,7 +107,7 @@ void main(){
     o=o+w*(1.-o.a);
   }
   // the lights' front (night.js): on its far side the stock is the other theme's, drawn whole over the body's
-  float want=1.-smoothstep(uNightY-56.,uNightY,cp.y), k=abs(want-uDark);
+  float want=1.-smoothstep(uNightY-1.5,uNightY,cp.y), k=abs(want-uDark);
   if(k>.002) o=mix(o,vec4(turnTo(o.rgb+bg*(1.-o.a),1.-uDark),1.),k);
   gl_FragColor=o;
 }`;
