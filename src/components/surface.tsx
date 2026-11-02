@@ -6,7 +6,7 @@ type Layer = { destroy: () => void };
 type Mode = "analog" | "digital";
 
 /**
- * Starts the WebGL paper, marker, ink and frame layers after first paint. The mode lives in the DOM:
+ * Starts the WebGL paper, marker, ink, frame, illustration and pulp-print image layers after first paint. The mode lives in the DOM:
  * `<html data-surface="analog|digital">`, or any element with `data-surface-toggle`. The button below is just one such element.
  */
 export function Surface() {
@@ -18,14 +18,14 @@ export function Surface() {
     let unbind = () => {};
     let unsync = () => {};
     const start = () =>
-      Promise.all([import("@/lib/surface-mode"), import("@/lib/paper-gl"), import("@/lib/marker-gl"), import("@/lib/ink-gl"), import("@/lib/frame-gl")]).then(
-        ([s, p, m, i, f]) => {
+      Promise.all([import("@/lib/surface-mode"), import("@/lib/paper-gl"), import("@/lib/marker-gl"), import("@/lib/ink-gl"), import("@/lib/frame-gl"), import("@/lib/illo-gl"), import("@/lib/pulp-gl")]).then(
+        ([s, p, m, i, f, l, u]) => {
           if (cancelled) return;
           s.restoreSurfaceMode();
           unbind = s.bindSurfaceAttributes();
           unsync = s.onSurface(() => setMode(s.getSurfaceMode()));
           setMode(s.getSurfaceMode());
-          layers.push(p.startPaper(), m.startMarker(), i.startInk(), f.startFrames());
+          layers.push(p.startPaper(), m.startMarker(), i.startInk(), f.startFrames(), l.startIllos(), u.startPulp());
         },
       );
     const idle = typeof window.requestIdleCallback === "function";

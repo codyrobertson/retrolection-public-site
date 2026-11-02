@@ -48,6 +48,17 @@ html.marker-gl [data-marker] {
 html.frame-gl [data-frame],
 html.frame-ascii-gl [data-frame] { border-color: transparent !important; }
 
+/* illustrations (illo-gl.js): the plain SVG is the fallback; once the layer is ready it draws the strokes instead */
+svg[data-illo] { overflow: visible; }
+svg[data-illo] path, svg[data-illo] circle, svg[data-illo] ellipse, svg[data-illo] line, svg[data-illo] polyline, svg[data-illo] polygon, svg[data-illo] rect {
+  fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round;
+}
+svg[data-illo] [data-hatch] { stroke: none; }
+svg[data-illo] [data-raw] { stroke-width: .5; stroke-opacity: .3; }
+svg[data-illo] [data-pen="9h"] { stroke-opacity: .4; stroke-width: .8; }
+svg[data-illo] [data-pen="3b"] { stroke-opacity: .6; stroke-width: 2.4; }
+html.illo-gl svg[data-illo] * { stroke: transparent !important; }
+
 .surface-toggle {
   position: fixed; right: 16px; bottom: 16px; z-index: 50;
   font: 500 11px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .08em; text-transform: uppercase;
@@ -56,3 +67,8 @@ html.frame-ascii-gl [data-frame] { border-color: transparent !important; }
 }
 .surface-toggle:hover { border-color: currentColor; }
 @media print { .surface-toggle { display: none; } }
+
+/* Pulp print: the printed canvas replaces the img visually in analog; digital shows the original. */
+html:not([data-surface="digital"]) img[data-pulp][data-pulp-ready] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); pointer-events: none; }
+html[data-surface="digital"] canvas[data-pulp-canvas] { display: none; }
+canvas[data-pulp-canvas] { display: block; height: auto; }
