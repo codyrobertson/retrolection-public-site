@@ -1,8 +1,8 @@
 /**
  * The page, heard: off until the reader turns it on (SoundToggle), and then every motion that
  * makes a sound makes its own, synthesised here as it happens, nothing downloaded. The hero's
- * keys strike as a typewriter's (each at the frame its key bottoms out: plate.ts), the pen
- * scratches as a mark draws itself (pen.ts), the foot's cigarette catches with a lighter's
+ * keys thock as a round-cap board's (each at the frame it bottoms out, a tick as it comes back
+ * up: plate.ts), the pen scratches as a mark draws itself (pen.ts), the foot's cigarette catches with a lighter's
  * flick, the fingers knock on the wood and the index ticks the ash off (SmokeFooter,
  * cig-break). Under it, a band that never repeats: a Rhodes, an upright, brushes, and a vibes
  * line now and then, in the late-night Tokyo way, over a record's crackle.
@@ -101,36 +101,22 @@ function ping(b: Bus, dest: AudioNode, t: number, o: { f: number; to?: number; g
 
 // ---- the motions ----------------------------------------------------------------------------
 
-/** a key bottoming out, as a typewriter's: the type bar slapping the platen, the bar's ring, the
-    carriage's thud; the space bar only the escapement; Enter the bell and the carriage run home */
+/** a key bottoming out on the hero's board, a round-cap mechanical one: the cap's clack over the
+    case's thock, deeper on the long keys, with their stabiliser wire's rattle after it */
 export function strike(name: string) {
   const b = live(); if (!b) return;
-  const t = b.ac.currentTime + 0.004, v = rnd(0.85, 1.15), out = b.sfx;
-  if (/ENTER|RETURN/.test(name)) {
-    ping(b, out, t, { f: 2093 * rnd(0.998, 1.002), gain: 0.16, decay: 1.4 });           // the bell
-    ping(b, out, t, { f: 2093 * 2.76, gain: 0.05, decay: 0.7 });
-    for (let k = 0; k < 9; k++) burst(b, out, t + 0.12 + 0.028 * k * (1 - k * 0.04), { f: 3000, q: 3, gain: 0.07, decay: 0.012 });   // the ratchet
-    burst(b, out, t + 0.1, { f: 900, q: 0.8, gain: 0.05, decay: 0.32, attack: 0.08 });  // the carriage's run
-    burst(b, out, t + 0.42, { f: 220, q: 1.2, gain: 0.3, decay: 0.12 });                // home
-    return;
-  }
-  if (name === "SPACE") {
-    burst(b, out, t, { f: 1700 * v, q: 2, gain: 0.12, decay: 0.02 });
-    ping(b, out, t, { f: 95 * v, to: 60, gain: 0.3, decay: 0.08 });
-    return;
-  }
-  if (/SHIFT/.test(name)) {                                                             // the basket lifting
-    ping(b, out, t, { f: 70, to: 48, gain: 0.4, decay: 0.16 });
-    burst(b, out, t, { f: 500, q: 1, gain: 0.12, decay: 0.08 });
-    return;
-  }
-  if (/BACK/.test(name)) { burst(b, out, t, { f: 2600, q: 2, gain: 0.12, decay: 0.02 }); ping(b, out, t, { f: 140, to: 90, gain: 0.18, decay: 0.05 }); return; }
-  burst(b, out, t, { f: 2800 * v, q: 0.9, gain: 0.34, decay: 0.022 });                 // the slap
-  burst(b, out, t + 0.001, { f: 6200 * v, q: 3, gain: 0.07, decay: 0.008 });
-  ping(b, out, t, { f: 3150 * v, gain: 0.035, decay: 0.07 });                           // the bar ringing
-  ping(b, out, t, { f: 4710 * v, gain: 0.02, decay: 0.05 });
-  ping(b, out, t, { f: 135 * v, to: 78, gain: 0.34, decay: 0.07 });                    // the platen
-  burst(b, out, t, { f: 520 * v, q: 2, gain: 0.14, decay: 0.045 });
+  const t = b.ac.currentTime + 0.004, v = rnd(0.92, 1.08), out = b.sfx;
+  const big = name === "SPACE" || /SHIFT|ENTER|RETURN|BACK|TAB|CAPS/.test(name);
+  burst(b, out, t, { f: (big ? 1500 : 2300) * v, q: 1.1, gain: big ? 0.3 : 0.4, decay: 0.03 });      // the cap
+  burst(b, out, t, { f: (big ? 420 : 640) * v, q: 2.2, gain: 0.26, decay: big ? 0.09 : 0.06 });       // the case
+  ping(b, out, t, { f: (big ? 105 : 150) * v, to: big ? 62 : 90, gain: big ? 0.5 : 0.38, decay: big ? 0.11 : 0.075 });
+  if (big) burst(b, out, t + 0.012, { f: 3200, q: 4, gain: 0.05, decay: 0.05 });                      // the wire
+}
+
+/** a key let go: the spring bringing it back up, a lighter tick */
+export function release() {
+  const b = live(); if (!b) return;
+  burst(b, b.sfx, b.ac.currentTime + 0.004, { f: 3600 * rnd(0.92, 1.08), q: 1.5, gain: 0.07, decay: 0.014 });
 }
 
 /** a mark drawing itself in pencil: `n` strokes set off `gap` ms apart, each `dur` ms. The

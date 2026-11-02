@@ -3,7 +3,7 @@ import { createMachine, PLAYING, type Phase } from "./machine";
 import { markRows, markTyped, visit } from "./session";
 import { markFade, unmarkFade, watchFade } from "@/lib/theme-fade";
 import { night, setNight } from "@/lib/night";
-import { strike } from "@/lib/sound";
+import { release as keyUp, strike } from "@/lib/sound";
 
 // Plate 01's director. The hands are solved and drawn in workers while the page plays; this is
 // the one clock on the main thread that puts them on the stage, and the one machine (machine.ts)
@@ -705,7 +705,9 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
       const next = i + 1 >= N ? loop0 : i + 1;
       if (isReady(s.frames[next], next)) {
         const from = i; i = frameIdx = next; acc -= step; arrive(s.frames[i]); advance(s, from, next);
-        const fr = s.frames[i]; if (fr.clunkShift) strike(fr.clunkShift); if (fr.clunk) strike(fr.clunk);   // heard as it bottoms out (lib/sound)
+        // heard (lib/sound): each key as it bottoms out, and its spring as it comes back up
+        const fr = s.frames[i]; if (fr.clunkShift) strike(fr.clunkShift); if (fr.clunk) strike(fr.clunk);
+        if (s.frames[from].pressed.some((id) => !fr.pressed.includes(id))) keyUp();
       }
       else { acc = step; if (debug) { debug.under++; debug.holds.push([Math.round(performance.now()), next]); } }
     }
