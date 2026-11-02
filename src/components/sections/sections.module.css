@@ -7,6 +7,8 @@
 .section[data-width="standard"] { --section-width: 64rem; }
 .section[data-width="wide"] { --section-width: 80rem; }
 .section[data-width="full"] { --section-width: 100%; width: 100%; }
+/* text running on from text is one piece of writing: a heading's break, not a new section's */
+.section[data-kind="text"] + .section[data-kind="text"] { padding-top: 0; }
 
 .hero { display: grid; gap: 1.25rem; padding-block: clamp(2rem, 8vw, 6rem); }
 .eyebrow { font-family: var(--font-small); font-size: 0.85rem; color: var(--muted); }
@@ -18,7 +20,8 @@
 .headingRow { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
 .headingRow a { color: var(--muted); font-size: 0.9rem; font-family: var(--font-small); }
 
-.markdown { display: grid; gap: 1em; line-height: 1.65; max-width: var(--measure); }
+/* Markdoc wraps the body in an <article>: the paragraphs are its children, so it carries the rhythm */
+.markdown, .markdown > article { display: grid; gap: 1em; line-height: 1.65; max-width: var(--measure); }
 .markdown a { text-decoration: underline; text-underline-offset: 0.2em; }
 
 .media { width: 100%; height: auto; border-radius: var(--radius); }

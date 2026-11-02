@@ -7,7 +7,7 @@ import { PASTE } from './scene.js';
 // The page passes its own hero (content/home.yaml); this is the same copy, for the check
 // script and for a page that renders the plate without one.
 export const HERO = {
-  eyebrow: 'Design Engineer · Phoenix, AZ',
+  eyebrow: 'Cody Robertson, Phoenix Arizona',
   heading: 'I design and build AI-native products.',
   subheading: 'Creative director turned design engineer. From crypto to AI-native solutions: the brand, the product, and the code behind it.',
   links: [

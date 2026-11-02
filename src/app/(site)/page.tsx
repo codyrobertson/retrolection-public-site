@@ -1,5 +1,6 @@
 import Contact from "@/components/Contact";
 import Experience from "@/components/Experience";
+import Portfolio from "@/components/Portfolio";
 import TypingPlate from "@/components/TypingPlate";
 import { workItems } from "@/components/WorkPlate";
 import { getHome, getProjects, getSite } from "@/lib/content";
@@ -22,6 +23,7 @@ export default async function Home() {
     <>
       <TypingPlate work={workItems(sheet)} more={projects.length} />
       <Experience />
+      <Portfolio />
       <Contact />
     </>
   );

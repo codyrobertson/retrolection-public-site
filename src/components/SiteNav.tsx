@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import SoundToggle from "./SoundToggle";
 import styles from "./masthead.module.css";
 
 /** what the hands type when a link is pointed at: the plate listens for it (TypingPlate) */
@@ -21,6 +22,7 @@ export default function SiteNav() {
         <a href="https://github.com/codyrobertson" target="_blank" rel="noopener noreferrer" onPointerEnter={say("GitHub")} onFocus={say("GitHub")}>
           GitHub<span aria-hidden className={styles.out}>↗</span>
         </a>
+        <SoundToggle />
       </nav>
       <Link href="/#contact" className={styles.contact} onPointerEnter={say("Contact me")} onFocus={say("Contact me")}>Contact me</Link>
     </>

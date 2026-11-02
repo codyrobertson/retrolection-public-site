@@ -18,6 +18,8 @@
  * how it was first held; with no sensor, or reduced motion, it stays where it was.
  */
 
+import { linked } from "./gl-ready.js";
+
 const VS = `attribute vec2 p;void main(){gl_Position=vec4(p,0,1);}`;
 
 const TILE = 256; // px of the baked noise tile; only periodicity matters
@@ -271,7 +273,7 @@ export function startBlackInk(wrap, { id, kind }) {
   /** @type {WebGLRenderingContext | null} */
   let g = null;
   /** @type {any} */
-  let progBake, progComp, tile = null;
+  let progBake, progComp, tile = null, built = false;
   let dark = docEl.dataset.theme === "dark", onScreen = false, hidden = document.hidden, lost = false, failed = false, dead = false;
   const reducedMq = window.matchMedia("(prefers-reduced-motion: reduce)");
   let reduced = reducedMq.matches, tiltHeld = false;
@@ -294,24 +296,23 @@ export function startBlackInk(wrap, { id, kind }) {
     fadeMs = ms > 0 ? ms : 900;
   }
 
-  /** compile + link; the info log goes to perf.error, as nothing here should throw at a reader */
+  /** compile + link, asked after (checked): the info log goes to perf.error, as nothing here should throw at a reader */
   function prog(fs) {
-    const sh = (type, src) => {
-      const o = g.createShader(type); g.shaderSource(o, src); g.compileShader(o);
-      if (!g.getShaderParameter(o, g.COMPILE_STATUS)) throw new Error(g.getShaderInfoLog(o) || "shader");
-      return o;
-    };
-    const pr = g.createProgram();
-    g.attachShader(pr, sh(g.VERTEX_SHADER, VS)); g.attachShader(pr, sh(g.FRAGMENT_SHADER, fs));
+    const sh = (type, src) => { const o = g.createShader(type); g.shaderSource(o, src); g.compileShader(o); return o; };
+    const pr = g.createProgram(), f = sh(g.FRAGMENT_SHADER, fs);
+    g.attachShader(pr, sh(g.VERTEX_SHADER, VS)); g.attachShader(pr, f);
     g.bindAttribLocation(pr, 0, "p"); g.linkProgram(pr);
-    if (!g.getProgramParameter(pr, g.LINK_STATUS)) throw new Error(g.getProgramInfoLog(pr) || "link");
     const c = {};
-    return { pr, u: (n) => (c[n] ??= g.getUniformLocation(pr, n)) };
+    return { pr, u: (n) => (c[n] ??= g.getUniformLocation(pr, n)), check() { if (!g.getProgramParameter(pr, g.LINK_STATUS)) throw new Error(g.getShaderInfoLog(f) || g.getProgramInfoLog(pr) || "link"); } };
   }
 
-  /** programs, the quad, and the noise tile rendered once into a texture */
+  /** the programs, set going: they link off the thread, and the frame loop finishes the build when they have (gl-ready) */
   function build() {
-    progBake = prog(BAKE); progComp = prog(COMP);
+    progBake = prog(BAKE); progComp = prog(COMP); built = false;
+  }
+  /** the quad, and the noise tile rendered once into a texture */
+  function finish() {
+    progBake.check(); progComp.check();
     g.bindBuffer(g.ARRAY_BUFFER, g.createBuffer());
     g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), g.STATIC_DRAW);
     g.enableVertexAttribArray(0); g.vertexAttribPointer(0, 2, g.FLOAT, false, 0, 0);
@@ -333,6 +334,7 @@ export function startBlackInk(wrap, { id, kind }) {
     g.deleteFramebuffer(fb);
     readTokens();
     fitBuffer(true);
+    built = true;
   }
 
   /** the context, made the first time it's wanted */
@@ -398,7 +400,13 @@ export function startBlackInk(wrap, { id, kind }) {
     raf = 0;
     syncTilt();
     if (!want()) { away(); perf.running = false; return; }
-    if (!g) { open(); if (!g) { perf.running = false; return; } fadeStart = now; }
+    if (!g) { open(); if (!g) { perf.running = false; return; } }
+    if (!built) {
+      if (failed) { perf.running = false; return; }
+      if (!linked(g, progBake.pr, progComp.pr)) { raf = requestAnimationFrame(frame); return; }
+      try { finish(); } catch (err) { failed = true; perf.error = String(err && err.message || err); perf.running = false; return; }
+      fadeStart = now;
+    }
     if (!cw || !ch) measure();
     if (fade !== fadeTarget) {
       const k = Math.min(1, (now - fadeStart) / fadeMs);
@@ -435,7 +443,7 @@ export function startBlackInk(wrap, { id, kind }) {
     syncTilt(); if (!raf && !dead && want()) { raf = requestAnimationFrame(frame); perf.running = true; } }
 
   function bench(n) {
-    if (!g || !bw) return NaN;
+    if (!g || !built || !bw) return NaN;
     const a = performance.now();
     for (let i = 0; i < n; i++) { draw(performance.now()); g.finish(); }
     return (performance.now() - a) / n;
@@ -466,7 +474,7 @@ export function startBlackInk(wrap, { id, kind }) {
   const onVis = () => { hidden = document.hidden; dirty = true; away(); kick(); };
   const onMotion = () => { reduced = reducedMq.matches; dirty = true; kick(); };
   const onLost = (e) => { e.preventDefault(); lost = true; perf.running = false; };
-  const onRestored = () => { lost = false; try { build(); } catch (err) { failed = true; perf.error = String(err && err.message || err); } dirty = true; kick(); };
+  const onRestored = () => { lost = false; build(); dirty = true; kick(); };
   const disarm = armTiltPermission(section);
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", measure);

@@ -16,8 +16,12 @@
  */
 
 import { surface, onSurface } from "./surface-mode.js";
+import { linked } from "./gl-ready.js";
+import { NIGHT, night, nightIn, onNight } from "./night.js";
 
 export const TILE_H = 1024;
+/** how long a tile takes to settle in, its ink coming up (then it is still) */
+const SETTLE_MS = 3000;
 export const PAD = 16; // css px of mask beyond each tile edge so blur/halo cross seams
 const MARGIN = 512;
 
@@ -40,12 +44,14 @@ const withSurface = (frag, gate) => {
   const i = frag.lastIndexOf("void main(){");
   const body = frag.slice(i + "void main(){".length);
   const head = frag.slice(0, i).replace("varying vec2 uv;", "varying vec2 uvv;vec2 uv;");
-  return head + SURF + "void main0(){" + body +
+  return head + SURF + NIGHT + "void main0(){" + body +
     `void main(){uv=uvv;float fl=1.;
   if(uFront<1e8) fl=uFront;
   DG=mix(uFrom,uTo,step(bayer8(gl_FragCoord.xy*.5),fl));
   ${gate === "analog" ? "if(DG>.5){gl_FragColor=vec4(0.);return;}" : gate === "digital" ? "if(DG<.5){gl_FragColor=vec4(0.);return;}" : ""}
-  main0();}`;
+  main0();
+  vec4 o=gl_FragColor;                                        // the lights' front (night.js), in the layer's own px
+  if(o.a>.0){float y=y0+(1.-uv.y)*th;gl_FragColor=vec4(lights(o.rgb/o.a,y)*o.a,o.a);}}`;
 };
 
 const noop = { rebuild() {}, destroy() {} };
@@ -60,9 +66,9 @@ const noop = { rebuild() {}, destroy() {} };
  * @property {number} metaScale        meta map resolution relative to css px
  * @property {boolean} [metaNearest]   sample meta without filtering (for angles/ids)
  * @property {boolean} animated        redraw visible tiles at 30fps
- * @property {boolean} [live]          with animated: false keeps redrawing only while a tile's 3s draw-on settles (default true)
  * @property {"analog" | "digital"} [gate] draw only in this surface mode
- * @property {(root: HTMLElement, host: HTMLElement) => any[]} collect  items need numeric y,h
+ * @property {(root: HTMLElement, host: HTMLElement, changes: { full: boolean, dirty: Set<Element> }) => any[]} collect  items need numeric y,h;
+ *   `changes` says whether all that changed since the last collect is in `dirty` (the elements the DOM changed in)
  * @property {(mx: CanvasRenderingContext2D, tx: CanvasRenderingContext2D) => void} begin  called per tile before painting
  * @property {(mx: CanvasRenderingContext2D, tx: CanvasRenderingContext2D, item: any) => void} paint
  * @property {string[]} [attributes]   attributes whose mutation should rebuild
@@ -74,12 +80,31 @@ const noop = { rebuild() {}, destroy() {} };
  *                                     layer under live typing wants about a frame
  */
 
+/** the largest texture the GPU takes, 0 without WebGL: asked once a page, of a context made and let go for the asking */
+let maxTex = -1;
+function maxTexture() {
+  if (maxTex < 0) {
+    const probe = document.createElement("canvas").getContext("webgl");
+    maxTex = probe ? probe.getParameter(probe.MAX_TEXTURE_SIZE) : 0;
+    probe?.getExtension("WEBGL_lose_context")?.loseContext();
+  }
+  return maxTex;
+}
+
+/** one new context a frame, across every layer on the page: each is ~3-20 ms of the GPU's answering, and the
+ *  page's layers starting together made a dozen in one frame */
+let spent = false;
+function spend() {
+  if (spent) return false;
+  spent = true;
+  requestAnimationFrame(() => setTimeout(() => (spent = false), 0));
+  return true;
+}
+
 /** @param {LayerConfig} cfg */
 export function createLayer(cfg) {
-  const probe = document.createElement("canvas").getContext("webgl");
-  if (!probe) return noop; // no WebGL → page is left exactly as authored
-  const maxTex = probe.getParameter(probe.MAX_TEXTURE_SIZE);
-  probe.getExtension("WEBGL_lose_context")?.loseContext();
+  const maxTex = maxTexture();
+  if (!maxTex) return noop; // no WebGL → page is left exactly as authored
 
   const root = cfg.root ?? document.body;
   const scoped = root !== document.body;
@@ -93,13 +118,15 @@ export function createLayer(cfg) {
   /** @type {Map<number, any>} */ const active = new Map();
   /** @type {any[]} */ const free = [];
   let docW = 0, docH = 0, dpr = 1, alive = true, raf = 0, lastDraw = 0, first = true, timer = 0, roReady = false;
-  const t0 = performance.now();
+  // the colours the layer was last drawn in, and where the lights' front is over it (night.js)
+  let drawnDark = 0, nightY = -1e6;
+  const origin = () => (scoped ? root.getBoundingClientRect().top : -scrollY);
 
   const host = document.createElement("div");
   host.id = cfg.id;
   host.setAttribute("data-gl-host", "");
   host.setAttribute("aria-hidden", "true");
-  host.style.cssText = `position:absolute;top:0;left:0;pointer-events:none;overflow:hidden;z-index:${cfg.z}`;
+  host.style.cssText = `position:absolute;top:0;left:0;pointer-events:none;overflow:hidden;z-index:${cfg.z};visibility:hidden`;
   root.appendChild(host);
 
   function bucketize() {
@@ -138,8 +165,10 @@ export function createLayer(cfg) {
       g.uniform2f(blurP.u("stp"), (dx * sig) / dst.w, (dy * sig) / dst.h); g.drawArrays(g.TRIANGLE_STRIP, 0, 4); g.enable(g.BLEND);
     };
 
+    cv.style.display = "none";
     const tile = {
       i: -1, th: 0, cv, lost: false, start: 0, sig: "",
+      linked: () => linked(g, blurP.pr, compP.pr),
       load(i, th, settleFromZero) {
         tile.i = i; tile.th = th;
         const mhC = th + 2 * PAD, ty = i * TILE_H - PAD;
@@ -169,17 +198,18 @@ export function createLayer(cfg) {
         pass(T.mask, T.tmp, 1, 0, s1 * dpr); pass(T.tmp.t, T.b1, 0, 1, s1 * dpr);
         pass(T.mask, T.tmpH, 1, 0, s2 * dpr * 0.5); pass(T.tmpH.t, T.b2, 0, 1, s2 * dpr * 0.5);
         g.bindFramebuffer(g.FRAMEBUFFER, null); g.viewport(0, 0, cw, ch);
-        tile.start = performance.now() - (settleFromZero ? 0 : 3000);
+        tile.start = performance.now() - (settleFromZero ? 0 : SETTLE_MS);
       },
       draw(now) {
         g.useProgram(compP.pr);
         [T.mask, T.b1.t, T.b2.t, T.meta].forEach((x, k) => { g.activeTexture(g.TEXTURE0 + k); g.bindTexture(g.TEXTURE_2D, x); });
         ["mask", "b1", "b2", "meta"].forEach((n, k) => g.uniform1i(compP.u(n), k));
         g.uniform2f(compP.u("res"), cv.width, cv.height); g.uniform1f(compP.u("dpr"), dpr);
-        g.uniform1f(compP.u("t"), cfg.animated ? (now - t0) / 1000 : 0);
+        g.uniform1f(compP.u("t"), 0);   // still once settled: drawn again only when something changes
         g.uniform1f(compP.u("y0"), tile.i * TILE_H); g.uniform1f(compP.u("th"), tile.th); g.uniform1f(compP.u("pad"), PAD);
-        g.uniform1f(compP.u("settle"), !cfg.animated || reduced.matches ? 1 : 1 - Math.pow(1 - Math.min(1, (now - tile.start) / 3000), 3));
+        g.uniform1f(compP.u("settle"), !cfg.animated || reduced.matches ? 1 : 1 - Math.pow(1 - Math.min(1, (now - tile.start) / SETTLE_MS), 3));
         g.uniform1f(compP.u("uFrom"), surface.from); g.uniform1f(compP.u("uTo"), surface.to); g.uniform1f(compP.u("uFront"), surface.front);
+        g.uniform1f(compP.u("uNightY"), nightY); g.uniform1f(compP.u("uDark"), drawnDark);
         g.clearColor(0, 0, 0, 0); g.clear(g.COLOR_BUFFER_BIT); g.drawArrays(g.TRIANGLE_STRIP, 0, 4);
       },
     };
@@ -210,8 +240,10 @@ export function createLayer(cfg) {
     const vlo = Math.max(0, Math.floor(top / TILE_H)), vhi = Math.floor((top + innerHeight) / TILE_H);
     return { lo, hi, vlo, vhi };
   }
+  let left = false, tickF = 0, tickT = 0;
+  /** @type {any[]} */ const baking = [];
   function sync(force = false) {
-    const { lo, hi } = wanted();
+    const { lo, hi, vlo, vhi } = wanted();
     const now = performance.now();
     for (const [i, t] of active) {
       const th = Math.min(TILE_H, docH - i * TILE_H);
@@ -220,86 +252,159 @@ export function createLayer(cfg) {
         // a tile whose words are all as they were is drawn from the same textures: only the
         // tiles a change touched (under live typing, the one the letter went down in) are raised again
         const sig = sigOf(i, th);
-        if (sig !== null && sig === t.sig) t.start = now - 3000;
+        if (sig !== null && sig === t.sig) t.start = now - SETTLE_MS;
         else { t.load(i, th, false); t.sig = sig; }
         t.draw(now);
       }
     }
-    for (let i = lo; i <= hi; i++) {
+    // new tiles, the window's first, one a frame where one can wait. A tile is a context (one a frame, page-wide:
+    // spend), two programs that link off the thread (made ahead into `baking`, used once linked: gl-ready) and its
+    // first textures. One in the window once the page's glyphs are hidden cannot wait: it is made now, and waits
+    const todo = [];
+    for (let i = lo; i <= hi; i++) if (i * TILE_H < docH && !active.has(i) && buckets.get(i)?.length) todo.push(i);
+    const seen = (i) => i >= vlo && i <= vhi;
+    todo.sort((a, b) => +seen(b) - +seen(a));
+    let made = 0;
+    left = false;
+    for (const i of todo) {
+      const must = seen(i) && !first;
+      if (made && !must) { left = true; break; }
+      const k = baking.findIndex((b) => b.linked());
+      let t = free.pop() ?? (k >= 0 ? baking.splice(k, 1)[0] : must ? baking.shift() ?? createTile() : null);
+      if (!t) {
+        if (must) continue;
+        if (!baking.length && spend()) { const n = createTile(); if (n) baking.push(n); }
+        left = true; break;
+      }
       const th = Math.min(TILE_H, docH - i * TILE_H);
-      if (th <= 0 || active.has(i) || !buckets.get(i)?.length) continue;
-      const t = free.pop() || createTile();
-      if (!t) continue;
-      t.load(i, th, first); t.sig = sigOf(i, th); t.draw(now); active.set(i, t);
+      t.load(i, th, first); t.sig = sigOf(i, th); t.draw(now); active.set(i, t); made++;
     }
     perf.tiles = active.size;
+    if (left && !tickF) tickF = requestAnimationFrame(() => (tickT = window.setTimeout(() => { tickF = tickT = 0; sync(); reveal(); }, 0)));
+  }
+  /** the first tiles all made: the layer shows, and the page's own glyphs go, in the same frame */
+  function reveal() {
+    if (!first || left || !alive) return;
+    host.style.visibility = "";
+    docEl.classList.add(cfg.readyClass); if (scoped) root.setAttribute("data-inked", "");
+    first = false;
   }
   function loop(now) {
     raf = 0; if (!alive) return;
+    // only tiles still settling in are drawn on a clock; a settled tile is drawn once, and again
+    // only when its words, the window or the lights change (a canvas redrawn every frame is a
+    // full-window texture the compositor uploads every frame, for a shimmer no one could see)
+    let settling = false;
     if (now - lastDraw >= 30) {
       const { vlo, vhi } = wanted();
-      for (const [i, tile] of active) if (i >= vlo && i <= vhi && !tile.lost) tile.draw(now);
+      for (const [i, tile] of active) {
+        if (now - tile.start > SETTLE_MS + 100) continue;
+        settling = true;
+        if (i >= vlo && i <= vhi && !tile.lost) tile.draw(now);
+      }
       lastDraw = now;
-    }
-    if (cfg.animated && !reduced.matches && !document.hidden && (cfg.live !== false || settling(now))) raf = requestAnimationFrame(loop);
+    } else settling = true;
+    if (settling && cfg.animated && !reduced.matches && !document.hidden) raf = requestAnimationFrame(loop);
   }
-  const settling = (now) => { for (const t of active.values()) if (now - t.start < 3100) return true; return false; };
   const offSurface = onSurface(() => {
+    if (waiting && needed()) { clearTimeout(timer); timer = 0; build(); }
     const { vlo, vhi } = wanted(), now = performance.now();
     for (const [i, tile] of active) if (i >= vlo && i <= vhi && !tile.lost) tile.draw(now);
   });
   const kick = () => { if (cfg.animated && !raf && alive) raf = requestAnimationFrame(loop); };
+  // the lights' front moved (or the page under it): a tile it crossed is drawn again. The edge is hard, so a
+  // tile wholly above (or below) both where it was and where it is now looks as it did, and is left alone
+  const offNight = onNight(() => {
+    if (!alive) return;
+    const y = nightIn(origin()), was = nightY;
+    nightY = y;
+    const lo = Math.min(y, was) - 4, hi = Math.max(y, was) + 4;
+    if (hi < -60 || lo > docH + 60) return;
+    const now = performance.now();
+    for (const tile of active.values()) {
+      if (tile.lost || tile.i * TILE_H + tile.th + PAD < lo || tile.i * TILE_H - PAD > hi) continue;
+      tile.draw(now);
+    }
+  });
 
+  // a layer gated to the other surface draws nothing, so it makes no tiles (their contexts and programs are most of
+  // a page's start) until the surface turns, or is turning, to its own
+  const needed = () => !cfg.gate || (cfg.gate === "digital" ? !!(surface.from || surface.to) : !surface.from || !surface.to);
+  let waiting = false;
+  // what has changed since the last build: only the DOM, in these elements, or anything (a size, the lights, a font)
+  let full = true, dirty = new Set();
   function build() {
+    if (!needed()) { waiting = true; full = true; return; }
+    waiting = false;
     const t1 = performance.now();
     docW = scoped ? root.clientWidth : docEl.clientWidth; docH = Math.max(scoped ? root.scrollHeight : docEl.scrollHeight, 1);
     dpr = Math.min(devicePixelRatio || 1, 2, maxTex / Math.max(docW, 1));
     host.style.width = docW + "px"; host.style.height = docH + "px";
     perf.rasterMs = 0;
-    const tc = performance.now(); items = cfg.collect(root, host); perf.items = items.length; perf.collectMs = performance.now() - tc;
+    // what the colours are: the stock they were chosen for, where the layer is (a part of the page can be in the other theme's)
+    const paper = getComputedStyle(root).getPropertyValue("--paper").trim(), hex = /^#([\da-f]{6})$/i.exec(paper);
+    drawnDark = hex && parseInt(hex[1].slice(0, 2), 16) + parseInt(hex[1].slice(2, 4), 16) + parseInt(hex[1].slice(4), 16) < 384 ? 1 : 0;
+    nightY = nightIn(origin());
+    const changes = { full, dirty }; full = false; dirty = new Set();
+    const tc = performance.now(); items = cfg.collect(root, host, changes); perf.items = items.length; perf.collectMs = performance.now() - tc;
     bucketize();
     sync(true);
-    if (first) { docEl.classList.add(cfg.readyClass); if (scoped) root.setAttribute("data-inked", ""); first = false; }
+    reveal();
     perf.buildMs = performance.now() - t1; lastBuild = performance.now();
     for (const k of ["buildMs", "collectMs", "rasterMs"]) perf[k] = +perf[k].toFixed(2);
     kick();
   }
   // a change waits for the page to settle (a burst of edits is one rebuild); under live typing
-  // (a short debounce) it is a steady beat instead, so the ink keeps up with the keys
+  // (a short debounce) it is a steady beat instead, so the ink keeps up with the keys. The beat
+  // is never less than three builds long: on a slow phone a build can take most of a frame, and
+  // the ink keeping up a letter sooner is not worth the scroll stuttering under it
   const wait = cfg.debounce ?? 120;
   let lastBuild = 0;
   function scheduleBuild() {
     if (wait >= 60) { clearTimeout(timer); timer = window.setTimeout(build, wait); return; }
     if (timer) return;
-    timer = window.setTimeout(() => { timer = 0; build(); }, Math.max(0, wait - (performance.now() - lastBuild)));
+    const beat = Math.max(wait, 3 * (perf.buildMs || 0));
+    timer = window.setTimeout(() => { timer = 0; build(); }, Math.max(0, beat - (performance.now() - lastBuild)));
   }
+  const buildAll = () => { full = true; scheduleBuild(); };
 
   const onScroll = () => { sync(); kick(); };
   addEventListener("scroll", onScroll, { passive: true });
   document.addEventListener("visibilitychange", kick);
-  const ro = new ResizeObserver(() => { if (roReady) scheduleBuild(); }); ro.observe(root);
+  const ro = new ResizeObserver(() => { if (roReady) buildAll(); }); ro.observe(root);
   // a layer's own host, or a part of the page that animates its own DOM (data-gl-skip: the hero's
   // live typing), never asks for a rebuild
   // (a scoped layer is the one that covers such a part, so only its own host is ignored)
   const ignore = scoped ? "[data-gl-host]" : "[data-gl-host],[data-gl-skip]";
   const inHost = (n) => (n instanceof Element ? n : n.parentElement)?.closest(ignore);
-  const mo = new MutationObserver((m) => { if (m.some((r) => !inHost(r.target))) scheduleBuild(); });
+  const mo = new MutationObserver((m) => {
+    let any = false;
+    for (const r of m) {
+      if (inHost(r.target)) continue;
+      const el = r.target instanceof Element ? r.target : r.target.parentElement;
+      if (el) dirty.add(el); else full = true;
+      any = true;
+    }
+    if (any) scheduleBuild();
+  });
   // what is read at a rebuild (an opacity, a colour) can still be on its way: look again when it lands
-  const landed = (e) => { if (!inHost(e.target) && /opacity|color/.test(e.propertyName)) scheduleBuild(); };
+  // (a transition's opacity or colour, or a keyframe entrance: a button fading in as it renders)
+  const landed = (e) => { if (!inHost(e.target) && (e.type === "animationend" || /opacity|color/.test(e.propertyName))) buildAll(); };
   root.addEventListener("transitionend", landed);
+  root.addEventListener("animationend", landed);
   mo.observe(root, { childList: true, subtree: true, characterData: true, ...(cfg.attributes ? { attributes: true, attributeFilter: cfg.attributes } : {}) });
-  const scheme = matchMedia("(prefers-color-scheme: dark)"); scheme.addEventListener("change", scheduleBuild);
-  const themeMo = new MutationObserver(scheduleBuild); themeMo.observe(docEl, { attributes: true, attributeFilter: ["data-theme"] });
-  document.fonts?.addEventListener("loadingdone", scheduleBuild);
+  const scheme = matchMedia("(prefers-color-scheme: dark)"); scheme.addEventListener("change", buildAll);
+  const themeMo = new MutationObserver(buildAll); themeMo.observe(docEl, { attributes: true, attributeFilter: ["data-theme", "data-theme-moving"] });   // and again once the fade has landed
+  document.fonts?.addEventListener("loadingdone", buildAll);
   document.fonts.ready.then(() => { if (!alive) return; build(); roReady = true; });
 
   return {
-    rebuild: build,
+    rebuild: () => { full = true; build(); },
     destroy() {
-      alive = false; cancelAnimationFrame(raf); clearTimeout(timer); offSurface();
+      alive = false; cancelAnimationFrame(raf); clearTimeout(timer); cancelAnimationFrame(tickF); clearTimeout(tickT); offSurface(); offNight();
       removeEventListener("scroll", onScroll); ro.disconnect(); mo.disconnect(); themeMo.disconnect();
-      root.removeEventListener("transitionend", landed);
-      scheme.removeEventListener("change", scheduleBuild); document.fonts?.removeEventListener("loadingdone", scheduleBuild);
+      root.removeEventListener("transitionend", landed); root.removeEventListener("animationend", landed);
+      scheme.removeEventListener("change", buildAll); document.fonts?.removeEventListener("loadingdone", buildAll);
       document.removeEventListener("visibilitychange", kick);
       host.querySelectorAll("canvas").forEach((c) => /** @type {WebGLRenderingContext} */ (c.getContext("webgl"))?.getExtension("WEBGL_lose_context")?.loseContext());
       host.remove(); docEl.classList.remove(cfg.readyClass); if (scoped) root.removeAttribute("data-inked");
