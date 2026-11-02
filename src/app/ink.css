@@ -17,7 +17,27 @@ html.ink-gl [data-ink-off] * {
   -webkit-text-fill-color: currentColor;
 }
 
-#ink-gl canvas {
+/* a part of the page that changes as it is read (data-gl-skip: the hero's sheet, the experience)
+   has a layer of its own riding in it (startLiveInk): its text stays as it is until that layer is
+   on screen (data-inked), then goes over to it the same way */
+html.ink-gl [data-gl-skip],
+html.ink-gl [data-gl-skip] * {
+  -webkit-text-fill-color: currentColor;
+}
+html:root [data-inked],
+html:root [data-inked] * {
+  -webkit-text-fill-color: transparent;
+}
+html:root [data-inked] [data-ink-off],
+html:root [data-inked] [data-ink-off] *,
+html:root [data-inked] input,
+html:root [data-inked] textarea,
+html:root [data-inked] select {
+  -webkit-text-fill-color: currentColor; /* what's typed is the reader's, not the ink's */
+}
+
+#ink-gl canvas,
+[data-inked] > [data-gl-host] canvas {
   display: block;
 }
 
@@ -25,7 +45,11 @@ html.ink-gl [data-ink-off] * {
   #ink-gl {
     display: none;
   }
-  html.ink-gl body {
+  html.ink-gl body,
+  html:root [data-inked] * {
     -webkit-text-fill-color: currentColor;
+  }
+  [data-inked] > [data-gl-host] {
+    display: none;
   }
 }

@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${messina.variable} ${inferi.variable} ${nichrome.variable}`}>
+    <html lang="en" data-theme="light" className={`${messina.variable} ${inferi.variable} ${nichrome.variable}`}>
       <body>
         <Surface />
         {children}

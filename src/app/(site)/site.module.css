@@ -1,39 +1,68 @@
-.header,
+/* the foot of every page, always on the light stock (a sheet of paper at the foot of the desk,
+   even where the page above has gone dark): the light tokens are scoped to it, from globals.css's
+   :root, so the art, the smoke and the links are graphite on paper on every page. The box's
+   mono, quiet, on the masthead's gutter. The links sit above the vignette (SmokeFooter); on a
+   wide screen, at its lower right over the bare wood. */
 .footer {
-  font-family: var(--font-sans);
+  --paper: #f4f1e8;
+  --paper-deep: #ebe7db;
+  --ink: #1a1917;
+  --ink-2: #4a4740;
+  --ink-3: #8a857a;
+  --rule: rgb(26 25 23 / 0.14);
+  --vermilion: #d4462a;
+
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin-top: auto;
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.meta {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  width: min(80rem, 100% - 2 * var(--gutter));
-  margin-inline: auto;
-  padding-block: 1.25rem;
+  align-items: baseline;
+  gap: 12px 28px;
+  padding: 22px var(--gutter) 6px;
+  order: -1;
 }
-
-.footer {
-  margin-top: auto;
-  border-top: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 0.875rem;
-  font-family: var(--font-small);
-}
-
-.brand {
-  font-weight: 600;
+@media (min-width: 1200px) {
+  .meta {
+    position: absolute;
+    z-index: 2;
+    right: var(--gutter);
+    bottom: calc(22px + env(safe-area-inset-bottom));
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    gap: 10px;
+    padding: 0;
+    order: 0;
+  }
 }
 
 .nav {
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: 1.25rem;
+  gap: 8px 22px;
 }
-
-.nav a:hover {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
+.nav a {
+  padding: 3px 0;
+  color: var(--ink-2);
+  background: linear-gradient(currentColor, currentColor) no-repeat 0 100% / 0 1px;
+  transition: color 0.2s ease, background-size 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
+.nav a:hover { color: var(--ink); background-size: 100% 1px; }
 
 .main {
   flex: 1;
