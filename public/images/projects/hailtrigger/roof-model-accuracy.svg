@@ -1,28 +1,41 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" font-family="system-ui, sans-serif">
-  <rect width="1200" height="600" fill="#f6f2e9"/>
-  <text x="60" y="70" font-size="30" font-weight="600" fill="#171717">Roof model: exact-material accuracy by version</text>
-  <text x="60" y="102" font-size="17" fill="#6b6b6b">v4 looked solved on its own split, then collapsed on imagery it hadn't been trained on.</text>
-  <!-- baseline at y=500, 100% = 340px tall (y=160) -->
-  <line x1="60" y1="500" x2="1140" y2="500" stroke="#171717" stroke-width="2"/>
-  <g font-size="18" text-anchor="middle">
-    <rect x="130" y="281.7" width="150" height="218.3" fill="#6b6b6b"/>
-    <text x="205" y="268" fill="#171717" font-weight="600">64.2%</text>
-    <text x="205" y="530" fill="#171717">v1</text>
-    <text x="205" y="554" fill="#6b6b6b" font-size="15">hand-built features</text>
-
-    <rect x="380" y="279.7" width="150" height="220.3" fill="#6b6b6b"/>
-    <text x="455" y="266" fill="#171717" font-weight="600">64.8%</text>
-    <text x="455" y="530" fill="#171717">v2</text>
-    <text x="455" y="554" fill="#6b6b6b" font-size="15">more assessor rows</text>
-
-    <rect x="630" y="205.3" width="150" height="294.7" fill="#2563eb"/>
-    <text x="705" y="192" fill="#171717" font-weight="600">86.7%</text>
-    <text x="705" y="530" fill="#171717">v4, held-out split</text>
-    <text x="705" y="554" fill="#6b6b6b" font-size="15">footprint-centered crops</text>
-
-    <rect x="880" y="345.3" width="150" height="154.7" fill="#d97706"/>
-    <text x="955" y="332" fill="#171717" font-weight="600">45.5%</text>
-    <text x="955" y="530" fill="#171717">v4, unseen imagery</text>
-    <text x="955" y="554" fill="#6b6b6b" font-size="15">promotion blocked</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" font-family="inherit">
+  <!-- scale: baseline y=400, 1 point = 3.2px. Thin bars, values at the tips. -->
+  <text x="60" y="40" font-size="16" letter-spacing="1.5" fill="currentColor" fill-opacity=".6">EXACT-MATERIAL ACCURACY BY VERSION</text>
+  <!-- the one that matters: v4 on unseen imagery -->
+  <rect x="927" y="254.4" width="56" height="145.6" data-marker="#e2552f" style="fill:#e2552f"/>
+  <g fill="none" stroke="currentColor" stroke-width="1.5">
+    <g data-pen="3b">
+      <rect x="177" y="194.6" width="56" height="205.4" data-hatch="45 6"/>
+      <rect x="427" y="192.6" width="56" height="207.4" data-hatch="45 6"/>
+      <rect x="677" y="122.6" width="56" height="277.4" data-hatch="45 6"/>
+    </g>
+    <rect x="177" y="194.6" width="56" height="205.4"/>
+    <rect x="427" y="192.6" width="56" height="207.4"/>
+    <rect x="677" y="122.6" width="56" height="277.4"/>
+    <rect x="927" y="254.4" width="56" height="145.6"/>
+    <!-- range-frame baseline: spans the bars only -->
+    <path d="M160 400H1000"/>
+    <!-- same model, two test sets: pencil tie from tip to tip -->
+    <path data-pen="9h" d="M741 128L761 142M771 149L791 162M801 169L821 183M831 190L851 203M861 210L881 224M891 231L911 244"/>
+  </g>
+  <g fill="currentColor" text-anchor="middle">
+    <g font-size="20" font-weight="600">
+      <text x="205" y="180">64.2%</text>
+      <text x="455" y="178">64.8%</text>
+      <text x="705" y="108">86.7%</text>
+      <text x="955" y="240">45.5%</text>
+    </g>
+    <g font-size="18">
+      <text x="205" y="430">v1</text>
+      <text x="455" y="430">v2</text>
+      <text x="705" y="430">v4, held-out split</text>
+      <text x="955" y="430">v4, unseen imagery</text>
+    </g>
+    <g font-size="16" fill-opacity=".6">
+      <text x="205" y="455">hand-built features</text>
+      <text x="455" y="455">more assessor rows</text>
+      <text x="705" y="455">footprint-centered crops</text>
+      <text x="955" y="455">promotion blocked</text>
+    </g>
   </g>
 </svg>

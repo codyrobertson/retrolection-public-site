@@ -3,6 +3,9 @@ title: "MagicList"
 summary: "A pipeline that reads public Notice of Trustee Sale filings, extracts the fields, and scores each property as a lead."
 cover: /images/projects/magiclist/cover.webp
 coverAlt: "Diagram of the November 20 extraction flow: regex on the OCR text, then three gates (required fields, average confidence, completeness) whose thresholds drop from 85% and 80% to 70% and 60%, with failures going to free models and then Claude"
+art: /images/projects/magiclist/art.jpg
+artAlt: "Legal notices fly off the page as paper scraps and land in a card tray as index cards; one card has an orange tab."
+loop: /videos/projects/magiclist/loop.mp4
 discipline: code
 status: hobby
 date: 2025-10-01
@@ -20,9 +23,13 @@ seo:
 ---
 MagicList started as AI real-estate analysis, and that was too broad. So I narrowed it to one document type: the Notice of Trustee Sale, the public filing that schedules a foreclosure auction. The pipeline finds new filings in the county recorder's public records, downloads the PDFs, OCRs them, pulls out the fields, enriches the property and scores it as a lead. I built it solo, mostly between late October and early December 2025. That's 355 commits on the app and 38 on a separate marketing site.
 
+{% Spot src="/images/projects/magiclist/spot-house-flags.webp" alt="A row of naive little houses each with a small paper flag on a stick, the flags at different heights; the tallest flag is orange-red." side="right" /%}
+
 Stack: FastAPI, Postgres with PostGIS, Redis, Cloudflare R2, Tesseract and PaddleOCR, models through OpenRouter.
 
 ## Regex, then Claude, then regex again
+
+{% Spot src="/images/projects/magiclist/spot-comb-hand-comb.webp" alt="Paper scraps falling through a coarse comb, a cupped naive hand, then a fine comb; one scrap resting in the hand is orange-red." side="left" /%}
 
 Extraction changed direction three times, and the commits show each one. On October 27 I tried having a model write a regex for each field. The same day I dropped that for straight Claude extraction, with a commit message calling it a breakthrough that "replaces brittle regex."
 
@@ -31,6 +38,8 @@ That didn't last. One model call per filing gets expensive across thousands of f
 That means more code paths and more thresholds, and extraction quality now depends on numbers someone has to tune.
 
 ## Documents that stalled quietly
+
+{% Spot src="/images/projects/magiclist/spot-snail-on-stack.webp" alt="A neat stack of paper documents with a small snail resting on top; the snail is orange-red." side="right" /%}
 
 The pipeline runs as a saga: eight explicit stages from discovery to leads, with durable events. A November 13 gap analysis found that 451 of 1,098 documents had never run OCR, because the saga was never triggered for anything created before November 12. The backfill script written to fix it only got through stage two.
 

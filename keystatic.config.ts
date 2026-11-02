@@ -124,6 +124,21 @@ export const richComponents = {
       frame: frame,
     },
   }),
+  Spot: block({
+    label: "Spot illustration",
+    schema: {
+      src: fields.text({ label: "Image URL" }),
+      alt: fields.text({ label: "Alt text" }),
+      side: fields.select({
+        label: "Side",
+        options: [
+          { label: "Right", value: "right" },
+          { label: "Left", value: "left" },
+        ],
+        defaultValue: "right",
+      }),
+    },
+  }),
   Gallery: block({
     label: "Gallery (images side by side)",
     schema: {
@@ -415,6 +430,14 @@ export default config({
         url: fields.url({ label: "Live URL" }),
         cover: image("Cover image", "projects"),
         coverAlt: fields.text({ label: "Cover alt text" }),
+        art: image("Hero illustration", "projects"),
+        artAlt: fields.text({ label: "Hero illustration alt text" }),
+        loop: fields.file({
+          label: "Hero loop",
+          description: "Muted MP4 that loops over the hero illustration. Its first frame should match the illustration.",
+          directory: "public/videos/projects",
+          publicPath: "/videos/projects/",
+        }),
         tags,
         featured: fields.checkbox({ label: "Featured", defaultValue: false }),
         draft: fields.checkbox({ label: "Draft (hidden from the site)", defaultValue: false }),

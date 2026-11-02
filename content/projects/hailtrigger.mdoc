@@ -9,6 +9,9 @@ client: ""
 url: "https://hailtrigger.com"
 cover: /images/projects/hailtrigger/cover.webp
 coverAlt: "The HailTrigger landing page headline: The storm hits. Your crew is first on the doors worth knocking."
+art: /images/projects/hailtrigger/art.jpg
+artAlt: "A slate storm cloud rains postcards on three houses painted over a printed storm report; one house has an orange door."
+loop: /videos/projects/hailtrigger/loop.mp4
 tags:
   - "AI"
   - "Geospatial"
@@ -40,6 +43,8 @@ My notes to the agents stayed blunt: "why do we have this should be way simpler 
 
 ## The column that said "hit this week"
 
+{% Spot src="/images/projects/hailtrigger/spot-circled-hailstone.webp" alt="A handful of white hailstones on torn slate paper, one circled in orange-red, a thin orange-red thread running from it to the one small door of a lone naive house." side="right" /%}
+
 The recon table had a `storm_date` column. Operators read it as "this home got hit this week." It was really the date of the nearest hail report, because proximity was cheaper than geometry when v1 was built.
 
 A dry run caught it. For two whole cities, zero parcels sat inside that week's hail polygons, and the column still showed recent dates on everything. We switched to containment only and added a city-coverage check that fails closed when the geometry is missing.
@@ -51,6 +56,8 @@ Permits had the same bug. A stale permit file can't contain a permit filed after
 Both turned into one rule: a stored value can't claim more certainty than its evidence is fresh. The rewrite keeps them as named scars, `freshness-is-correctness` and `storm-containment-not-proximity`, and says absence is "Blocked, Unknown, Unavailable, or Stale, never nullable optimism." In the UI, source, freshness and blockers show up before an operator is asked to spend money.
 
 ## The roof model
+
+{% Spot src="/images/projects/hailtrigger/spot-ruler-roof.webp" alt="A plain unmarked ruler laid along the roof of a naive house, stopping short of the far edge; the ruler is orange-red." side="left" /%}
 
 Roof vulnerability depends on what the roof is made of, so I wanted a roof-material classifier on authorized county aerial imagery. Agents ran the experiments and logged them in a training journal that's past 3,000 lines, with my directives recorded where I gave them.
 
@@ -87,6 +94,8 @@ The organizing question changed from where code runs to who's allowed to change 
 In its first four days the rewrite landed identity with row-level security, a gateway that gives agents named capability handles instead of root credentials, an exact-commit ship path and release telemetry. That's 95 commits, nearly all governance and very little product. It's an architecture bet, and it isn't proven in production.
 
 ## Where it stands
+
+{% Spot src="/images/projects/hailtrigger/spot-postcard-plane.webp" alt="A postcard with a small square dot pattern folded into an orange-red paper plane, gliding toward a tiny naive house." side="right" /%}
 
 The live product still runs on the old repo, and the rewrite hasn't cut over. The roof model runs as a canary for targeting hints only, with promotion off and metal suppressed. It's processed 768 properties with zero failures. That says the pipeline works. It doesn't say the model is ready.
 

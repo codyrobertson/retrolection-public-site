@@ -6,6 +6,9 @@ status: retired
 date: 2025-06-18
 cover: /images/projects/willow/cover.webp
 coverAlt: "Willow's Storybook open on the Button story, with the component list on the left and a grid of button themes and variants"
+art: /images/projects/willow/art.jpg
+artAlt: "A willow whose branches form a box diagram and whose roots run as a cable into a slate box, over terminal output; one leaf-box is orange."
+loop: /videos/projects/willow/loop.mp4
 role: "Design Engineer"
 client: "Willow"
 url: ''
@@ -25,6 +28,8 @@ Aftercare Companion was an app where a video AI persona named Willow walked pati
 
 ## Copy the code, don't install a package
 
+{% Spot src="/images/projects/willow/spot-carbon-copy.webp" alt="A charcoal pencil tracing over carbon paper; the copied wavy line on the bottom sheet is orange-red." side="right" /%}
+
 The usual way to share components is a package. The app installs the library, and when the library updates, the app bumps a version number and gets the new button everywhere.
 
 I went the other way, the way shadcn does it. Each component is a file. A build script reads it, works out what it depends on, and writes it out as JSON (30 of those files). The CLI fetches that JSON and copies the component's code straight into the app, fixing the imports as it goes. You type `willow add button` and the app now owns a button.
@@ -37,6 +42,8 @@ You could already install through the shadcn CLI by pointing a `registries` entr
 
 ## Tokens, then getting hex out of the app
 
+{% Spot src="/images/projects/willow/spot-tweezer-chip.webp" alt="Tweezers lifting a single colour chip out of a torn-paper cutout; the chip is orange-red." side="left" /%}
+
 The tokens are in `tokens.ts`: a Willow purple scale from 50 to 950 (`#F4F3FF` to `#230E67`), cool blue-gray neutrals, an Oxford Blue secondary, and semantic success, warning, error and info. Tailwind and the CSS variables read from it. On June 23 I switched the variables from HSL to hex and moved to the client's official brand colors.
 
 Screens from Figma show up full of one-off values, so the app got a cleanup pass. `text-[#534f5e]` and `border-[#e1dee9]` became neutral tokens, and `rounded-[10px]` became `rounded-lg`. Some exact Figma values got rounded onto the scale along the way. I don't know if anyone compared the screens afterward.
@@ -48,6 +55,8 @@ Screens from Figma show up full of one-off values, so the app got a cleanup pass
 The brand typeface was Codec Pro. The licensed OTFs were "rejected by sanitizer" in the browser, so I added a WOFF2 conversion guide and a system-font fallback.
 
 ## The day I lost to deployment
+
+{% Spot src="/images/projects/willow/spot-tipped-rocket.webp" alt="A paper rocket tipped over on its launch pad, a wisp of charcoal smoke, a pale cream sun behind; the rocket is orange-red." side="right" /%}
 
 June 23 had more than 40 commits. Some of it was real work: Label, Input, Textarea, FormField and a few more, plus Storybook and a deploy workflow with protected branches. The rest was Vercel route-manifest errors, a commit called "Nuclear option - pure vanilla Next.js deployment," a move from Vercel to Netlify, and Storybook base-path patches. That Vercel deploy is a 404 now.
 

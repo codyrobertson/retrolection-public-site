@@ -1,43 +1,48 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" font-family="system-ui, sans-serif">
-  <rect width="1200" height="600" fill="#f6f2e9"/>
-  <text x="60" y="80" font-size="30" font-weight="600" fill="#171717">From storm to signed job, one address the whole way</text>
-  <text x="60" y="114" font-size="18" fill="#6b6b6b">Every step carries the same address, so a booking can be traced back to the postcard that caused it.</text>
-  <defs>
-    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
-      <path d="M0 0L10 5L0 10z" fill="#171717"/>
-    </marker>
-  </defs>
-  <g font-size="19" fill="#171717" text-anchor="middle">
-    <rect x="60" y="230" width="130" height="90" rx="10" fill="none" stroke="#171717" stroke-width="2"/>
-    <text x="125" y="270">Storm</text><text x="125" y="296" font-size="15" fill="#6b6b6b">hail + wind</text>
-    <rect x="220" y="230" width="130" height="90" rx="10" fill="none" stroke="#171717" stroke-width="2"/>
-    <text x="285" y="270">Score</text><text x="285" y="296" font-size="15" fill="#6b6b6b">exposure + roof</text>
-    <rect x="380" y="230" width="130" height="90" rx="10" fill="none" stroke="#171717" stroke-width="2"/>
-    <text x="445" y="270">Pick homes</text><text x="445" y="296" font-size="15" fill="#6b6b6b">contractor</text>
-    <rect x="540" y="230" width="130" height="90" rx="10" fill="#2563eb"/>
-    <text x="605" y="270" fill="#ffffff">Postcard</text><text x="605" y="296" font-size="15" fill="#dbe6fd">its own QR</text>
-    <rect x="700" y="230" width="130" height="90" rx="10" fill="none" stroke="#171717" stroke-width="2"/>
-    <text x="765" y="270">Scan</text><text x="765" y="296" font-size="15" fill="#6b6b6b">homeowner</text>
-    <rect x="860" y="230" width="130" height="90" rx="10" fill="none" stroke="#171717" stroke-width="2"/>
-    <text x="925" y="270">Booking</text><text x="925" y="296" font-size="15" fill="#6b6b6b">inspection</text>
-    <rect x="1020" y="230" width="130" height="90" rx="10" fill="none" stroke="#171717" stroke-width="2"/>
-    <text x="1085" y="270">Signed job</text><text x="1085" y="296" font-size="15" fill="#6b6b6b">attributed</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" font-family="inherit">
+  <!-- key step: the postcard, marked with orange-red -->
+  <rect x="550" y="76" width="100" height="18" data-marker="#e2552f" style="fill:#e2552f" fill-opacity=".55"/>
+  <!-- highlighter under the tie label -->
+  <rect x="540" y="202" width="120" height="22" data-marker="#8fd3b6" style="fill:#8fd3b6" fill-opacity=".6"/>
+  <g fill="none" stroke="currentColor" stroke-width="1.5">
+    <!-- arrows between steps: shaft + open head -->
+    <path d="M182 84H218M207 78L218 84L207 90"/>
+    <path d="M342 84H378M367 78L378 84L367 90"/>
+    <path d="M502 84H538M527 78L538 84L527 90"/>
+    <path d="M662 84H698M687 78L698 84L687 90"/>
+    <path d="M822 84H858M847 78L858 84L847 90"/>
+    <path d="M982 84H1018M1007 78L1018 84L1007 90"/>
+    <!-- one address: tie line under every step -->
+    <path d="M120 180H1080" data-w="1.3"/>
+    <g data-pen="9h">
+      <path d="M120 134V140M120 146V152M120 158V164M120 170V178"/>
+      <path d="M280 134V140M280 146V152M280 158V164M280 170V178"/>
+      <path d="M440 134V140M440 146V152M440 158V164M440 170V178"/>
+      <path d="M600 134V140M600 146V152M600 158V164M600 170V178"/>
+      <path d="M760 134V140M760 146V152M760 158V164M760 170V178"/>
+      <path d="M920 134V140M920 146V152M920 158V164M920 170V178"/>
+      <path d="M1080 134V140M1080 146V152M1080 158V164M1080 170V178"/>
+    </g>
   </g>
-  <g stroke="#171717" stroke-width="2" marker-end="url(#a)">
-    <line x1="190" y1="275" x2="218" y2="275"/>
-    <line x1="350" y1="275" x2="378" y2="275"/>
-    <line x1="510" y1="275" x2="538" y2="275"/>
-    <line x1="670" y1="275" x2="698" y2="275"/>
-    <line x1="830" y1="275" x2="858" y2="275"/>
-    <line x1="990" y1="275" x2="1018" y2="275"/>
+  <g fill="currentColor" text-anchor="middle">
+    <g font-size="21" font-weight="600">
+      <text x="120" y="90">Storm</text>
+      <text x="280" y="90">Score</text>
+      <text x="440" y="90">Pick homes</text>
+      <text x="600" y="90">Postcard</text>
+      <text x="760" y="90">Scan</text>
+      <text x="920" y="90">Booking</text>
+      <text x="1080" y="90">Signed job</text>
+    </g>
+    <g font-size="16" fill-opacity=".6">
+      <text x="120" y="118">hail + wind</text>
+      <text x="280" y="118">exposure + roof</text>
+      <text x="440" y="118">contractor</text>
+      <text x="600" y="118">its own QR</text>
+      <text x="760" y="118">homeowner</text>
+      <text x="920" y="118">inspection</text>
+      <text x="1080" y="118">attributed</text>
+    </g>
+    <text x="600" y="219" font-size="19" font-weight="600">one address</text>
   </g>
-  <line x1="125" y1="400" x2="1085" y2="400" stroke="#2563eb" stroke-width="3"/>
-  <g stroke="#2563eb" stroke-width="2" stroke-dasharray="4 5">
-    <line x1="125" y1="320" x2="125" y2="400"/><line x1="285" y1="320" x2="285" y2="400"/>
-    <line x1="445" y1="320" x2="445" y2="400"/><line x1="605" y1="320" x2="605" y2="400"/>
-    <line x1="765" y1="320" x2="765" y2="400"/><line x1="925" y1="320" x2="925" y2="400"/>
-    <line x1="1085" y1="320" x2="1085" y2="400"/>
-  </g>
-  <text x="605" y="440" font-size="20" fill="#2563eb" text-anchor="middle" font-weight="600">one address</text>
-  <text x="60" y="530" font-size="16" fill="#6b6b6b">Two users: contractor staff in a dense dashboard (storm to postcard), homeowners on a phone (scan onward).</text>
+  <text x="60" y="290" font-size="16" fill="currentColor" fill-opacity=".6">Two users: contractor staff in a dense dashboard (storm to postcard), homeowners on a phone (scan onward).</text>
 </svg>
