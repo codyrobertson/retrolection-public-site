@@ -66,17 +66,52 @@ const strengthFor = (size) => 0.22 + 0.78 * sstep(12, 34, size);
  * in a box that clips (overflow hidden) is clipped to it; text that is hidden (opacity 0) is
  * left out but not tagged, so it is inked as soon as it shows. On the body, a part of the page
  * marked data-gl-skip is left to the layer scoped to it (startSheetInk).
+ *
+ * A layer keeps what it learnt (`memo`) from one walk to the next. When all that has changed is
+ * the DOM itself (`changes.dirty`: the elements the layer's MutationObserver saw change, a letter
+ * going down), only those elements and what is in them are asked their styles again; the rest
+ * keep theirs, and every run of text has its place read again (one box) so nothing moved is missed.
+ * @param {{ full: boolean, dirty: Set<Element> }} [changes]
  */
-function collect(root, host) {
+function collect(root, host, share = false, memo = { words: new WeakMap(), els: new WeakMap() }, changes) {
   const docEl = document.documentElement, scoped = root !== document.body;
-  root.querySelectorAll("[data-ink-off]").forEach((e) => e.removeAttribute("data-ink-off"));
+  const part = !!changes && !changes.full;
+  if (!part) root.querySelectorAll("[data-ink-off]").forEach((e) => e.removeAttribute("data-ink-off"));
   const o = scoped ? root.getBoundingClientRect() : { left: -scrollX, top: -scrollY };
-  const styles = new Map(), ok = new Map(), op = new Map(), clips = new Map(), off = [];
-  const style = (el) => { let s = styles.get(el); if (!s) styles.set(el, (s = getComputedStyle(el))); return s; };
+  const styles = new Map(), ok = new Map(), op = new Map(), clips = new Map(), off = [], on = [], sibs = new Map(), moved = new Map();
+  /** an element the DOM changed in, or in one that did */
+  const touched = (el) => {
+    if (!part) return true;
+    if (!el || el === root) return false;
+    let v = moved.get(el); if (v !== undefined) return v;
+    v = changes.dirty.has(el) || touched(el.parentElement); moved.set(el, v); return v;
+  };
+  // a part that types itself is hundreds of spans a letter each, and its layer is rebuilt as each goes down:
+  // spans alike (one parent, one class, the same attributes) are styled alike, so they are asked once
+  // (only spans, only there: nothing on the page styles a span by its place among its siblings)
+  const style = (el) => {
+    let s = styles.get(el); if (s) return s;
+    let k = null, sib;
+    if (share && el.tagName === "SPAN" && !el.id && !el.style.length && el.parentElement) {
+      k = el.className; for (const a of el.attributes) if (a.name !== "class") k += `|${a.name}=${a.value}`;
+      sib = sibs.get(el.parentElement); s = sib?.get(k);
+    }
+    if (!s) {
+      s = getComputedStyle(el);
+      if (k !== null) { if (!sib) sibs.set(el.parentElement, (sib = new Map())); sib.set(k, s); }
+    }
+    styles.set(el, s); return s;
+  };
   const eligible = (el) => {
     if (!el || el === docEl || (scoped && !root.contains(el))) return true;
     let v = ok.get(el); if (v !== undefined) return v;
-    if (!eligible(el.parentElement)) { ok.set(el, false); return false; }
+    // as it was, unless the DOM changed in it (a box that clips is always looked at again: it may have moved)
+    const was = memo.els.get(el);
+    if (was && !was.clip && !touched(el) && eligible(el.parentElement) === was.up) {
+      op.set(el, was.alpha); ok.set(el, was.own); return was.own;
+    }
+    const up = eligible(el.parentElement);
+    if (!up) { ok.set(el, false); memo.els.set(el, { own: false, up, alpha: 0, clip: null }); return false; }
     const s = style(el);
     const alpha = ((el.parentElement && op.get(el.parentElement)) || 1) * parseFloat(s.opacity || "1");
     op.set(el, alpha);
@@ -94,7 +129,9 @@ function collect(root, host) {
     const own = !hidden && !SKIP_TAGS.has(el.tagName.toUpperCase()) && !el.hasAttribute("data-ink-skip") && !el.hasAttribute("data-gl-host") &&
       s.position !== "fixed" && s.position !== "sticky" && s.transform === "none" && flow < 2;
     if (!own && !hidden) off.push(el); // tag after reading, so we never dirty style mid-collect
+    else if (part) on.push(el);
     ok.set(el, own);
+    memo.els.set(el, { own, up, alpha, clip: clip || null });
     return own;
   };
   const out = [];
@@ -105,37 +142,53 @@ function collect(root, host) {
     if (!/\S/.test(data)) continue;
     const el = n.parentElement;
     if (!el || host.contains(el) || !eligible(el)) continue;
-    const s = style(el);
-    const size = parseFloat(s.fontSize);
-    const base = {
-      font: `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`, color: s.color, alpha: op.get(el) ?? 1,
-      ls: s.letterSpacing === "normal" ? "0px" : s.letterSpacing, size, S: strengthFor(size), clip: clips.get(el),
-    };
-    const up = s.textTransform === "uppercase", low = s.textTransform === "lowercase";
-    for (const m of data.matchAll(/\S+/g)) {
-      range.setStart(n, m.index); range.setEnd(n, m.index + m[0].length);
-      const rects = range.getClientRects();
-      const push = (txt, r) => out.push({ ...base, text: up ? txt.toUpperCase() : low ? txt.toLowerCase() : txt, x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height });
-      if (rects.length === 1) push(m[0], rects[0]);
-      else for (let k = 0; k < m[0].length; k++) { range.setStart(n, m.index + k); range.setEnd(n, m.index + k + 1); const r = range.getClientRects()[0]; if (r) push(m[0][k], r); }
+    const e = /** @type {any} */ (memo.els.get(el));
+    if (!e.base || touched(el) || e.clip || e.base.alpha !== op.get(el)) {
+      const s = style(el), size = parseFloat(s.fontSize);
+      e.base = {
+        font: `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`, color: s.color, alpha: op.get(el) ?? 1,
+        ls: s.letterSpacing === "normal" ? "0px" : s.letterSpacing, size, S: strengthFor(size), clip: clips.get(el),
+      };
+      e.up = s.textTransform === "uppercase"; e.low = s.textTransform === "lowercase";
     }
+    const base = e.base, up = e.up, low = e.low;
+    // the words' boxes are kept, as offsets in the box of the element they're in, while the text, its font and
+    // that box's size are as they were: one box read for the run rather than one for each word. (Text that shares
+    // its element is only kept while nothing in that element changed: what's beside it could have moved it.)
+    const pr = el.getBoundingClientRect(), px = pr.left - o.left, py = pr.top - o.top;
+    const keepable = (el.firstChild === n && el.lastChild === n) || !touched(el);
+    const sig = `${data}\u0000${base.font}\u0000${base.ls}\u0000${up}${low}\u0000${pr.width}\u0000${pr.height}`;
+    let words = keepable ? memo.words.get(n) : null;
+    if (!words || words.sig !== sig) {
+      words = { sig, list: [] };
+      const keep = (txt, r) => words.list.push({ text: up ? txt.toUpperCase() : low ? txt.toLowerCase() : txt, dx: r.left - pr.left, dy: r.top - pr.top, w: r.width, h: r.height });
+      for (const m of data.matchAll(/\S+/g)) {
+        range.setStart(n, m.index); range.setEnd(n, m.index + m[0].length);
+        const rects = range.getClientRects();
+        if (rects.length === 1) keep(m[0], rects[0]);
+        else for (let k = 0; k < m[0].length; k++) { range.setStart(n, m.index + k); range.setEnd(n, m.index + k + 1); const r = range.getClientRects()[0]; if (r) keep(m[0][k], r); }
+      }
+      memo.words.set(n, words);
+    }
+    for (const w of words.list) out.push({ ...base, text: w.text, x: px + w.dx, y: py + w.dy, w: w.w, h: w.h });
   }
   off.forEach((e) => e.setAttribute("data-ink-off", ""));
+  on.forEach((e) => e.hasAttribute("data-ink-off") && e.removeAttribute("data-ink-off"));
   return out;
 }
 
 /**
- * @param {{ id?: string, readyClass?: string, root?: HTMLElement, debounce?: number, attributes?: string[] }} [opts]
+ * @param {{ id?: string, readyClass?: string, root?: HTMLElement, debounce?: number, attributes?: string[], share?: boolean }} [opts]
  *   the page's ink by default; scoped to a part of it that types itself (startSheetInk)
  */
 export function startInk(opts = {}) {
-  const ascents = new Map();
+  const ascents = new Map(), memo = { words: new WeakMap(), els: new WeakMap() };
   let font = "", ls = "", color = "", alpha = -1, S = -1;
   const root = opts.root ?? document.body;
   const layer = createLayer({
     id: opts.id ?? "ink-gl", z: 2, readyClass: opts.readyClass ?? "ink-gl", frag: INK_FRAG, sigmas: [0.45, 2.3], metaScale: 0.25, animated: true,
     root: opts.root, debounce: opts.debounce, attributes: opts.attributes,
-    collect,
+    collect: (root, host, changes) => collect(root, host, !!opts.share, memo, changes),
     begin(mx) { font = ls = color = ""; alpha = S = -1; mx.textBaseline = "alphabetic"; },
     paint(mx, tx, w) {
       if (w.font !== font) mx.font = font = w.font;
@@ -168,5 +221,5 @@ export function startInk(opts = {}) {
  * @param {string} id unique per page
  */
 export function startLiveInk(root, id) {
-  return startInk({ id, readyClass: id, root, debounce: 24, attributes: ["data-on", "data-state", "data-ready", "data-drawn", "data-seen", "open"] });
+  return startInk({ id, readyClass: id, root, debounce: 24, share: true, attributes: ["data-on", "data-state", "data-ready", "data-drawn", "data-seen", "open"] });
 }

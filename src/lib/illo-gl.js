@@ -221,7 +221,7 @@ async function loadSources() {
 export function startIllos() {
   loadSources();                                              // the layer rebuilds itself when the strokes land (mutation observer)
   const layer = createLayer({
-    id: "illo-gl", z: 2, readyClass: "illo-gl", frag: ILLO_FRAG, sigmas: [0.45, 2.3], metaScale: 1, metaNearest: true, animated: true, live: false,
+    id: "illo-gl", z: 2, readyClass: "illo-gl", frag: ILLO_FRAG, sigmas: [0.45, 2.3], metaScale: 1, metaNearest: true, animated: true,
     collect: (root) => collect(root),
     begin(mx, tx) { mx.lineJoin = "round"; tx.lineCap = "round"; tx.lineJoin = "round"; },
     paint(mx, tx, it) {

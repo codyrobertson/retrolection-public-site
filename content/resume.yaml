@@ -6,91 +6,130 @@ summary: >-
   the economic model, the technical execution) and connect the dots.
 location: Phoenix, AZ
 experience:
-  - company: Independent
-    role: Design Engineer
+  - company: PersonaLM
+    role: Founder
+    url: 'https://persona-lm.com'
+    location: Phoenix, AZ
+    start: '2026'
+    end: ''
+    highlights:
+      - >-
+        Buyer intelligence for ecommerce brands: turns a store's own order history into named customer audiences and ranked campaigns, overnight.
+      - >-
+        Purchase prediction above 80%, validated on a 30-day forward holdout.
+  - company: Whag
+    role: Co-founder & CDO
+    url: ''
+    location: ''
+    start: '2023'
+    end: ''
+    highlights:
+      - >-
+        A verified-link platform: a digital identity with provenance, shortened customizable links, shared Whitelists, and a community Blacklist for malicious links.
+      - >-
+        Designed the product, brand, and landing pages.
+  - company: ApeIn
+    role: Creative Director
     url: ''
     location: Phoenix, AZ
-    start: ''
-    end: ''
+    start: '2021'
+    end: '2023'
     highlights:
       - >-
-        Sedona: creative director and design engineer on an AI-agent platform
-        on Solana. Designed the brand, website, and front end.
+        Cross-chain GameFi experience with three titles, including Jungle Rumble, a tokenized PVP idle brawler built in Unity.
       - >-
-        ReelsVault: AI tool that turns saved Instagram Reels into searchable
-        competitive intelligence, with transcription, classification, semantic
-        search, and pattern extraction.
+        Shipped a turn-based Unity game with no prior game-dev experience: three months to learn and hire, six months to build, on a $100K budget.
       - >-
-        Product, brand, and landing-page work for whag.me, StablOS, Stabl Pay,
-        and Step3.
-      - >-
-        Founded and taught VibePHX (vibecodephx.com), a Phoenix workshop where
-        people build and ship an AI app in a day.
-  - company: Isle of Motu (ApeIn)
-    role: Co-founder & Creative Director
-    url: ''
-    location: ''
-    start: ''
-    end: ''
-    highlights:
-      - >-
-        Cross-chain GameFi experience with three titles, including Jungle
-        Rumble, a tokenized PVP idle brawler built in Unity.
-      - >-
-        Shipped a turn-based Unity game with no prior game-dev experience: three
-        months to learn and hire, six months to build, on a $100K budget.
-      - >-
-        Created the first design system to render randomized 3D NFTs in the
-        browser, with a Blender asset pipeline for in-app randomization.
-  - company: Polyient Labs & Polyient Games
-    role: Creative Director
-    url: https://polyient.io
-    location: ''
-    start: ''
-    end: ''
-    highlights:
-      - >-
-        Scaled the creative organization at what was then the largest Web3
-        incubator; a dozen-plus companies incubated, with successful exits.
-      - >-
-        Designed industry-first patterns: the first utility NFT, the first
-        bi-directional NFT-to-ERC-20 bridge interface, and the first NFT/ERC-20
-        liquid staking interface.
-      - >-
-        Launched about ten NFT collections across three chains, earning more
-        than 4,000 ETH in primary sales.
-  - company: Real Blocks
+        Created the first design system to render randomized 3D NFTs in the browser, with a Blender asset pipeline for in-app randomization.
+  - company: Step3
     role: Creative Director
     url: ''
-    location: New York, NY
-    start: ''
-    end: ''
+    location: Phoenix, AZ
+    start: '2021'
+    end: '2026'
     highlights:
       - >-
-        Employee #12 at the first company to offer accredited investors
-        tokenized REITs (Barclays Fintech Incubator).
-      - Naming, brand identity, web and application design, and marketing strategy.
+        Brand, product, and landing-page design.
+  - company: Polyient Labs
+    role: Creative Director
+    url: 'https://polyient.io'
+    location: Phoenix, AZ
+    start: '2018'
+    end: '2026'
+    highlights:
+      - >-
+        Scaled the creative organization at what was then the largest Web3 incubator; a dozen-plus companies incubated, with successful exits.
+      - >-
+        Designed industry-first patterns: the first utility NFT, the first bi-directional NFT-to-ERC-20 bridge interface, and the first NFT/ERC-20 liquid staking interface.
+      - >-
+        Launched about ten NFT collections across three chains, earning more than 4,000 ETH in primary sales.
+  - company: Blockchain48
+    role: Creative Director
+    url: ''
+    location: Phoenix, AZ
+    start: '2018'
+    end: '2019'
+    highlights:
+      - >-
+        The look and feel of every physical and digital property, touchpoint, and piece of collateral.
   - company: Block Collective
     role: Creative Partner
     url: ''
-    location: ''
-    start: ''
-    end: ''
+    location: New York, NY
+    start: '2018'
+    end: '2018'
     highlights:
       - >-
-        Led the creative organization for ICO-era crypto startups, including
-        Sweetbridge (blockchain supply chain, 20+ localizations).
-  - company: Retrolection
-    role: Founder
-    url: https://www.retrolection.com
+        Led the creative organization for ICO-era crypto startups, including Sweetbridge (blockchain supply chain, 20+ localizations).
+  - company: RealBlocks
+    role: Creative Director
+    url: ''
+    location: New York, NY
+    start: '2017'
+    end: '2018'
+    highlights:
+      - >-
+        Employee #12 at the first company to offer accredited investors tokenized REITs (Techstars Barclays NYC '17).
+      - >-
+        Naming, brand identity, web and application design, and marketing strategy.
+  - company: Sourcely
+    role: Senior Designer
+    url: ''
+    location: Scottsdale, AZ
+    start: '2016'
+    end: '2018'
+    highlights:
+      - >-
+        Brand development, design, and strategy.
+  - company: OCEG
+    role: Design Lead
+    url: ''
     location: Phoenix, AZ
-    start: ''
-    end: ''
+    start: '2016'
+    end: '2017'
     highlights:
       - >-
-        Brand strategy, identity, and digital design studio. Clients include
-        Coca-Cola, GSK, Lionsgate, Barclays, OCEG, Citarella, Sourcely, and the
-        Boy Scouts of America.
+        Brand guidelines, naming, brand strategy, marketing collateral, web design, and art direction.
+      - >-
+        Marketing audits, personas, client interviews, competitive analysis, content strategy, and A/B testing.
+  - company: Honydo
+    role: Founder
+    url: ''
+    location: Scottsdale, AZ
+    start: '2015'
+    end: '2016'
+    highlights:
+      - >-
+        A social indoor-mapping shopping app: shoppers find items in store, report deals, and flag products that moved.
+  - company: Retrolection
+    role: Founder & Designer
+    url: 'https://www.retrolection.com'
+    location: Scottsdale, AZ
+    start: '2012'
+    end: '2026'
+    highlights:
+      - >-
+        Brand strategy, identity, and digital design studio. Clients include Coca-Cola, GSK, Lionsgate, Barclays, OCEG, Citarella, Sourcely, and the Boy Scouts of America.
 skills:
   - group: Design
     items:

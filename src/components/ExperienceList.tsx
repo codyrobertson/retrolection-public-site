@@ -5,7 +5,6 @@ import styles from "./experience.module.css";
 
 export type Job = { company: string; role: string; url: string; location: string; when: string; highlights: string[] };
 
-const NN = (n: number) => String(n).padStart(2, "0");
 const LINE_MS = 70;                        // a line of what was done printing after the one before it
 
 /**
@@ -30,7 +29,7 @@ export default function ExperienceList({ jobs, dated }: { jobs: Job[]; dated: bo
   return (
     <ol className={styles.rows} data-dated={dated}>
       <li className={styles.head} aria-hidden>
-        <span>No.</span><span>Company</span><span>Role</span>{dated && <span>When</span>}<span>Where</span><span />
+        <span>Company</span><span>Role</span>{dated && <span>When</span>}<span>Where</span><span />
       </li>
       {jobs.map((j, i) => {
         const shown = printed[i] ?? -1;
@@ -38,7 +37,6 @@ export default function ExperienceList({ jobs, dated }: { jobs: Job[]; dated: bo
           <li key={`${j.company}-${i}`}>
             <details className={styles.row} name="experience" onToggle={(e) => toggle(i, e.currentTarget.open)}>
               <summary className={styles.line}>
-                <span className={styles.num}>{NN(i + 1)}</span>
                 <span className={styles.company}>{j.company}</span>
                 <span className={styles.role}>{j.role}</span>
                 {dated && <span className={styles.when}>{j.when}</span>}
