@@ -11,30 +11,32 @@
   --u: clamp(0.42px, calc((100vw - 2 * var(--gutter)) / var(--group)), 1px);
   --rise: 125px;                                                     /* ember to the scrim */
   /* the ashtray, 16 of air, the hand: the group set against the right gutter, the arm coming up off the page's foot */
-  --hand-x: calc(100vw - var(--gutter) - var(--hand-w) * var(--u));
-  --tray-x: calc(var(--hand-x) - (var(--tray-w) + 16) * var(--u));
+  --hand-x: calc(100vw - var(--gutter) - var(--hand-vw) * var(--u));
+  --tray-x: calc(var(--hand-x) - (var(--tray-w) + var(--tray-gap)) * var(--u));
   --tray-b: calc(22 * var(--u));
   --ember-l: calc(var(--tray-x) + var(--ember-x) * var(--u));
   --ember-b: calc(var(--tray-b) + var(--ember-y) * var(--u));
 
   position: relative;
-  height: max(calc(var(--ember-b) + var(--rise) + 10px), calc(var(--hand-h) * var(--u) + 12px));
+  height: max(calc(var(--ember-b) + var(--rise) + 10px), calc(var(--hand-vh) * var(--u) + 12px));
   overflow: hidden;
   pointer-events: none;
 }
 /* wide: the links stand at the bottom right (site.module.css), so the group stands in the middle */
 @media (min-width: 1200px) {
-  .vignette { --hand-x: calc(50vw + (var(--group) / 2 - var(--hand-w)) * var(--u)); }
+  .vignette { --hand-x: calc(50vw + (var(--group) / 2 - var(--hand-vw)) * var(--u)); }
 }
 
 .vignette > *,
-.hand > * {
+.hand > *,
+.cig > * {
   position: absolute;
   pointer-events: none;
 }
 
 .trayBody,
 .trayInk,
+.cig > *,
 .handBody,
 .handInk,
 .wisp {
@@ -63,6 +65,36 @@
 .trayBody { background: var(--paper); -webkit-mask-image: url(/footer/tray-body.webp); mask-image: url(/footer/tray-body.webp); }
 .trayInk { background: var(--ink); -webkit-mask-image: url(/footer/tray-ink.webp); mask-image: url(/footer/tray-ink.webp); }
 
+/* the cigarette, over its rest in the dish: a sheet the dish's size, moved whole when the hand takes it (cig-break) */
+.cig {
+  left: var(--tray-x);
+  bottom: var(--tray-b);
+  width: calc(var(--tray-w) * var(--u));
+  height: calc(var(--tray-h) * var(--u));
+}
+.cigShadow,
+.cigBody,
+.cigInk,
+.cigAsh {
+  inset: 0;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+.cigShadow { background: var(--ink); -webkit-mask-image: url(/footer/cig-shadow.webp); mask-image: url(/footer/cig-shadow.webp); }
+.cigBody { background: var(--paper); -webkit-mask-image: url(/footer/cig-body.webp); mask-image: url(/footer/cig-body.webp); }
+.cigInk { background: var(--ink); -webkit-mask-image: url(/footer/cig-ink.webp); mask-image: url(/footer/cig-ink.webp); }
+.cigAsh { background: var(--ink); -webkit-mask-image: url(/footer/cig-ash.webp); mask-image: url(/footer/cig-ash.webp); }
+/* tapped off, and grown back over a minute */
+.vignette[data-ash="gone"] .cigAsh { opacity: 0; transition: opacity 0.12s; }
+.vignette[data-ash="grow"] .cigAsh { opacity: 1; transition: opacity 60s linear; }
+.fleck {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: 0;
+  filter: blur(0.4px);
+}
+
 /* the smoke as a drawing: what shows until the plume is live */
 .wisp {
   left: calc(var(--ember-l) - 17px);
@@ -75,28 +107,30 @@
   mask: url(/footer/wisp-ink.webp) no-repeat 0 0 / 100% 100%;
   transition: opacity 0.6s ease;
 }
-.vignette[data-live] .wisp { opacity: 0; }
+.vignette[data-live] .wisp,
+.vignette[data-break] .wisp { opacity: 0; }
 
-/* the ember: a dot of vermilion with a short fall-off; the plume's shader adds the glow when live */
-.ember {
-  left: calc(var(--ember-l) - 6 * var(--u));
-  bottom: calc(var(--ember-b) - 6 * var(--u));
+/* the ember: a dot of vermilion with a short fall-off, at the root of the ash; the plume's shader adds the glow when live */
+.cig > .ember {
+  left: calc((var(--cig-ex) - 6) * var(--u));
+  top: calc((var(--cig-ey) - 6) * var(--u));
   width: calc(12 * var(--u));
   height: calc(12 * var(--u));
   background: radial-gradient(circle closest-side, var(--vermilion) 0 27%, transparent 75%);
 }
 
+/* reaching down past the ember: the plume goes with the cigarette when the hand draws it back */
 .smoke {
   width: max(240px, calc(300 * var(--u)));
-  height: calc(var(--rise) + 24px);
+  height: calc(var(--rise) + 24px + 70 * var(--u));
   left: calc(var(--ember-l) - max(120px, 150 * var(--u)));
-  bottom: calc(var(--ember-b) - 24px);
+  bottom: calc(var(--ember-b) - 24px - 70 * var(--u));
 }
 
-/* the hand: a sheet of frames; --hc and --hr (set by the tapping) pick one. The sleeve is cut square at the cell's foot, the page's */
+/* the hand: a sheet of frames; --hc and --hr (set by the tapping) pick one. The sleeve runs on --hand-under below the page's foot */
 .hand {
   left: var(--hand-x);
-  bottom: 0;
+  bottom: calc(var(--hand-under) * var(--u) * -1);
   width: calc(var(--hand-w) * var(--u));
   height: calc(var(--hand-h) * var(--u));
 }
@@ -108,8 +142,18 @@
   -webkit-mask-position: calc(var(--hc, 0) * var(--hand-w) * var(--u) * -1) calc(var(--hr, 0) * var(--hand-h) * var(--u) * -1);
   mask-position: calc(var(--hc, 0) * var(--hand-w) * var(--u) * -1) calc(var(--hr, 0) * var(--hand-h) * var(--u) * -1);
 }
+/* in: up onto the table from below the page's foot, turning a little as an arm does, and settling
+   (SmokeFooter sets data-enter: "wait" below, then "in") */
+.hand { transition: transform 1.6s cubic-bezier(0.2, 0.75, 0.25, 1), opacity 0.5s ease; transform-origin: 70% 100%; }
+.vignette[data-enter="wait"] .hand { transform: translate(6%, 62%) rotate(5deg); opacity: 0; transition: none; }
+@media (prefers-reduced-motion: reduce) { .hand { transition: none; } }
 .handBody { background: var(--paper); -webkit-mask-image: url(/footer/hand-body.webp); mask-image: url(/footer/hand-body.webp); }
 .handInk { background: var(--ink); -webkit-mask-image: url(/footer/hand-ink.webp); mask-image: url(/footer/hand-ink.webp); }
+
+/* in the fingers (cig-break sets data-held) the cigarette is over the hand, and its smoke and the air's fade with it */
+.vignette[data-held] .cig,
+.vignette[data-held] .smoke,
+.vignette[data-held] .scrim { z-index: 1; }
 
 /* the top of the veneer goes to paper: the smoke is gone before it reaches it (the hand is above it) */
 .scrim {

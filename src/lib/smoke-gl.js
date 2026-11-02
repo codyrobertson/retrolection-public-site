@@ -19,7 +19,7 @@ precision highp float;
 precision mediump float;
 #endif
 uniform vec2 res,ember;
-uniform float t,rise,dark,breath,grow;
+uniform float t,rise,dark,breath,grow,span,drift;
 uniform vec3 ink,glow;
 float h21(vec2 p){p=fract(p*vec2(443.897,441.423));p+=dot(p,p.yx+19.19);return fract((p.x+p.y)*p.x);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
@@ -43,14 +43,14 @@ float strand(float x,float h,float ph,float t,float lean,float wid){
 }
 void main(){
   vec2 uv=gl_FragCoord.xy/res;
-  vec2 p=(uv-ember)*vec2(res.x/res.y,1.);              // height units, the ember the origin
+  vec2 p=(uv-ember)*vec2(res.x/res.y,1.)/span;         // plume units (the canvas's height, less the room below the ember), the ember the origin
   float h=p.y/rise;
   float r=length(p*vec2(1.,1.4))/grow;
   float em=.55+.45*breath;
   float halo=(exp(-r*r*2600.)*1.+exp(-r*r*280.)*.26)*em;
   float a=0.;
   if(h>-.03&&h<1.02){
-    float lean=(fbm(vec2(t*.04,3.1))-.5)*.34;                            // the whole column's drift, over tens of seconds
+    float lean=(fbm(vec2(t*.04,3.1))-.5)*.34+drift;                      // the whole column's drift, over tens of seconds, and the trail when the cigarette moves
     float d=strand(p.x,h,0.,t,lean,1.);
     d=max(d,.85*strand(p.x-.02*h,h,2.9,t*1.05,lean,.8)*smoothstep(.1,.32,h));
     d=max(d,.7*strand(p.x+.03*h,h,5.3,t*.95,lean,1.1)*smoothstep(.26,.5,h));
@@ -77,7 +77,9 @@ const FRAME_MS = 30;
 
 /**
  * Starts the smoke on `canvas`. `ember()` gives the ember's place in the canvas, 0..1 across
- * and up, and how big the drawing is (1 at full size: the glow keeps to the cigarette). Returns
+ * and up, how big the drawing is (1 at full size: the glow keeps to the cigarette), and what share of
+ * the canvas's height, down from its top, the plume is drawn to (default 1; below that is room for the ember to move),
+ * and how far the column trails sideways (0 still; the plume units per unit of height, against the ember's motion). Returns
  * null where there is no WebGL. `onFrame` fires when the first frame is drawn (and false if the
  * context is lost).
  */
@@ -109,10 +111,10 @@ export function startSmoke(canvas, { ember, onFrame }) {
   }
   function draw(now) {
     if (!alive || g.isContextLost()) return;
-    const T = (now - t0 - paused) / 1000, [ex, ey, grow] = ember();
+    const T = (now - t0 - paused) / 1000, [ex, ey, grow, span = 1, drift = 0] = ember();
     const breath = 0.5 + 0.5 * (0.6 * Math.sin(T * 0.9) + 0.25 * Math.sin(T * 2.7 + 1.3) + 0.15 * Math.sin(T * 0.23));
     g.uniform2f(u("res"), canvas.width, canvas.height); g.uniform2f(u("ember"), ex, ey);
-    g.uniform1f(u("t"), T + 40); g.uniform1f(u("rise"), 1 - ey); g.uniform1f(u("dark"), tint.dark); g.uniform1f(u("breath"), breath); g.uniform1f(u("grow"), grow);
+    g.uniform1f(u("t"), T + 40); g.uniform1f(u("rise"), (1 - ey) / span); g.uniform1f(u("span"), span); g.uniform1f(u("drift"), drift); g.uniform1f(u("dark"), tint.dark); g.uniform1f(u("breath"), breath); g.uniform1f(u("grow"), grow);
     g.uniform3fv(u("ink"), tint.ink); g.uniform3fv(u("glow"), tint.glow);
     g.clearColor(0, 0, 0, 0); g.clear(g.COLOR_BUFFER_BIT); g.drawArrays(g.TRIANGLE_STRIP, 0, 4);
     if (!lit) { lit = true; onFrame?.(); }

@@ -6,6 +6,9 @@
 //
 //   node scripts/footer-art.mjs [az=-38 el=-8 roll=-90] [--only hand|tray|wood] [--preview out.png]
 //
+// The cigarette is drawn on its own layers (cig-ink, cig-ash, cig-body, cig-shadow, the dish's size) and the
+// hand has reach, pinch and flick frames, so the hand can take it up and tap it (src/lib/cig-break.ts).
+//
 // public/footer/*.webp + src/lib/footer-art.json (css px at --s: 1; the page scales it).
 
 import { writeFileSync, mkdirSync, rmSync, readFileSync, existsSync } from 'node:fs';
@@ -112,12 +115,29 @@ async function hand() {
   const HALF = (d) => withFinger(d, UP(d).f[d - 1].slice(0, 3).map((v, k) => (v + rest(d)[k]) / 2), { neighbours: -0.015 });
   const FRAMES = [['rest', 0, REST]];
   for (let d = 1; d <= 4; d++) FRAMES.push(['half', 0, HALF(d)], ['up', 0, UP(d)], ['strike', 0, STRIKE(d)]);
+  // the cigarette (SmokeFooter): the hand opens toward the ashtray, takes the filter between the thumb and
+  // the index finger, and taps it with the index; the other fingers stay loose, as they lie at rest
+  const num = (k, d) => (args[k] ?? d).split(',').map(Number);
+  const loose = (k) => REST.f.slice(1).map(([m, p, d, a], i) => [m + k * (0.12 + 0.04 * i), p + k * (0.2 + 0.04 * i), d + k * 0.1, a * (1 - 0.4 * k)]);
+  const PINCH = { wrist: REST.wrist, arch: 0.3, thumb: num('pthumb', '0.3,-0.2,0,0.2,0.2'), f: [num('pidx', '0.45,0.6,0.3,-0.4'), ...loose(1)] };
+  const REACH = { wrist: REST.wrist, arch: 0.24, thumb: num('rthumb', '-0.25,-0.3,-0.35,0.15,0.1'), f: [num('ridx', '0.1,0.15,0.08,-0.4'), ...loose(0.4)] };
+  const FLICK = { ...PINCH, f: [num('fidx', '0.2,0.25,0.1,-0.4'), ...PINCH.f.slice(1)] };
+  FRAMES.push(['reach', 0, REACH], ['pinch', 0, PINCH], ['flick', 0, FLICK]);
+  // and the stages between, so the fingers open and close through the motion rather than jumping to it (cig-break steps through them)
+  const blend = (a, b, t) => (Array.isArray(a) ? a.map((v, i) => blend(v, b[i], t)) : typeof a === 'number' ? a + (b - a) * t : a);
+  const tween = (a, b, t) => ({ wrist: blend(a.wrist, b.wrist, t), arch: blend(a.arch, b.arch, t), thumb: blend(a.thumb, b.thumb, t), f: blend(a.f, b.f, t) });
+  FRAMES.push(['reach1', 0, tween(REST, REACH, 1 / 3)], ['reach2', 0, tween(REST, REACH, 2 / 3)]);
+  FRAMES.push(['pinch1', 0, tween(REACH, PINCH, 0.25)], ['pinch2', 0, tween(REACH, PINCH, 0.5)], ['pinch3', 0, tween(REACH, PINCH, 0.75)]);
+  FRAMES.push(['flick1', 0, tween(PINCH, FLICK, 0.5)]);
+  const GRIP = {};                                  // frame name -> where the thumb and index meet, on the sheet
 
   const noiseH = new M.Noise(SEED + 9);
   const MM_PER_UNIT = HAND_MM / 164;
   const MIRROR = !!+(args.mirror ?? 0);            // 1: a left hand (the right model, mirrored)
   const RING = !!+(args.ring ?? 0), CUFF = !!+(args.cuff ?? 1), SHADOW = !!+(args.shadow ?? 1);
-  const SLEEVE_MM = +(args.sleeve ?? 56), BAND_MM = +(args.band ?? 18);            // how much sleeve the cell holds
+  const SLEEVE_MM = +(args.sleeve ?? 56), BAND_MM = +(args.band ?? 18);            // how much sleeve shows above the page's foot
+  const UNDER_MM = +(args.under ?? 34);              // and how much more is drawn, below it: the arm swings and reaches (cig-break) without its end showing
+  let under = 0;                                     // that much, in sheet px
   const cg = new PEN.Graphite(HS, HS, 2, SEED + 1);
   const cbase = cg.stroke.bind(cg);
   cg.stroke = (pts, o) => cbase(pts, { ...o, weight: (o && o.weight !== undefined ? o.weight : 1) * 1.575 * X });
@@ -187,14 +207,16 @@ async function hand() {
     R.g.noise = boils[boil % 3]; cg.noise = boils[(boil + 1) % 3];
     const b = R.draw({ seed: SEED, pose: pose(spec), view: VIEW, fit: FIT, style: STYLE, layers: LAYERS, detail: DETAIL, quality: 2, contacts: false });
     const { div, w: dw, i0, z0 } = b.df, upp = b.view.mmPerPx * div;
+    { const t = b.view.px(b.rig.digits[0].tip), f = b.view.px(b.rig.digits[1].tip); spec.grip = [(t[0] + f[0]) / 2, (t[1] + f[1]) / 2]; }
     if (!owner) { owner = new Int8Array(64).fill(-2); owner[b.ids.palm] = -1; b.ids.digit.forEach((segs, d) => segs.forEach((id) => { if (id >= 0) owner[id] = d; })); }
     if (!sl) {
       sl = sleeve(GK.rig, b.rig, { gape: +(args.gape ?? 1.85), band: BAND_MM / MM_PER_UNIT, step: +(args.step ?? 0), drop: +(args.drop ?? 34) / MM_PER_UNIT });
-      const tEnd = SLEEVE_MM / MM_PER_UNIT, pE = b.view.px(vadd(sl.C, vmul(sl.ax, -tEnd))), p0 = b.view.px(sl.C);
+      const tEnd = (SLEEVE_MM + UNDER_MM) / MM_PER_UNIT, pE = b.view.px(vadd(sl.C, vmul(sl.ax, -tEnd))), p0 = b.view.px(sl.C);
+      const pV = b.view.px(vadd(sl.C, vmul(sl.ax, -SLEEVE_MM / MM_PER_UNIT)));
       // the sleeve leaves the cell through the edge it runs most toward: cut square to that edge
       const dx = pE[0] - p0[0], dy = pE[1] - p0[1];
-      if (Math.abs(dy) > Math.abs(dx)) { const c = Math.round(pE[1]), s = Math.sign(dy); beyond = (x, y) => (y - c) * s > 0; }
-      else { const c = Math.round(pE[0]), s = Math.sign(dx); beyond = (x) => (x - c) * s > 0; }
+      if (Math.abs(dy) > Math.abs(dx)) { const c = Math.round(pE[1]), s = Math.sign(dy); beyond = (x, y) => (y - c) * s > 0; under = Math.abs(pE[1] - pV[1]); }
+      else { const c = Math.round(pE[0]), s = Math.sign(dx); beyond = (x) => (x - c) * s > 0; under = Math.abs(pE[0] - pV[0]); }
       sl.tEnd = tEnd;
     }
     if (DROP && !arm) {
@@ -343,13 +365,18 @@ async function hand() {
     return { ink, body };
   }
 
-  const sheets = (probeOnly ? FRAMES.slice(0, 1) : FRAMES).map(([, boil, spec]) => layer(spec, boil));
+  const shown = probeOnly ? FRAMES.filter(([n]) => n === (args.pose ?? 'rest')).slice(0, 1) : FRAMES;
+  const sheets = shown.map(([, boil, spec]) => layer(spec, boil));
   // the union box of every frame, padded for the pencil's edge
   let bx0 = HS, by0 = HS, bx1 = 0, by1 = 0;
   for (const { ink, body } of sheets) for (let y = 0; y < HS; y++) for (let x = 0; x < HS; x++) {
     const i = y * HS + x;
     if (ink[i] > 0.004 || body[i]) { if (x < bx0) bx0 = x; if (x > bx1) bx1 = x; if (y < by0) by0 = y; if (y > by1) by1 = y; }
   }
+  // what shows above the page's foot: the layout is fitted to this, the sleeve below it hangs out of sight
+  const visCut = Math.round(by1 - under);
+  let vx1 = bx0;
+  for (const { ink, body } of sheets) for (let y = by0; y <= visCut; y++) for (let x = vx1 + 1; x <= bx1; x++) { const i = y * HS + x; if (ink[i] > 0.004 || body[i]) vx1 = x; }
   const cw = bx1 - bx0 + 1, ch = by1 - by0 + 1, COLS = probeOnly ? 1 : 5, ROWS = probeOnly ? 1 : Math.ceil(FRAMES.length / COLS);
   const gw = cw * COLS, gh = ch * ROWS;
   const inkG = new Float32Array(gw * gh), bodyG = new Float32Array(gw * gh);
@@ -364,9 +391,12 @@ async function hand() {
   const bodyS = boxBlur(bodyG, gw, gh);
   if (!probeOnly) { writeMask('hand-ink', inkG, gw, gh, +(args.hq ?? 55), +(args.haq ?? 70)); writeMask('hand-body', bodyS, gw, gh, 40, 50); }
   meta.hand = {
-    cell: [cw / X, ch / X], cols: COLS, rows: ROWS, px: [gw, gh],
+    cell: [cw / X, ch / X], cols: COLS, rows: ROWS, px: [gw, gh], under: Math.round((under / X) * 10) / 10, vis: [(vx1 - bx0 + 1) / X, (visCut - by0 + 1) / X],
     frames: FRAMES.map(([name], n) => ({ name, col: n % COLS, row: (n / COLS) | 0 })),
   };
+  for (const [name, , spec] of shown) if (spec.grip) GRIP[name] = [Math.round(((MIRROR ? bx1 - spec.grip[0] : spec.grip[0] - bx0) / X) * 10) / 10, Math.round(((spec.grip[1] - by0) / X) * 10) / 10];
+  meta.hand.grip = GRIP;
+  console.log('grip', JSON.stringify(GRIP), 'box', bx0, by0, cw, ch);
   return { inkG, bodyG: bodyS, gw, gh, cw, ch };
 }
 
@@ -410,18 +440,21 @@ function compose(name, w, h, layers, ground) {
 
 
 // ---- the ashtray and the cigarette --------------------------------------------------
-// Drawn with the hero's pencil, from above, on a 216 × 216 css px sheet: a heavy round glass dish
+// Drawn with the hero's pencil, from above, on a square css px sheet: a heavy round glass dish
 // with three rests, a lit cigarette lying in the upper right one, its burning end over the middle.
 // The hand's light (from the upper left, shadows to the lower right) and the hand's camera: the eye
 // sits a little toward the wrist, so a raised point shifts right by 0.23 of its height. Few lines,
 // each one meant; the glass is said by the wood showing through its floor.
-const TW = 216, TH = 216, TK = +(args.tk ?? 0.84);       // the dish is drawn a little under the hand's scale: a hand curled on the table lies short
+// at the hand's own scale and a little over (it lies nearer the eye): a dish about 12 cm across, half
+// again the palm's width, and a cigarette as long as a finger. The sheet grows with it.
+// the sheet runs on past the dish toward the hand, for the filter's shadow; it lies over the gap between them
+const TK = +(args.tk ?? 1.15), TSH = TK / 0.84, TH = Math.round(216 * TSH), TW = Math.round(232 * TSH), TGAP = 16 - (TW - TH);
 function tray() {
   const W = TW * X, H = TH * X;
   const g = new PEN.Graphite(W, H, 2, 777);
   const grade = (v) => PEN.gradeAt(v);
   let ph = 1;
-  const DC = [104, 104], PM = PX_MM * TK, S = PM * X;     // css px per mm of the dish; sheet px per mm
+  const DC = [104 * TSH, 104 * TSH], PM = PX_MM * TK, S = PM * X;     // css px per mm of the dish; sheet px per mm
   const pr = (x, y, z = 0) => [(DC[0] + PM * (0.97 * x + 0.23 * z)) * X, (DC[1] - PM * (y + 0.05 * z)) * X];
   const pol = (r, z, a) => pr(r * Math.cos(a * DEG), r * Math.sin(a * DEG), z);
   const arc = (r, z, a0, a1, n = 120) => Array.from({ length: n + 1 }, (_, i) => pol(r, z, a0 + (a1 - a0) * (i / n)));
@@ -431,7 +464,9 @@ function tray() {
   const LIGHT = 135;                                     // the light comes from the upper left
   const lit = (a) => 0.5 + 0.5 * Math.cos((a - LIGHT) * DEG);   // 1 where the rim faces the light
   const RIM = 52, LIP = 43, ZR = 22, FLOOR = 31, ZF = 7, GD = 5;   // mm: rim's outer radius, lip's inner, rim height, floor, its height, a rest's depth
-  const RESTS = [45, 165, 285], HW = 5.2;                // the rests' angles and half width (mm)
+  // the rests' angles and half width (mm): the cigarette lies in the first, its filter toward the hand, low
+  // enough that the hand reaches it sliding across the table rather than up it
+  const AX = +(args.ax ?? 30), RESTS = [AX, AX + 120, AX + 240], HW = 5.2;
   const wall = (t) => ({ r: LIP - (LIP - FLOOR) * t, z: ZR - (ZR - ZF) * Math.pow(t, 1.5) });
   const inRest = (a, r) => RESTS.some((c) => Math.abs(((a - c + 540) % 360) - 180) * DEG * r < HW);
 
@@ -483,9 +518,9 @@ function tray() {
     for (let i = 0; i < dish.length; i++) dish[i] = 1 - (1 - dish[i]) * (1 - hv[i]);
   }
 
-  // the cigarette, on its own sheet so the dish can be wiped out from under it
-  const c = new PEN.Graphite(W, H, 2, 778), cink = pen(c);
-  const AX = 45, N0 = [RIM * Math.cos(AX * DEG), RIM * Math.sin(AX * DEG)], DIR = [-Math.cos(AX * DEG), -Math.sin(AX * DEG)], PERP = [-DIR[1], DIR[0]];
+  // the cigarette, on its own sheets (paper and ash), so the hand can take it out of the dish
+  const c = new PEN.Graphite(W, H, 2, 778), cink = pen(c), ca = new PEN.Graphite(W, H, 2, 779), aink = pen(ca);
+  const N0 = [RIM * Math.cos(AX * DEG), RIM * Math.sin(AX * DEG)], DIR = [-Math.cos(AX * DEG), -Math.sin(AX * DEG)], PERP = [-DIR[1], DIR[0]];
   // PERP points to the lower right: v > 0 is the side away from the light
   const RAD = 3.9, U0 = -25, UF = -1, UB = 35, U1 = 45;   // the filter's end, the filter's join, the burn, the tip
   const axisZ = (u) => ZR - GD + RAD - 0.11 * (u - (RIM - LIP) / 2);
@@ -505,11 +540,11 @@ function tray() {
   cink(Array.from({ length: 15 }, (_, i) => { const v = -RAD + (2 * RAD * i) / 14; return cp(UB + jag(v, 3), v); }), { grade: grade(4), tone: 1.5, passes: 3, weight: 1.15, taper: 0.1, wobble: 0.9 });
   // the ash: a little proud of the paper, grey, rough at the edges, three cracks round it
   const ashR = (u, s) => RAD * (1.04 + 0.05 * (noise.n1(u * 1.3 + s * 7) - 0.5));
-  for (const s of [1, -1]) cink(Array.from({ length: 13 }, (_, i) => { const u = UB + 0.3 + ((U1 - 1.2 - UB) * i) / 12; return cp(u, s * ashR(u, s)); }), { grade: grade(1.6), tone: s > 0 ? 0.62 : 0.38, passes: 1, weight: 0.85, taper: 0.25, wobble: 1.1 });
-  cink(Array.from({ length: 15 }, (_, i) => { const a = (i / 14) * Math.PI; return cp(U1 - 1.2 + 1.3 * Math.sin(a), RAD * 1.02 * Math.cos(a)); }), { grade: grade(1.8), tone: 0.55, passes: 1, weight: 0.9, taper: 0.3, wobble: 1.0 });   // the tip, round
-  for (const [u, k] of [[UB + 2.6, 1], [UB + 5.2, 2], [UB + 7.6, 3]]) cink(Array.from({ length: 9 }, (_, i) => { const v = -RAD * 0.9 + (1.8 * RAD * i) / 8; return cp(u + 0.35 * Math.cos((v / RAD) * 1.4) + jag(v, k * 5) * 0.5, v); }), { grade: grade(1.3), tone: 0.3, passes: 1, weight: 0.7, taper: 0.5, wobble: 0.8 });
-  const tip = cp(U1 - 0.8, 0.2), tipPx = [tip[0] / X, tip[1] / X];
-  const cig = coverage(c);
+  for (const s of [1, -1]) aink(Array.from({ length: 13 }, (_, i) => { const u = UB + 0.3 + ((U1 - 1.2 - UB) * i) / 12; return cp(u, s * ashR(u, s)); }), { grade: grade(1.6), tone: s > 0 ? 0.62 : 0.38, passes: 1, weight: 0.85, taper: 0.25, wobble: 1.1 });
+  aink(Array.from({ length: 15 }, (_, i) => { const a = (i / 14) * Math.PI; return cp(U1 - 1.2 + 1.3 * Math.sin(a), RAD * 1.02 * Math.cos(a)); }), { grade: grade(1.8), tone: 0.55, passes: 1, weight: 0.9, taper: 0.3, wobble: 1.0 });   // the tip, round
+  for (const [u, k] of [[UB + 2.6, 1], [UB + 5.2, 2], [UB + 7.6, 3]]) aink(Array.from({ length: 9 }, (_, i) => { const v = -RAD * 0.9 + (1.8 * RAD * i) / 8; return cp(u + 0.35 * Math.cos((v / RAD) * 1.4) + jag(v, k * 5) * 0.5, v); }), { grade: grade(1.3), tone: 0.3, passes: 1, weight: 0.7, taper: 0.5, wobble: 0.8 });
+  const tip = cp(UB + 1, 0.2), tipPx = [tip[0] / X, tip[1] / X];    // the ember: the coal at the root of the ash, where it stays when the ash is tapped off
+  const cig = coverage(c), ash = coverage(ca);
 
   // the cigarette's footprint on the sheet (and where each point of it stands)
   const tubeUV = (x, y) => {                              // sheet px -> (u, v) on the cigarette's axis plane, near enough
@@ -521,7 +556,7 @@ function tray() {
   const onTube = (x, y) => { const [u, v] = tubeUV(x, y); return u > U0 - 0.9 && u < U1 + 0.6 && Math.abs(v) < RAD * (u > UB ? 1.06 : 1) - 0.15; };
 
   // tone laid in straight: the filter's cork mottle, the singe, the ash's grain, a soft heap of ash on the floor under the tip
-  const tone = new Float32Array(W * H);
+  const tone = new Float32Array(W * H), atone = new Float32Array(W * H), heapT = new Float32Array(W * H);
   const heap = pr(at(U1 + 1.5, 0.8)[0], at(U1 + 1.5, 0.8)[1], ZF);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x, grain = hash2(x, y);
@@ -529,12 +564,11 @@ function tray() {
       const [u, v] = tubeUV(x, y), shade = clamp01(0.5 + 0.5 * (v / RAD));
       if (u < UF - 1.6) { const spot = noise.fbm(u * 2.4, v * 2.4, 0.7); tone[i] = 0.07 + (spot > 0.58 ? 0.16 : 0.02) * (0.5 + grain) + 0.12 * shade * shade; }
       else if (u > UB - 1.4 && u < UB) tone[i] = 0.16 * (0.5 + grain) * (1 - (UB - u) / 1.4);
-      else if (u >= UB) tone[i] = (0.1 + 0.18 * shade) * (0.7 + 0.6 * grain);
-      continue;
+      else if (u >= UB) atone[i] = (0.1 + 0.18 * shade) * (0.7 + 0.6 * grain);
     }
     const d = Math.hypot(x - heap[0], y - heap[1]) / S;
     const edge = 3.2 + 1.2 * (noise.fbm(Math.atan2(y - heap[1], x - heap[0]) * 1.7, 2.2, 0.8) - 0.5) * 2;
-    if (d < edge + 1) tone[i] = 0.13 * smooth(clamp01((edge + 1 - d) / 2.6)) * (0.6 + 0.6 * grain);
+    if (d < edge + 1) heapT[i] = 0.13 * smooth(clamp01((edge + 1 - d) / 2.6)) * (0.6 + 0.6 * grain);
   }
 
   // the cigarette's shadow: each point of it thrown down to the lower right onto what lies under it, as far as the hand's are for its height
@@ -565,32 +599,48 @@ function tray() {
       const rl = Math.hypot(x - rimC[0], y - rimC[1]) / S, rf = Math.hypot(x - (base[0] + (rimC[0] - base[0]) * ZF / ZR), y - (base[1] + (rimC[1] - base[1]) * ZF / ZR)) / S;
       body[i] = rl > LIP ? 0.96 : rf < FLOOR ? 0.58 : 0.72 + 0.2 * clamp01((rl - FLOOR) / (LIP - FLOOR));
     }
-    if (onTube(x, y)) body[i] = 1;
   }
-  const bodyS = blur(body, W, H, 1, 2);
+  const tubeM = new Float32Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (onTube(x, y)) tubeM[y * W + x] = 1;
+  const bodyS = blur(body, W, H, 1, 2), cigBody = blur(tubeM, W, H, 1, 2);
   const a = blur(cast, W, H, 5 * X, 3), b = blur(seam, W, H, 3, 2), cl = blur(caustic, W, H, 9 * X, 3), cs = blur(cshadow, W, H, 3, 2);
   // the paper's wash and tooth (skin=1, as the hand's can be): off, as the hero's keyboard, white with hatching
   const SKIN = +(args.skin ?? 0);
   const wash = blur(tw, W, H, 5, 2), lx = 0.6, ly = 0.8, l0 = (base[0] - Rpx) * lx + (base[1] - Rpx) * ly, l1 = (base[0] + Rpx) * lx + (base[1] + Rpx) * ly;
-  const ink2 = new Float32Array(W * H);
+  // the dish (with the ash heap) whole, the cigarette over it in its own layers: paper, ash, and its shadow
+  const ink2 = new Float32Array(W * H), cigInk = new Float32Array(W * H), ashInk = new Float32Array(W * H), cigShadow = new Float32Array(W * H);
   for (let i = 0; i < ink2.length; i++) {
-    const x = i % W, y = (i / W) | 0, tube = onTube(x, y);
-    let v = tube ? cig[i] : 1 - (1 - dish[i]) * (1 - cig[i]);
-    v = 1 - (1 - v) * (1 - tone[i]);
+    const x = i % W, y = (i / W) | 0;
+    let v = 1 - (1 - dish[i]) * (1 - heapT[i]);
     if (SKIN && body[i] > 0.5) {
       const gr = smooth(clamp01((x * lx + y * ly - l0) / (l1 - l0))), h = hash2(x + 7, y + 3);
-      let p = (0.02 + 0.05 * gr) * (0.55 + 0.9 * h) + (tube ? 0 : 0.3 * Math.pow(wash[i], 1.2) * (0.4 + 0.9 * h));
+      let p = (0.02 + 0.05 * gr) * (0.55 + 0.9 * h) + 0.3 * Math.pow(wash[i], 1.2) * (0.4 + 0.9 * h);
       if (h > 0.9935 - 0.005 * gr) p = Math.max(p, 0.09 + 0.13 * gr);
       v = 1 - (1 - v) * (1 - p);
     }
-    if (!tube) v = 1 - (1 - v) * (1 - cs[i] * (body[i] > 0.5 ? 0.3 : 0.2));
     if (body[i] < 0.5) v = Math.max(v, Math.min(1, a[i] * 0.19 * (1 - 0.55 * cl[i]) + b[i] * 0.12));
     ink2[i] = clamp01(v);
+    cigInk[i] = clamp01(1 - (1 - cig[i]) * (1 - tone[i]));
+    ashInk[i] = clamp01(1 - (1 - ash[i]) * (1 - atone[i]));
+    cigShadow[i] = tubeM[i] ? 0 : cs[i] * (body[i] > 0.5 ? 0.3 : 0.2);
   }
   writeMask('tray-ink', ink2, W, H, 66, 80);
   writeMask('tray-body', bodyS, W, H, 44, 60);
-  meta.tray = { w: TW, h: TH, ember: [Math.round(tipPx[0] * 10) / 10, Math.round((TH - tipPx[1]) * 10) / 10] };
-  return { ink2, bodyS, W, H };
+  writeMask('cig-ink', cigInk, W, H, 66, 80);
+  writeMask('cig-ash', ashInk, W, H, 66, 80);
+  writeMask('cig-body', cigBody, W, H, 44, 60);
+  writeMask('cig-shadow', cigShadow, W, H, 44, 60);
+  const css = (q) => [Math.round((q[0] / X) * 10) / 10, Math.round((q[1] / X) * 10) / 10];
+  const g0 = cp(U0 + 5, 0), g1 = cp(U1, 0);
+  meta.tray = { w: TW, h: TH, gap: TGAP, ember: [Math.round(tipPx[0] * 10) / 10, Math.round((TH - tipPx[1]) * 10) / 10] };
+  // css px from the sheet's top left: where the fingers take it (on the filter), the burn, the ember, and which way it points
+  meta.cig = { pxPerMm: Math.round(PM * 1000) / 1000, z: Math.round(axisZ(U0 + 5) * 10) / 10, floor: ZF, grip: css(g0), burn: css(cp(UB, 0)), ember: css(tip), angle: Math.round((Math.atan2(g1[1] - g0[1], g1[0] - g0[0]) / DEG) * 10) / 10 };
+  // the solid it lies in, for the cigarette's physics (cig-physics): the dish's centre on the sheet (css px), its profile and
+  // rests (mm, degrees), and the cigarette as drawn: its radius, its stations along the rest's line in from the rim (filter's
+  // end, the tipping's join, the burn, the tip), where it is taken, and the fall of its axis
+  meta.dish = { c: [Math.round(DC[0] * 1000) / 1000, Math.round(DC[1] * 1000) / 1000], rim: RIM, lip: LIP, zr: ZR, floor: FLOOR, zf: ZF, gd: GD, hw: HW, rests: RESTS,
+    rad: RAD, u: [U0, UF, UB, U1], grip: U0 + 5, ember: UB + 1, slope: 0.11 };
+  return { ink2, bodyS, cigInk, ashInk, cigBody, cigShadow, W, H };
 }
 /** a polygon filled into a 0/1 sheet, by scanlines */
 function fillPoly(dst, W, H, poly) {
@@ -677,7 +727,7 @@ if (want('tray')) { parts.tray = tray(); parts.wisp = wisp(); }
 if (want('wood')) parts.wood = wood();
 
 // the hand's cell, a gap, the ashtray: the width the page fits to its own
-if (meta.hand && meta.tray) meta.groupW = Math.round((meta.hand.cell[0] + 16 + meta.tray.w) * 10) / 10;
+if (meta.hand && meta.tray) meta.groupW = Math.round((meta.hand.vis[0] + meta.tray.gap + meta.tray.w) * 10) / 10;
 if (!probeOnly) writeFileSync(JSON_AT, JSON.stringify(meta));
 console.log(JSON.stringify(meta));
 
@@ -690,8 +740,9 @@ if (preview) {
     ppms.push(compose('hand-d', gw, gh, [{ cov: bodyG, col: '#141311' }, { cov: inkG, col: '#ebe6da' }], '#2a2824'));
   }
   if (parts.tray) {
-    const { ink2, bodyS, W, H } = parts.tray;
-    ppms.push(compose('tray-l', W, H, [{ cov: bodyS, col: '#f4f1e8' }, { cov: ink2, col: '#1a1917' }], '#d9d3c3'));
+    const { ink2, bodyS, cigInk, ashInk, cigBody, cigShadow, W, H } = parts.tray;
+    ppms.push(compose('tray-l', W, H, [{ cov: bodyS, col: '#f4f1e8' }, { cov: ink2, col: '#1a1917' }, { cov: cigShadow, col: '#1a1917' }, { cov: cigBody, col: '#f4f1e8' }, { cov: cigInk, col: '#1a1917' }, { cov: ashInk, col: '#1a1917' }], '#d9d3c3'));
+    ppms.push(compose('tray-e', W, H, [{ cov: bodyS, col: '#f4f1e8' }, { cov: ink2, col: '#1a1917' }], '#d9d3c3'));
     ppms.push(compose('tray-d', W, H, [{ cov: bodyS, col: '#141311' }, { cov: ink2, col: '#ebe6da' }], '#2a2824'));
     ppms.push(compose('wisp-l', parts.wisp.W, parts.wisp.H, [{ cov: parts.wisp.raw, col: '#1a1917' }], '#f4f1e8'));
   }
