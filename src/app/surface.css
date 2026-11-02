@@ -67,3 +67,8 @@ html.illo-gl svg[data-illo] * { stroke: transparent !important; }
 }
 .surface-toggle:hover { border-color: currentColor; }
 @media print { .surface-toggle { display: none; } }
+
+/* Pulp print: the printed canvas replaces the img visually in analog; digital shows the original. */
+html:not([data-surface="digital"]) img[data-pulp][data-pulp-ready] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); pointer-events: none; }
+html[data-surface="digital"] canvas[data-pulp-canvas] { display: none; }
+canvas[data-pulp-canvas] { display: block; height: auto; }
