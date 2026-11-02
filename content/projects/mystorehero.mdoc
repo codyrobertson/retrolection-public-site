@@ -1,6 +1,8 @@
 ---
 title: "MyStoreHero"
-summary: "A multi-tenant AI analytics workspace for commerce operators."
+summary: "An AI analytics workspace for store operators. The model never picks the tenant and never writes the headline number."
+cover: /images/projects/mystorehero/cover.webp
+coverAlt: "Diagram: a chat question goes to the server, which resolves operator, org and store, runs every query inside withEntity(), takes headline numbers from Cube, checks generated UI against ViewSpec and saves an App Board"
 discipline: code
 status: hobby
 date: 2026-06-02
@@ -17,6 +19,24 @@ seo:
   description: ''
   noindex: false
 ---
-MyStoreHero is an AI analytics shell for people who run online stores: a multi-tenant workspace that turns commerce data into answers.
+MyStoreHero is a workspace for people who run online stores. You connect your store, ask a question in chat, and get back a saved dashboard built from governed metrics. I called those App Boards. I built it solo over about four weeks in June 2026. That's 219 commits, most of them agent-run stories worked against written specs and a phased roadmap.
 
-Built with Better Auth, Neon and Drizzle, Inngest and Cube.
+Stack: Next.js 15, Better Auth with organizations, Neon and Drizzle, Inngest, Cube, Vercel AI SDK.
+
+## The model doesn't choose the store
+
+An analytics agent writes queries. In a multi-tenant app, that makes it the thing most likely to leak one store's revenue into another store's dashboard, so isolation can't live in a prompt. Each store is the isolation unit. Postgres enforces it with row-level security through a `withEntity()` wrapper, and every store gets its own warehouse schema. The server works out the operator, the org and the store. The browser and the agent's tools never pass a tenant id.
+
+The cost is that every query path has to go through the wrapper. A later commit moved the remaining control-plane reads into it. One background sync path still can't use it, so it's documented as an exception.
+
+## Cube owns the numbers
+
+Answers about revenue have to be right. So headline numbers come from Cube semantic metrics, not from SQL the model writes, and anything the model works out on its own gets labeled unverified. Generated UI has to validate against a ViewSpec schema before it renders or saves.
+
+The product follows the same rule. Nothing says Connected or synced, and no metric shows, unless real data is behind it. The roadmap's guiding principle was everything real, nothing hidden or cut. The docs hold themselves to it too. Of the nine connectors in the contract (Shopify, WooCommerce, Google Ads, Google Analytics, Search Console, Meta Ads, Stripe, Klaviyo, Mailchimp), several are marked "tile visible, ingestion unproven."
+
+## What broke in production
+
+On June 14 a written audit found the core working locally and failing in production. The background worker wasn't deployed, the verify and reset emails were facades, and a dev login route had shipped. That audit became a 43-issue roadmap called "real & shipped." The production deploy went out June 15 with 370 tests passing.
+
+By June 30 the agency features were in: a client switcher, bulk onboarding, plan limits and branded shared views. At the last note, Google sign-in was still unconfigured in production. It's a hobby project now.

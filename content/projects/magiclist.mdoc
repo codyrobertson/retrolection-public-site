@@ -1,6 +1,8 @@
 ---
 title: "MagicList"
-summary: "A real-estate lead pipeline that turns public trustee-sale notices into qualified leads."
+summary: "A pipeline that reads public Notice of Trustee Sale filings, extracts the fields, and scores each property as a lead."
+cover: /images/projects/magiclist/cover.webp
+coverAlt: "Diagram of the November 20 extraction flow: regex on the OCR text, then three gates (required fields, average confidence, completeness) whose thresholds drop from 85% and 80% to 70% and 60%, with failures going to free models and then Claude"
 discipline: code
 status: hobby
 date: 2025-10-01
@@ -16,6 +18,24 @@ seo:
   description: ''
   noindex: false
 ---
-MagicList is a side project that began as AI real-estate analysis, proved too broad, and narrowed to a pipeline that processes Notice of Trustee Sale filings into leads, with PostGIS doing the geography. It came with its own landing page and programmatic SEO.
+MagicList started as AI real-estate analysis, and that was too broad. So I narrowed it to one document type: the Notice of Trustee Sale, the public filing that schedules a foreclosure auction. The pipeline finds new filings in the county recorder's public records, downloads the PDFs, OCRs them, pulls out the fields, enriches the property and scores it as a lead. I built it solo, mostly between late October and early December 2025. That's 355 commits on the app and 38 on a separate marketing site.
 
-It's part of a longer run of real-estate AI work that led to DealKept.
+Stack: FastAPI, Postgres with PostGIS, Redis, Cloudflare R2, Tesseract and PaddleOCR, models through OpenRouter.
+
+## Regex, then Claude, then regex again
+
+Extraction changed direction three times, and the commits show each one. On October 27 I tried having a model write a regex for each field. The same day I dropped that for straight Claude extraction, with a commit message calling it a breakthrough that "replaces brittle regex."
+
+That didn't last. One model call per filing gets expensive across thousands of filings. By November 20 the pipeline was back to regex first, with Claude as a fallback behind three gates: the required fields (recorder number, address, sale date) have to be present, average confidence has to be at least 85%, and completeness at least 80%. Later that day free models went in ahead of Claude, and the gates dropped to 70% and 60% to cut cost again.
+
+That means more code paths and more thresholds, and extraction quality now depends on numbers someone has to tune.
+
+## Documents that stalled quietly
+
+The pipeline runs as a saga: eight explicit stages from discovery to leads, with durable events. A November 13 gap analysis found that 451 of 1,098 documents had never run OCR, because the saga was never triggered for anything created before November 12. The backfill script written to fix it only got through stage two.
+
+{% Figure src="/images/projects/magiclist/stalled-documents.svg" alt="Bar charts: of 1,098 documents on November 13, 647 went through OCR and 451 never did; county GIS lookup timeouts fell from about 66% to about 30%" caption="Two places documents got stuck. The OCR gap was a trigger bug. The GIS timeouts got better but never went away." width="wide" frame="none" /%}
+
+Every external dependency sits behind a circuit breaker: one shared recorder client, a 30-second timeout, and a trip at 10 failures. Enrichment still leaned on slow county GIS lookups. Timeouts there went from about 66% to about 30%, which is better but not fixed.
+
+The last commit was December 4, 2025, and it's a hobby project now. Nothing shows a lead turning into a deal. The people behind these filings are facing foreclosure, so no sample documents or addresses appear on this page. The repo root also has about a hundred agent-written status and session-summary files.

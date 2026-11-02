@@ -1,12 +1,14 @@
 ---
 title: "StablOps"
-summary: "Marketing site and lead intake for Stabl, a payroll and operations platform for security companies."
+summary: "The marketing site for StablOS, a security operating system, rebuilt each time the positioning moved. Most of the animation fixes were deletions."
 discipline: design
 status: active
 date: 2025-08-01
 role: "Design Engineer"
 client: "Stabl"
-url: "https://stablops.com"
+url: ''
+cover: /images/projects/stablops/cover.webp
+coverAlt: "The StablOS v2 home page hero: Un-Admin Your Security Firm. over navy and blue wave backgrounds, with a browser mockup of the timekeeping dashboard below"
 tags:
   - "Brand"
   - "Website"
@@ -18,4 +20,48 @@ seo:
   description: ''
   noindex: false
 ---
-The site for Stabl Pay and StablOS, an AI-native operating system for security companies covering payroll, scheduling, dispatch and invoicing. I designed and built the site, intake flow and manifesto page, and an icon-font system for the brand.
+I design and build stablops.com, the marketing site for StablOS, which the company calls a "Security Operating System": payroll, scheduling, dispatch and invoicing for security companies. I built the intake flow, a manifesto page and a brand guide that lives on the site, and I rebuilt the site when the positioning moved. Most of the fixes worth talking about were deletions. When the scroll animations caused a hydration flash, I pulled every one of them and brought back a much smaller CSS version. For the client's review I built a tool so they could mark up the live page instead of emailing screenshots. The repo has 204 commits in three bursts: 47 in August 2025, 15 in September, 142 in March 2026.
+
+## Three positionings
+
+The brand started as Stabl Pay, earned wage access. From October 2024 to June 2025 that was Figma work: discovery, a UX audit, web design and a brand guide, with Mist `#C0D9DE`, Sand `#EDECE6`, Marble Blue `#546A7B` and Onyx `#393D3F`.
+
+{% Gallery images=[{src: "/images/projects/stablops/stabl-pay-palette.webp", alt: "Stabl Pay brand palette page: White, Sand, Dark Sand, Mist, Marble Blue and Onyx swatches with RGB and hex values"}, {src: "/images/projects/stablops/stabl-pay-typography.webp", alt: "Stabl Pay typography page: Gabarito at 64pt and 40pt on a pale blue background"}, {src: "/images/projects/stablops/stabl-pay-home-hero.webp", alt: "Stabl Pay home page design: Stop Losing Talent for Slightly Higher Pay. beside a photo with two stat cards"}] columns="3" caption="From the Stabl Pay era: the palette and type pages from the brand guide, and a home hero from the web design." /%}
+
+In September 2025 it became a Security Operating System. The SEO and copy moved with it, and I added the manifesto, a thank-you flow, and the brand guide as a docs-style page.
+
+{% Figure src="/images/projects/stablops/brand-center-logo-playground.webp" alt="The StablOS brand page: a sidebar, full logo and logomark downloads, and a logo playground with OKLCH contrast and chroma sliders and the converted color stops" caption="The brand page on the site as it is now, with downloads for the marks and an OKLCH playground for the logo gradient." width="wide" frame="browser" /%}
+
+In March 2026 the messaging moved again, to AI automation. I rebuilt the site as v2 between March 27 and 30.
+
+## v2 on tokens
+
+v2 started from the client's copy workbook and a Figma template that came with its own tokens (`#335cff`, Inter and Gabarito). I pulled the palette into named tokens (brand-navy `#001A33`, azure `#003366`, blue `#1A66CC`, sky `#66B2FF`, ice `#E6F2FF`) and replaced 22 hardcoded hex values across the site with them.
+
+{% Figure src="/images/projects/stablops/v2-how-it-works.webp" alt="StablOS v2 How it works section on brand navy: three steps, Stand up the account, Let AI learn your operation and Un-Admin everything, each with a small status card" caption="A v2 section built on the navy tokens." width="wide" /%}
+
+The backgrounds are three wave images I generated with GPT-5 Image through OpenRouter, in the navy-to-sky range, in place of stock photos.
+
+{% Figure src="/images/projects/stablops/brand-center-image-generator.webp" alt="Image generator on the StablOS brand page: a JSON style guide asking for organic wave formations in the navy to sky blue palette, five color chips, and a gallery of three sample outputs" caption="The style guide for the generated backgrounds lives on the brand page: wave shapes, the five palette tokens, no hard shadows. The gallery shows sample outputs." width="wide" frame="browser" /%}
+
+## Animation I deleted
+
+The August site had framer-motion `whileInView` animations on most sections, and they caused a hydration flash. A section rendered visible, snapped to hidden, then animated back in.
+
+I took out every `whileInView`. Then I brought back a smaller version in CSS: a `.reveal` class that an IntersectionObserver toggles, with an 80ms stagger. Now the first frame renders without JavaScript deciding what's visible. I gave up springs and per-element choreography to get that.
+
+The hero had its own lag. Commit `8f17a47` removed the layout animation, the scroll-driven padding and `mix-blend`, and swapped `AnimatePresence` for plain opacity toggles. The hero is flatter now. I don't have frame times from before and after, so I'm not putting a number on it.
+
+## A mockup hero the brief said not to build
+
+The written scope said to lead with value and keep screenshots out of the hero. In August 2025 I built the hero around an isometric dashboard mockup anyway. In the v2 review, the client asked to change the domain shown in that mockup.
+
+## Intake
+
+The scope listed required fields: company, contact, employee count, payroll provider, monthly payroll volume, timeline. The form I built sends each submission to Resend and a Google Sheet and creates a HubSpot contact. On August 18, 2025 I took meeting creation out of the flow.
+
+## Review on the live page
+
+For the v2 review I built collab-review, a click-to-annotate redline tool along the lines of Agentation. The client marks up the live page, the annotations go to Vercel Blob, and the reviewer doesn't need an account. It's one more thing to build and secure.
+
+The client left six entries on March 30. They included dropping pricing for "Get a Quote", changing the mockup's domain, adding stats, and removing the blog section.

@@ -194,6 +194,10 @@ export function startPaper() {
   const ro = new ResizeObserver(onResize); ro.observe(document.body);
   const scheme = matchMedia("(prefers-color-scheme: dark)"); scheme.addEventListener("change", bake);
   const mo = new MutationObserver(bake); mo.observe(docEl, { attributes: true, attributeFilter: ["data-theme"] });
+  // the paper's colour is read from the body: when the lights change it is still on its way, so
+  // look again when it lands
+  const landed = (e) => { if (e.target === document.body && e.propertyName === "background-color") bake(); };
+  document.body.addEventListener("transitionend", landed);
   cv.addEventListener("webglcontextlost", (e) => e.preventDefault());
   cv.addEventListener("webglcontextrestored", () => location.reload());
 
@@ -203,7 +207,7 @@ export function startPaper() {
   return {
     rebuild: bake,
     destroy() {
-      alive = false; cancelAnimationFrame(raf); off(); ro.disconnect(); mo.disconnect();
+      alive = false; cancelAnimationFrame(raf); off(); ro.disconnect(); mo.disconnect(); document.body.removeEventListener("transitionend", landed);
       scheme.removeEventListener("change", bake); removeEventListener("scroll", request); removeEventListener("resize", onResize);
       g.getExtension("WEBGL_lose_context")?.loseContext(); cv.remove(); docEl.classList.remove("paper-gl");
     },

@@ -1,0 +1,229 @@
+/* Plate 03: the experience, after the lights go down. A ledger in the box's mono and the
+   heading's face: a line a role, opening (one at a time) to what was done there, printed a
+   line at a time; then the practice under it. The colours are the theme's, so it is chalk on
+   the dark stock here, and would be graphite on paper anywhere else. */
+.section {
+  /* up into the room the board leaves under the sheet's foot (--tail, set by the hero), so the
+     ledger follows the sheet as the index does the hero, not after a blank window of it */
+  margin-top: calc(-1 * var(--tail, 0px));
+  padding: clamp(48px, 8vh, 96px) var(--gutter) clamp(56px, 10vh, 120px);
+  scroll-margin-top: var(--masthead);
+  /* the spill rides under the words (BlackInk), clipped to this section with them */
+  position: relative;
+  isolation: isolate;
+}
+
+.inner {
+  position: relative;
+  z-index: 1;
+  container-type: inline-size;
+  width: min(var(--sheet, 760px), 100%);
+  margin: 0 auto;
+  font-family: var(--font-mono);
+}
+
+.label {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 1.6em;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+.title {
+  max-width: 18ch;
+  margin: 0 0 0.45em;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(30px, 6.2cqi, 52px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.summary {
+  max-width: 58ch;
+  margin: 0 0 clamp(36px, 6vh, 64px);
+  font-family: var(--font-serif);
+  font-size: clamp(16px, 2.3cqi, 18.5px);
+  line-height: 1.55;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* ---- the ledger ------------------------------------------------------------------------ */
+.rows {
+  --cols: 4ch minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 12ch) 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rows[data-dated="true"] { --cols: 4ch minmax(0, 1.2fr) minmax(0, 1fr) 11ch minmax(0, 12ch) 18px; }
+
+.head,
+.line {
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: baseline;
+  gap: 0 2.2ch;
+  font-size: 12px; /* the columns are counted in ch, so every grid counts in the same face and size */
+}
+
+.head > span { font-size: 11px; }
+.head {
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--rule);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.row { border-bottom: 1px dashed var(--rule); }
+
+.line {
+  position: relative;
+  padding: 20px 0 19px;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.line::-webkit-details-marker { display: none; }
+.line:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 4px; }
+
+.num { font-size: 12px; color: var(--ink-3); transition: color 0.2s ease; }
+.company {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(19px, 3.1cqi, 26px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.role { font-family: var(--font-sans); font-size: 14.5px; line-height: 1.35; color: var(--ink-2); }
+.when, .where { font-size: 12px; line-height: 1.4; color: var(--ink-3); }
+
+/* the toggle: a plus that turns to a minus, its strokes the rule's ink */
+.toggle {
+  position: relative;
+  align-self: center;
+  justify-self: end;
+  width: 11px;
+  height: 11px;
+}
+.toggle::before,
+.toggle::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 5px;
+  width: 11px;
+  height: 1px;
+  background: var(--ink-2);
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1), background-color 0.2s ease;
+}
+.toggle::after { transform: rotate(90deg); }
+.row[open] .toggle::after { transform: rotate(0deg); }
+
+.line:hover .num,
+.row[open] .num { color: var(--vermilion); }
+.line:hover .toggle::before,
+.line:hover .toggle::after { background: var(--ink); }
+
+/* what was done there: under the role's column, a line at a time */
+.more {
+  display: grid;
+  grid-template-columns: var(--cols);
+  gap: 0 2.2ch;
+  padding: 0 0 26px;
+  font-size: 12px;
+}
+.more > * { grid-column: 3 / -1; }
+.more ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.7em;
+  max-width: 62ch;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.more li { position: relative; padding-left: 1.5ch; text-wrap: pretty; }
+/* the dash is drawn, not typed: the ink layer redraws text but not a pseudo-element's */
+.more li::before { content: ""; position: absolute; left: 0; top: 0.78em; width: 0.8ch; height: 1px; background: var(--ink-3); }
+.more [data-on="false"] { opacity: 0; }
+.visit {
+  justify-self: start;
+  margin-top: 1.1em;
+  font-size: 12px;
+  color: var(--ink-2);
+  text-decoration: none;
+  background: linear-gradient(currentColor, currentColor) no-repeat 0 100% / 0 1px;
+  padding: 3px 0;
+  transition: color 0.2s ease, background-size 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.visit:hover { color: var(--ink); background-size: 100% 1px; }
+.visit:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 3px; }
+
+/* ---- the practice ---------------------------------------------------------------------- */
+.practice {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  gap: 32px 3ch;
+  margin-top: clamp(48px, 8vh, 88px);
+  padding-top: 22px;
+  border-top: 1px solid var(--rule);
+}
+.groupTitle {
+  margin: 0 0 0.9em;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.group ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45em;
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+  line-height: 1.35;
+  color: var(--ink);
+}
+.detail { display: block; margin-top: 0.2em; font-family: var(--font-serif); font-size: 13.5px; color: var(--ink-3); }
+
+/* ---- narrower boxes: the role and the place go under the name ----------------------------- */
+@container (max-width: 640px) {
+  .head { display: none; }
+  .rows { border-top: 1px solid var(--rule); }
+  .line,
+  .rows[data-dated="true"] .line {
+    grid-template-columns: 3.5ch minmax(0, 1fr) 18px;
+    grid-template-areas: "num company toggle" ". role toggle" ". where toggle";
+    gap: 4px 1.6ch;
+    padding: 18px 0 17px;
+  }
+  .num { grid-area: num; }
+  .company { grid-area: company; }
+  .role { grid-area: role; }
+  .when { display: none; }
+  .where { grid-area: where; }
+  .where:empty { display: none; }
+  .toggle { grid-area: toggle; align-self: start; margin-top: 8px; }
+  .more { grid-template-columns: 3.5ch minmax(0, 1fr); gap: 0 1.6ch; }
+  .more > * { grid-column: 2; }
+  .more ul { font-size: 15px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toggle::before, .toggle::after { transition: none; }
+}

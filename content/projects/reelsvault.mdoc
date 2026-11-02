@@ -1,12 +1,14 @@
 ---
 title: "ReelsVault"
-summary: "Turns your saved Instagram Reels into a searchable library of hooks, CTAs and patterns you can chat with."
+summary: "Saved Instagram Reels, cut into searchable hooks, proof points and CTAs. A free desktop app on your own keys, and a planned paid cloud version."
+cover: /images/projects/reelsvault/cover.webp
+coverAlt: "The ReelsVault web app home: Your Reels, Organized, a field for pasting Instagram reel URLs, and a row of recent reels"
 discipline: design-code
 status: hobby
 date: 2026-01-31
 role: "Solo"
 client: ""
-url: "https://getreelsvault.com"
+url: ''
 tags:
   - "AI"
   - "Creators"
@@ -18,6 +20,28 @@ seo:
   description: ''
   noindex: false
 ---
-ReelsVault transcribes saved Reels, classifies each one's hooks, calls to action and proof points, and makes the whole library searchable by meaning. You can chat with it to find what makes things go viral, and export everything to Obsidian.
+ReelsVault takes your saved Instagram Reels, downloads and transcribes them, and cuts each one into typed chunks. The chunks are embedded for semantic search, and you can chat over the library or export it to Obsidian.
 
-It runs locally on faster-whisper with GPT-4o-mini or a local Ollama model.
+It started as a local Python pipeline: yt-dlp, faster-whisper, and GPT-4o-mini or a local Ollama model. Over 132 commits between January 31 and February 11, 2026, it grew into a Tauri desktop app with auto-update and signed releases, a SvelteKit web app, and a Rust/Axum cloud API. You could also send it reels by Instagram DM. I built it solo, with agents running written plans in sprints.
+
+{% Gallery images=[{src: "/images/projects/reelsvault/desktop-ingest.webp", alt: "The Tauri desktop app's Ingest tab: a box for pasting reel URLs, Process Reels and Open in Obsidian buttons, an empty processing queue and vault stats of 47 sources and 312 chunks"}, {src: "/images/projects/reelsvault/web-chat.webp", alt: "The web app's chat page: saved chats on the left, and a reply listing the best hook patterns in the vault"}] columns="2" frame="browser" caption="The same library in the desktop app and on the web, shown with sample data." /%}
+
+## Chunks, not videos
+
+The unit of search is a chunk, not a reel. Each reel splits into six types: hook, proof, CTA, objection, transition and story, and each type has subtypes like pattern_interrupt and curiosity_gap. You search for hooks and you get hooks back, not the whole video one is buried in.
+
+{% Figure src="/images/projects/reelsvault/web-search.webp" alt="Search results for hook framework: separate cards for a hook, a proof point, a CTA and a story, each with its subtype and a line on why it works, beside a grid of related reels" caption="Results come back as typed chunks with a subtype, not as whole videos. Semantic, full-text and visual search sit in the top right." width="wide" frame="browser" /%}
+
+Later it got vision: keyframe extraction, scene understanding and CLIP embeddings, so "similar reels" matches on what a video looks like as well as what it says. That pipeline has 74 tests and an eval folder.
+
+## Free on your keys, paid in the cloud
+
+The pricing decision shaped the architecture. The desktop app is free and you bring your own API keys. The cloud version was planned at $15 a month flat for 100 reels, billed through Polar. The design doc estimated about $0.01 of API cost per reel and roughly $75 a month in fixed infrastructure, which puts break-even at six to eight paying users. Those are projections from the plan, not measurements.
+
+Splitting it that way meant two codebases for the same features. The desktop logic was reimplemented behind HTTP for the cloud, and a separate sync design had to reconcile the two in both directions, with each side processing on its own. The pipeline also moved off Python. The repo is now a Tauri and Cargo workspace that uses SQLite directly for chat, stats and search. The README still documents the old FastAPI version.
+
+## Instagram is the weak point
+
+Downloads need a logged-in Instagram session, so one expired session stops the whole product. The plans spend a lot of effort on that: noticing when auth breaks, sending the user a throttled alert, and keeping the session alive. It's recurring manual ops for an input Instagram controls.
+
+On February 6, after four hardening sprints, it scored 147 of 219 (67%, up from 55%) on my own go-to-market checklist. A February 11 launch-gap audit still listed P0 blockers. That's the last commit. It's a hobby project now.

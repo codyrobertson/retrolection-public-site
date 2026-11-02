@@ -1,9 +1,11 @@
 ---
 title: "Script Fury"
-summary: "Turns a screenplay into storyboard frames with AI."
+summary: "Turns a screenplay into black-and-white storyboard frames. Three versions in ten days, ending with a two-commit Flask app."
 discipline: design-code
 status: retired
 date: 2025-07-07
+cover: /images/projects/script-fury/cover.webp
+coverAlt: "Black-and-white storyboard frame of two people talking over coffee, drawn in clean ink line art"
 role: "Solo"
 client: ""
 tags:
@@ -16,6 +18,44 @@ seo:
   description: ''
   noindex: false
 ---
-Script Fury reads a screenplay, breaks it into scenes and generates storyboard frames for each one. It's one of my first full-stack AI products, built with a FastAPI backend and a Next.js front end, and iterated through three versions in a single month.
+Script Fury reads a screenplay (PDF, TXT or Fountain), breaks it into scenes and characters, and draws a storyboard frame for each scene. It was one of my first full-stack AI products.
 
-A sibling project, a screenplay analysis platform, let writers email in scripts and get AI coverage and chat-based feedback back.
+I built three versions between July 7 and July 17, 2025. The first was FastAPI, Redis and a CLI, 142 commits. The second added a Next.js web app, Supabase, Cloudflare edge functions and background tasks, 191 commits. The third was a single-folder Flask app with plain JavaScript and 2 commits. I built it solo, with coding agents working off backlog task files.
+
+The platform kept growing. The problem that never closed was getting a character to look the same from one frame to the next.
+
+{% Gallery images=[{src: "/images/projects/script-fury/frame-1.webp", alt: "A lone figure in a hat on a rain-soaked city street at night, black-and-white line art"}, {src: "/images/projects/script-fury/frame-3.webp", alt: "Two people talking over coffee in a cafe, close on their faces, black-and-white line art"}, {src: "/images/projects/script-fury/frame-4.webp", alt: "Over-the-shoulder shot of a woman typing on a laptop in an office"}, {src: "/images/projects/script-fury/frame-5.webp", alt: "Establishing shot of a skyscraper among smaller buildings"}] columns="4" caption="Frames generated from short sample prompts for the v2 landing page, not from a real screenplay." /%}
+
+## Locking the look
+
+A storyboard only works if the person in frame 12 looks like the person in frame 1. Image models are bad at that. Left alone, mine added heavy shadows, changed a character's skin tone between frames, bled color into black-and-white frames, swapped faces from frame to frame, and filled backgrounds with clutter.
+
+So the style stopped being the model's choice. The code calls it Style DNA: a fixed block of prompt text that goes in front of every frame prompt. Black-and-white line art only. No shading or gradients. Wide cinematic framing, minimal background, identical character features, no photorealism, no skin-tone variation, animation-studio storyboard style. Most of it is a list of things the model isn't allowed to do. Each style's full prompt runs 918 to 979 characters.
+
+The v2 web app had eight style previews: action, cinematic, classic, comic, copic, minimal, noir and sketch. Simple cut that to four (Classic, Cinematic, Sketch, Comic), and they're barely styles. Each one adds a short suffix on top of the DNA, and the prompt says outright "BUT maintaining character consistency." That's range traded for consistency.
+
+{% Gallery images=[{src: "/images/projects/script-fury/style-action.webp", alt: "The same detective-at-a-desk scene drawn in the action style preview"}, {src: "/images/projects/script-fury/style-cinematic.webp", alt: "The same detective-at-a-desk scene drawn in the cinematic style preview"}, {src: "/images/projects/script-fury/style-classic.webp", alt: "The same detective-at-a-desk scene drawn in the classic style preview"}, {src: "/images/projects/script-fury/style-comic.webp", alt: "The same detective-at-a-desk scene drawn in the comic style preview"}, {src: "/images/projects/script-fury/style-copic.webp", alt: "The same detective-at-a-desk scene drawn in the copic style preview"}, {src: "/images/projects/script-fury/style-minimal.webp", alt: "The same detective-at-a-desk scene drawn in the minimal style preview"}, {src: "/images/projects/script-fury/style-noir.webp", alt: "The same detective-at-a-desk scene drawn in the noir style preview"}, {src: "/images/projects/script-fury/style-sketch.webp", alt: "The same detective-at-a-desk scene drawn in the sketch style preview"}] columns="4" caption="The eight v2 style previews: action, cinematic, classic, comic, copic, minimal, noir, sketch. Simple kept classic, cinematic, sketch and comic." /%}
+
+I can show you the rules. I don't have a before-and-after showing how much they fixed.
+
+## Cost first, frames second
+
+Image generation is where the money goes. The README put a 5-frame storyboard at about $0.70 to $0.90. So nothing generates until you've seen the price. There's a dry-run mode, a running cost estimate and a per-project spending cap, $10 by default.
+
+It still broke in both directions. One bug let frames generate, and bill, before the user confirmed. Stricter dry-run logic fixed it. The other went the opposite way: a 155-page test script came out with 3 frames when it should have had 60 to 80 (the rough rule is one scene every two or three pages). The pipeline had three hardcoded caps, 20, 50 and 25, and scene detection used `min()` where it needed `max()`. The limits went up to 100 on the backend and 80 in the front end.
+
+## v2 got big
+
+v2 was the platform version. Supabase accounts, edge functions, a task queue, and an "enhanced analysis" mode that charted emotional arcs and character relationships. By the end it had about 50 docs at the repo root, covering architecture, memory-leak fixes, a database indexing strategy, CI/CD, monitoring and load testing.
+
+Its last two days were cleanup. The task queue came out, replaced by a direct path that generates frames and streams progress back as it goes. A July 15 audit marked v2 as blocked from deploying: auth could be skipped in dev mode, a search filter was open to SQL injection, and API keys were sitting in .env files. A security-fix commit landed the next day. None of that touched the face drift from the first section.
+
+## Simple
+
+On July 17 I started over in a new repo, "Script Fury Simple." One Flask app in one folder, plain JavaScript, no dependency on the main codebase. Your session survives a refresh through localStorage, and each project keeps its own cache. The README's case for it is portability and fewer moving parts.
+
+Accounts, multi-user, the edge functions and the analysis charts all went. The pipeline stayed: script in, scenes and characters out, locked-style frames, cost shown before anything runs. So did the model split. GPT-4o does character extraction and scene analysis, GPT-4o-mini handles basic script info, o3-mini cleans up prompts before they go out, and gpt-image-1 draws the frames.
+
+The UI is ash and charcoal with moss green (#4F6F4F) on anything you can press and a sky blue (#6485FF) accent, set in Rethink Sans with Anonymous Pro for the mono text. The README calls it Japanese-inspired.
+
+Script Fury is retired. I still don't have frames that show whether Style DNA fixed the drift or just made it rarer.

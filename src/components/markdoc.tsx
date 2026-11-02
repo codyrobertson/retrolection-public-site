@@ -36,11 +36,32 @@ const components = {
       </aside>
     );
   },
-  Figure({ src, alt, caption, width }: { src: string; alt: string; caption?: string; width: string }) {
+  Figure({ src, alt, caption, width, frame }: { src: string; alt: string; caption?: string; width: string; frame?: Frame }) {
     return (
       <figure className={styles[width] ?? styles.wide}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- CMS images have unknown dimensions */}
-        <img src={src} alt={alt} loading="lazy" />
+        <Framed src={src} alt={alt} frame={frame} />
+        {caption && <figcaption>{caption}</figcaption>}
+      </figure>
+    );
+  },
+  Gallery({
+    images = [],
+    columns = "2",
+    frame,
+    caption,
+  }: {
+    images?: { src: string; alt: string }[];
+    columns?: string;
+    frame?: Frame;
+    caption?: string;
+  }) {
+    return (
+      <figure className={styles.wide}>
+        <div className={styles.gallery} data-columns={columns}>
+          {images.map((img) => (
+            <Framed key={img.src} {...img} frame={frame} />
+          ))}
+        </div>
         {caption && <figcaption>{caption}</figcaption>}
       </figure>
     );
@@ -58,6 +79,20 @@ const components = {
     );
   },
 };
+
+type Frame = "none" | "browser" | "phone";
+
+function Framed({ src, alt, frame = "none" }: { src: string; alt: string; frame?: Frame }) {
+  // eslint-disable-next-line @next/next/no-img-element -- CMS images have unknown dimensions
+  const img = <img src={src} alt={alt} loading="lazy" />;
+  if (frame === "none") return img;
+  return (
+    <div className={styles.frame} data-frame={frame}>
+      {frame === "browser" && <span className={styles.chrome} aria-hidden="true" />}
+      {img}
+    </div>
+  );
+}
 
 function toVideoEmbed(src: string) {
   const yt = src.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/);

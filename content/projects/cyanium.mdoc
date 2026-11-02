@@ -1,12 +1,14 @@
 ---
 title: "Cyanium Design System"
-summary: "A Radix, Tailwind v4 and CVA design system with tokens, a component registry and design sync."
+summary: "A React design system that began with AlignUI's tokens and grew into primitives, finance and HR kits, charts and a registry guarded in CI. 28 commits in 11 days."
 discipline: design-code
 status: active
 date: 2026-06-09
 role: "Solo"
 client: ""
 url: "https://cyanium-design-system.vercel.app"
+cover: /images/projects/cyanium/cover.webp
+coverAlt: "The Cyanium docs site hero: Production UI for React teams, with a component preview card showing a toggle, a checkbox, segmented buttons and an email field"
 tags:
   - "Design system"
   - "Tokens"
@@ -17,4 +19,44 @@ seo:
   description: ''
   noindex: false
 ---
-Cyanium is a monorepo design system: design tokens, UI components built on Radix with Tailwind v4 and CVA, a shadcn-style registry for installing components, and tooling to keep design and code in sync.
+Cyanium is a React design system I built on Radix, Tailwind v4 and CVA. It's a monorepo: tokens, a package of 39 primitive components, kits for finance, landing pages and AI templates, a charts package, and a Storybook docs site. You install components through a shadcn-style registry. It's 28 commits, June 9 to June 20, 2026. The call I'd point at is that nothing renders on sample data unless it's explicitly a demo. Forget to pass the data and you get an empty screen, not a convincing fake.
+
+It didn't start from zero. The first commit is "Ships AlignUI tokens." AlignUI is someone else's design system, and a later commit (`8f36d49`) finishes renaming AlignUI to Cyanium. So the token layer began as AlignUI's. The structure, kits and tooling came after, and I'm not calling the tokens original.
+
+## Real data or nothing
+
+A design system has to look good in a demo, so its screens need plausible numbers. A real app built on it can never show those numbers to a real customer.
+
+The easy way to get both is to let each component fall back to sample data when nobody passes it anything. Demos work instantly. But the same component in production, missing one prop, also shows sample data, and nobody notices. A payroll widget with a made-up total looks exactly like one with a real total.
+
+Cyanium doesn't allow that. The `ui` package never imports sample data (the repo calls it fixtures). A kit app needs its data passed in, built by a `build*AppProps()` function. The versions that do run on fixtures are named `*Demo`, and they're only for previews.
+
+{% Figure src="/images/projects/cyanium/finance-kit-demo.webp" alt="The finance kit demo app: a sidebar, a savings card with masked card number, recent transactions and a budget overview bar chart for income, expenses and scheduled payments" caption="The finance kit's demo version. Every name and number here comes from fixtures, which is why it is called a demo." width="wide" frame="browser" /%}
+
+The cost is setup. You can't drop a kit component into a project and see it working. You wire the props first, every time.
+
+## Primitives in one package, screens in another
+
+The same line runs through the packages. `ui` holds primitives, the buttons and inputs and other small parts. Anything that composes them into a screen lives in `kits`.
+
+{% Figure src="/images/projects/cyanium/docs-four-packages.webp" alt="Docs site section titled Four packages, one system, with cards for @cyanium/tokens, @cyanium/ui, @cyanium/kits and Registry plus CI" caption="How the docs site explains the split." width="wide" frame="browser" /%}
+
+Finance widgets came in batches, the first one six. Then 14 HR widgets, closed out June 20 with a commit called "HR complete," which is also the last commit. The bundle lists 73 general, 18 finance and 14 HR entries. The palette and type stay small: a primary blue, an orange brand mark, Inter and DM Mono.
+
+{% Gallery images=[{src: "/images/projects/cyanium/hr-notes.webp", alt: "Notes widget with three sample notes, next to the same widget empty: No notes yet, with an Add a note button"}, {src: "/images/projects/cyanium/hr-status-tracker.webp", alt: "Status Tracker widget listing team members by presence, next to the empty version: No one's around"}, {src: "/images/projects/cyanium/hr-time-off.webp", alt: "Time Off widget with a 14 days left gauge and leave balances, next to the empty version: No balance set"}, {src: "/images/projects/cyanium/hr-employee-spotlight.webp", alt: "Employee Spotlight widget with a sample profile, next to the empty version: No spotlight yet"}] columns="2" caption="Four of the HR widgets, each with fixture data and with none. Without data they show an empty state, not a sample." /%}
+
+## Smaller fixes
+
+The example landing started as a generic template. On June 9 I replaced it with a dark editorial site, and a June 10 commit rebuilds the landing from the system's own components.
+
+Badge builds its class names from props. Tailwind v4 only generates classes it finds spelled out in source, so the dynamic ones never existed and the colors just didn't show up. A safelist with `@source inline` tells Tailwind to generate them anyway.
+
+The registry at `registry/cyanium.json` is what the install command reads. If it falls behind the components, someone installs an old version and gets no error. Two CI checks, `check:registry` and `check:css`, fail the build when the registry or the CSS disagree with the source. Releases go through Changesets, and 0.1.0 went out on day one.
+
+On June 19 I set up design sync to claude.ai/design. Storybook is arranged as a gallery, and per-component previews needed the package layout, so the sync follows the packages. Subagents wrote each component's preview.
+
+## Who did what
+
+The repo and the MIT licence are under my name. Commits carry Cursor as co-author, and subagents wrote the previews. The commits don't say which structural calls were mine and which an agent proposed, so this page doesn't split them yet.
+
+It's at 0.1.0. I have no evidence anyone else uses it.

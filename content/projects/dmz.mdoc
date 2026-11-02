@@ -1,12 +1,18 @@
 ---
 title: DMZ
-summary: ''
+summary: "Brand and product design for DMZ, a mobile-only Solana memecoin app where every token is a card in a swipeable feed."
 discipline: design
 status: retired
 role: "Brand & Product Designer"
 client: ''
-url: "https://dmz.fun"
-tags: []
+url: ''
+date: 2024-12-01
+cover: /images/projects/dmz/cover.webp
+coverAlt: "Four DMZ app screens: a token feed with live market cap, voice chat, the swap screen and discover"
+tags:
+  - "Crypto"
+  - "Mobile"
+  - "Brand"
 featured: false
 draft: false
 seo:
@@ -14,4 +20,46 @@ seo:
   description: ''
   noindex: false
 ---
-{% Callout tone="note" text="Full case study coming soon." /%}
+DMZ was a mobile-only Solana app for trading, finding and launching memecoins with friends. I did the brand and the product design. The Figma file it lives in is called meme.tech.
+
+The pitch on the site was that you didn't need to know crypto to use it. You could buy with a bank account or Apple Pay, your tokens sat in a smart wallet, and launching a token was free. Those are product claims. My part was the screens someone sees when they don't know what slippage or a bonding curve is. The biggest call is on the home screen: a token isn't a chart page you go looking for, it's a card in a feed you swipe through.
+
+## Every token is a card in a feed
+
+Each token gets a full-screen card in a vertical feed, with Saved and Trending tabs at the top. On the card, market cap, the bonding goal and the latest buys sit above the chart.
+
+The site's lines for it were "as familiar as your favorite apps" and "if you can tap, you can trade."
+
+The Figma page for the feed has 40 numbered versions of this one screen. The card has to fit price, bonding progress, recent buys and a buy button in a phone's width. I don't have notes on what changed between the 40, so I'm leaving that story out until I do.
+
+## Bonding as a ladder
+
+On launchpads like this, a new token "bonds" when it hits a market-cap goal, and its liquidity moves to a DEX pool. You can't see that happening, so the screen has to draw it.
+
+DMZ draws it as a ladder. Colored pills stack from $20,000 up to $65,000, each with a percentage, and a marker with the live number (89.5% in the comp) sits between them. The label reads "Goal Is Reach $65k". The file has a component called milestone-markers, used 46 times. At 100% a "Bonding Reached!!" modal pops up with one button: migrate the token, 0.001 SOL.
+
+{% Figure src="/images/projects/dmz/feed.webp" alt="DMZ token feed screens: a full-screen token card with live market cap, a ladder of bonding milestones above the chart, and a Bonding Reached modal with a Migrate Token button" caption="The feed card, the bonding ladder, and the modal when a token bonds. Design-stage frames; the modal still has placeholder copy." width="wide" /%}
+
+The ladder costs space. It sits above the chart and pushes the chart down the screen.
+
+## Swap is a sheet
+
+Tap the purple TRADE button and a sheet slides up over the token, which stays visible, blurred, behind it. You don't leave for a swap page.
+
+The sheet has an amount-in card, an amount-out card, a slider for how much of your stack to use, one fee line and a green SWAP button. It has its own number pad, so the phone keyboard never comes up over the button. Slippage is one setting that says "Auto" (0.3% in the comp). There's no panel of numbers to tune.
+
+On these screens, purple opens the sheet and green spends the money. Everything else is dark, with a purple glow and the chart grid drawn in perspective behind the price line.
+
+## Voice under the chart
+
+The site sold DMZ as social: follow friends and top traders, quests, leaderboards, voice rooms on each token. The voice room docks right under the chart instead of getting its own screen. It shows how many people are speaking, an avatar stack, a waveform, and raise-hand and speaker buttons. You can listen and watch the price at the same time.
+
+{% Gallery images=[{src: "/images/projects/dmz/swap.webp", alt: "The swap sheet over a blurred token: amount in and out, a stack slider, Auto slippage and one green SWAP button"}, {src: "/images/projects/dmz/social.webp", alt: "Voice chat docked under a token chart with speaker count and waveform, and the discover screen with trending metas and searches"}] columns="2" caption="Left: the swap sheet, with its own number pad and one setting. Right: voice docked under the chart, and discover." /%}
+
+The brand copy said the same thing: "Trade Together, Win Together" and "The trenches don't have to be lonely."
+
+## What's not here
+
+DMZ is retired and dmz.fun is gone. I don't have user, volume or download numbers, so there aren't any on this page. The old site advertised a 0.001% trading fee, free launches and a token bond bonus. Those were its marketing claims, not results.
+
+Still missing: what I threw out on the feed card and the ladder, who I worked with, and why it ended.

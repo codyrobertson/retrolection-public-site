@@ -1,12 +1,17 @@
 import Link from "next/link";
+import styles from "./not-found.module.css";
 
+/** A page that isn't there: said the way the plates say things, with the way back. */
 export default function NotFound() {
   return (
-    <main style={{ margin: "auto", padding: "4rem 1rem", textAlign: "center", display: "grid", gap: "1rem" }}>
-      <h1>Page not found</h1>
-      <Link href="/" style={{ textDecoration: "underline" }}>
-        Go home
-      </Link>
+    <main className={styles.page}>
+      <p className={styles.label}>404 / Not found</p>
+      <h1 className={styles.title}>Nothing was ever typed here.</h1>
+      <p className={styles.note}>The link may be old, or mistyped. Everything that is here starts on the front page.</p>
+      <p className={styles.links}>
+        <Link href="/">Front page →</Link>
+        <Link href="/projects">All projects →</Link>
+      </p>
     </main>
   );
 }
