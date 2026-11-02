@@ -29,9 +29,9 @@ It started as a local Python pipeline: yt-dlp, faster-whisper, and GPT-4o-mini o
 
 {% Gallery images=[{src: "/images/projects/reelsvault/desktop-ingest.webp", alt: "The Tauri desktop app's Ingest tab: a box for pasting reel URLs, Process Reels and Open in Obsidian buttons, an empty processing queue and vault stats of 47 sources and 312 chunks"}, {src: "/images/projects/reelsvault/web-chat.webp", alt: "The web app's chat page: saved chats on the left, and a reply listing the best hook patterns in the vault"}] columns="2" frame="browser" caption="The same library in the desktop app and on the web, shown with sample data." /%}
 
-{% Spot src="/images/projects/reelsvault/spot-sliced-loaf.webp" alt="A loaf of bread cut into neat slices on a board with a few crumbs; one slice is orange-red." /%}
-
 ## Chunks, not videos
+
+{% Spot src="/images/projects/reelsvault/spot-sliced-loaf.webp" alt="A loaf of bread cut into neat slices on a board with a few crumbs; one slice is orange-red." side="right" /%}
 
 The unit of search is a chunk, not a reel. Each reel splits into six types: hook, proof, CTA, objection, transition and story, and each type has subtypes like pattern_interrupt and curiosity_gap. You search for hooks and you get hooks back, not the whole video one is buried in.
 
@@ -39,17 +39,17 @@ The unit of search is a chunk, not a reel. Each reel splits into six types: hook
 
 Later it got vision: keyframe extraction, scene understanding and CLIP embeddings, so "similar reels" matches on what a video looks like as well as what it says. That pipeline has 74 tests and an eval folder.
 
-{% Spot src="/images/projects/reelsvault/spot-key-and-cloud.webp" alt="A single house key on a ring next to a small cloud that has a coin slot in it; the key is orange-red." /%}
-
 ## Free on your keys, paid in the cloud
+
+{% Spot src="/images/projects/reelsvault/spot-key-and-cloud.webp" alt="A single house key on a ring next to a small cloud that has a coin slot in it; the key is orange-red." side="left" /%}
 
 The pricing decision shaped the architecture. The desktop app is free and you bring your own API keys. The cloud version was planned at $15 a month flat for 100 reels, billed through Polar. The design doc estimated about $0.01 of API cost per reel and roughly $75 a month in fixed infrastructure, which puts break-even at six to eight paying users. Those are projections from the plan, not measurements.
 
 Splitting it that way meant two codebases for the same features. The desktop logic was reimplemented behind HTTP for the cloud, and a separate sync design had to reconcile the two in both directions, with each side processing on its own. The pipeline also moved off Python. The repo is now a Tauri and Cargo workspace that uses SQLite directly for chat, stats and search. The README still documents the old FastAPI version.
 
-{% Spot src="/images/projects/reelsvault/spot-weak-link.webp" alt="A chain of paper links where one link is thin and fraying; the weak link is orange-red." /%}
-
 ## Instagram is the weak point
+
+{% Spot src="/images/projects/reelsvault/spot-weak-link.webp" alt="A chain of paper links where one link is thin and fraying; the weak link is orange-red." side="right" /%}
 
 Downloads need a logged-in Instagram session, so one expired session stops the whole product. The plans spend a lot of effort on that: noticing when auth breaks, sending the user a throttled alert, and keeping the session alive. It's recurring manual ops for an input Instagram controls.
 

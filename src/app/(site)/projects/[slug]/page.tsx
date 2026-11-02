@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { AtAGlance, MoreWork, readStory, StoryHeader } from "@/components/case-study";
+import { SpotFlow } from "@/components/spot-flow";
 import storyStyles from "@/components/case-study.module.css";
 import { JsonLd } from "@/components/json-ld";
 import { MarkdocContent } from "@/components/markdoc";
@@ -41,9 +42,9 @@ async function ProjectPage({ params }: Pick<PageProps<"/projects/[slug]">, "para
   const [entry, all, site] = await Promise.all([getProject(slug), getProjects(), getSite()]);
   if (!entry) notFound();
   const { body, sections, minutes } = readStory(entry.body);
-  // the next three in the list's order, wrapping round, so every page leads on somewhere
+  // the next six in the list's order, wrapping round, so every page leads on somewhere
   const at = all.findIndex((p) => p.slug === slug);
-  const more = [1, 2, 3].map((k) => all[(at + k) % all.length]).filter((p) => p && p.slug !== slug);
+  const more = [1, 2, 3, 4, 5, 6].map((k) => all[(at + k) % all.length]).filter((p) => p && p.slug !== slug);
 
   return (
     <article className={storyStyles.story}>
@@ -52,6 +53,7 @@ async function ProjectPage({ params }: Pick<PageProps<"/projects/[slug]">, "para
       <AtAGlance story={entry} sections={sections} />
       <MarkdocContent tree={body} variant="story" />
       <MoreWork items={more} />
+      <SpotFlow />
     </article>
   );
 }

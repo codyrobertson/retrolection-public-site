@@ -165,7 +165,7 @@ function collect(root) {
     const dark = (0.3 * +col[0] + 0.6 * +col[1] + 0.1 * +col[2]) / 255 > 0.5;
     const seed = ++seedN, rng = mulberry(seed * 7919), strokes = [];
     svg.querySelectorAll("path,circle,ellipse,line,polyline,polygon,rect").forEach((el) => {
-      if (el.closest("defs,clipPath,mask,symbol")) return;
+      if (el.closest("defs,clipPath,mask,symbol,[data-marker]")) return; // marker fills belong to marker-gl
       const pen = attr(el, "data-pen", "ballpoint");
       const m = el.getScreenCTM();
       if (!PENS[pen] || !m) return;

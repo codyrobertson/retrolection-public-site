@@ -33,9 +33,9 @@ The realtor approved each draft with one click, or texted back YES or UNDO. It w
 
 Each agent worked on one PR, and a coordinator agent merged and deployed. 740 commits on main, September 22 to October 7, 2026.
 
-{% Spot src="/images/projects/dealkept/spot-name-card-funnel.webp" alt="A blank name card slipping out of an envelope and sliding toward a large slate-blue funnel; the name card is orange-red." /%}
-
 ## Client names were going to the model
+
+{% Spot src="/images/projects/dealkept/spot-name-card-funnel.webp" alt="A blank name card slipping out of an envelope and sliding toward a large slate-blue funnel; the name card is orange-red." side="right" /%}
 
 The first privacy rule shipped right away: every model call goes to a zero-data-retention provider, fails closed if it can't, and records which provider it used. That's a contract, not a technical guarantee. So the next step was to swap people's names for tokens like `⟦person:id⟧` before text reached the big LLM. Tokens instead of blacking names out, so the model could still tell that two messages were about the same person.
 
@@ -55,9 +55,9 @@ GLiNER didn't fit in a Worker at all. In a Cloudflare Container it worked, with 
 
 The third try kept the same 14.7 MB model and fine-tuned Rampart on everything either Rampart or GLiNER flagged. For a privacy layer a miss costs more than a false flag, so the union made sense as the teacher. The training run cost $0.76. On our own test set, recall on third-party names went from 88.7% to 94.9%. Precision on that set fell from 92.1% to 83.5%, mostly because the new model started tagging Chinese, Korean and Indian-script text as names. It flagged 61% of Chinese place names. Rampart flagged 6%.
 
-{% Spot src="/images/projects/dealkept/spot-closed-gate.webp" alt="A narrow wooden gate in a picket fence, firmly closed, with a small pile of paper slips waiting in front that did not get through; the gate latch is orange-red." /%}
-
 ## The gate
+
+{% Spot src="/images/projects/dealkept/spot-closed-gate.webp" alt="A narrow wooden gate in a picket fence, firmly closed, with a small pile of paper slips waiting in front that did not get through; the gate latch is orange-red." side="left" /%}
 
 On September 29, before the final scoring run, I set the gate. Person precision of at least 95% on the public ai4privacy benchmark. No more than 5% of the business data we meant to keep could get tokenised. Zero overlap between training and test data. Anything that passed would be ranked by recall. An independent scorer ran it, not the agents that built the candidates.
 
@@ -99,8 +99,8 @@ The Today screen ran 8 rounds and never got the two passes in a row it needed. I
 
 {% Figure src="/images/projects/dealkept/reid-poses.webp" alt="Eighteen master drawings of Reid, an orange and brown robin: three-quarter expressions from concerned to proud, a wink, plus front, side and back views" caption="Reid's master poses. Stickers, onboarding panels and animation frames were generated from these and a versioned prompt library." width="wide" /%}
 
-{% Spot src="/images/projects/dealkept/spot-stop-barrier.webp" alt="A long torn-paper road ending at a striped stop barrier, a little paper car parked before it; the barrier is orange-red." /%}
-
 ## Where it stopped
+
+{% Spot src="/images/projects/dealkept/spot-stop-barrier.webp" alt="A long torn-paper road ending at a striped stop barrier, a little paper car parked before it; the barrier is orange-red." side="right" /%}
 
 The last commit was October 7. The plan had been one pilot team using it daily within about six weeks; work stopped at day 16. No candidate cleared the privacy gate. Production still runs Rampart plus rules.

@@ -58,6 +58,12 @@ svg[data-illo] [data-raw] { stroke-width: .5; stroke-opacity: .3; }
 svg[data-illo] [data-pen="9h"] { stroke-opacity: .4; stroke-width: .8; }
 svg[data-illo] [data-pen="3b"] { stroke-opacity: .6; stroke-width: 2.4; }
 html.illo-gl svg[data-illo] * { stroke: transparent !important; }
+/* marker fills inside an illo are fills, not pen lines: marker-gl paints them (inline style fill is the fallback) */
+html svg[data-illo] [data-marker][data-marker] { stroke: none !important; }
+svg[data-illo] text { font-family: var(--font-sans); }
+
+/* tape (tape-gl.js): the element only marks where a strip goes; WebGL draws it */
+[data-tape] { pointer-events: none; }
 
 .surface-toggle {
   position: fixed; right: 16px; bottom: 16px; z-index: 50;

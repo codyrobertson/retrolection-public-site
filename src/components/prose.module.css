@@ -92,15 +92,48 @@
 }
 .gallery img { max-height: 80vh; object-fit: contain; }
 
-/* Spot illustrations open a section; the cream ground prints into the page paper. */
-.prose > article > .spot { justify-self: center; width: min(15rem, 60%); margin-top: 1.5em; }
-.prose .spot img { display: block; width: 100%; height: auto; max-height: none; border-radius: 0; }
-:root:not([data-theme="dark"]) .prose .spot img { mix-blend-mode: multiply; }
-.prose > article > .spot + h2 { margin-top: 0.4em; }
-
 /* The feature story (project pages). */
 .story { --measure: 40rem; font-size: 1.1875rem; }
-.story > article { font-family: var(--font-serif); line-height: 1.6; row-gap: 1.15em; }
+/* The story is one flowing column, not the grid: floats (the spots) need text beside them to wrap.
+   Figures break out of the measure with margins instead of grid lines. */
+.story > article {
+  --wide: min(var(--measure) + 16rem, 100vw - 2 * var(--gutter));
+  --full: 100vw;
+  display: block;
+  width: min(var(--measure), 100% - 2 * var(--gutter));
+  margin-inline: auto;
+  font-family: var(--font-serif);
+  line-height: 1.6;
+}
+.story > article > * + * { margin-top: 1.15em; }
+.story > article > .wide { width: var(--wide); margin-inline: calc((100% - var(--wide)) / 2); }
+.story > article > .full { width: var(--full); margin-inline: calc((100% - var(--full)) / 2); }
+.story > article > .wide, .story > article > .full, .story blockquote, .story .callout { clear: both; }
+
+/* Spot illustrations: keyed cut-outs floated beside the text, which wraps their silhouette
+   (shape-outside is set inline from the image's alpha). An image shape is stretched over the float's
+   margin box, so the float keeps zero margins and shape-margin alone holds the text off. */
+.spot {
+  width: clamp(9rem, 40%, 17rem);
+  margin: 0;
+  shape-image-threshold: 0.12;
+  shape-margin: 1.1rem;
+}
+.spot[data-side="right"] { float: right; }
+.spot[data-side="left"] { float: left; }
+.story > article > .spot { margin: 0; }
+.prose .spot img { display: block; width: 100%; height: auto; max-height: none; border-radius: 0; }
+/* With JS (spot-flow.ts): the spot leaves the float and hangs past the column; Pretext re-breaks
+   the paragraphs beside it, one nowrap row per line. */
+.spot[data-flow] { float: none; position: relative; width: auto; height: 0; shape-outside: none !important; }
+.spot[data-flow] img { position: absolute; top: 0; width: clamp(10rem, 46%, 19rem); }
+.spot[data-flow="right"] img { right: max(-7rem, min(0px, (var(--measure) - 100vw) / 2 + var(--gutter) + 0.5rem)); }
+.story :global(.flowSeg) { position: absolute; top: 0; white-space: nowrap; }
+.spot[data-flow="left"] img { left: max(-7rem, min(0px, (var(--measure) - 100vw) / 2 + var(--gutter) + 0.5rem)); }
+.story :global(.flowLine) { display: block; position: relative; white-space: nowrap; }
+@media (max-width: 40rem) {
+  .spot, .spot[data-flow] img { width: 42%; }
+}
 .story h2 {
   margin-top: 1.4em;
   font-family: var(--font-sans);
@@ -109,12 +142,52 @@
   line-height: 1.2;
   letter-spacing: -0.01em;
   scroll-margin-top: 5rem;
+  clear: both;
 }
 .story h3 { font-family: var(--font-sans); font-weight: 700; font-size: 1.1rem; }
 .story a { text-decoration-color: color-mix(in oklab, var(--foreground) 35%, transparent); text-decoration-thickness: 1px; }
 .story a:hover { text-decoration-color: currentColor; }
 .story li + li { margin-top: 0.35em; }
-.story code { padding: 0.1em 0.3em; border-radius: 3px; background: var(--surface); }
+/* Code reads as tiles set slightly proud of the paper: a lit top edge, a darker lip below, a short
+   cast shadow. Inline runs are keycaps; blocks are one raised slab. */
+.story code {
+  padding: 0.08em 0.38em 0.12em;
+  border-radius: 4px;
+  background: linear-gradient(to bottom, color-mix(in oklab, var(--paper-deep) 55%, #fff), var(--paper-deep));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    inset 0 -2px 0 rgb(60 45 20 / 0.12),
+    0 1px 0 rgb(60 45 20 / 0.18),
+    0 2px 3px -1px rgb(60 45 20 / 0.22);
+  font-size: 0.82em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.story pre {
+  clear: both;
+  padding: 1.1rem 1.25rem 1.2rem;
+  border-radius: 7px;
+  background: linear-gradient(to bottom, color-mix(in oklab, var(--paper-deep) 60%, #fff), var(--paper-deep));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.75),
+    inset 0 -3px 0 rgb(60 45 20 / 0.1),
+    0 1px 0 rgb(60 45 20 / 0.2),
+    0 6px 12px -6px rgb(60 45 20 / 0.3),
+    0 16px 28px -18px rgb(60 45 20 / 0.28);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+.story pre code { padding: 0; border-radius: 0; background: none; box-shadow: none; font-size: inherit; }
+:root[data-theme="dark"] .story code,
+:root[data-theme="dark"] .story pre {
+  background: linear-gradient(to bottom, color-mix(in oklab, var(--surface) 80%, #fff 6%), var(--surface));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    inset 0 -2px 0 rgb(0 0 0 / 0.35),
+    0 1px 0 rgb(0 0 0 / 0.5),
+    0 3px 6px -2px rgb(0 0 0 / 0.5);
+}
+:root[data-theme="dark"] .story pre code { background: none; box-shadow: none; }
 .story > article > figure { margin-block: 0.6em; }
 .story figcaption {
   margin-top: 0.65em;
@@ -124,11 +197,10 @@
   line-height: 1.45;
 }
 .story img { border-radius: 4px; }
+.chart svg { display: block; width: 100%; height: auto; color: var(--foreground); }
 /* charts and diagrams sit under a heavy rule, as a news graphic does */
-.story figure:has(> img[src$=".svg"]) { padding-top: 0.9rem; border-top: 3px solid var(--foreground); }
-.story figure:has(> img[src$=".svg"]) img { border-radius: 0; }
+.story figure:has(> .chart) { padding-top: 0.9rem; border-top: 3px solid var(--foreground); }
 .story blockquote {
-  grid-column: wide;
   margin-block: 0.6em;
   padding: 1.1rem 0;
   border-left: 0;

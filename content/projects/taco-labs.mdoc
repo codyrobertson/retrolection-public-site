@@ -33,9 +33,9 @@ The label has its own brand too: a cream background, an orange primary and a gre
 
 {% Figure src="/images/projects/taco-labs/brand-palette.webp" alt="Color scales for gray, blue, red, orange, yellow, green and a warm Tortilla neutral, each with numbered steps and a marked base color" caption="Color scales, including a warm neutral called Tortilla." width="wide" /%}
 
-{% Spot src="/images/projects/taco-labs/spot-propped-facade.webp" alt="A cardboard stage-set house front seen from the side, propped up from behind by sticks; one prop stick is orange-red." /%}
-
 ## Rules for a fake app
+
+{% Spot src="/images/projects/taco-labs/spot-propped-facade.webp" alt="A cardboard stage-set house front seen from the side, propped up from behind by sticks; one prop stick is orange-red." side="right" /%}
 
 Level Up Your Kid was built for one five-minute investor demo, and the brief says so. iOS only. Five screens at most. No backend, just local storage. Hardcoded data that looks like 90 days of real use. It has to work in airplane mode.
 
@@ -51,9 +51,9 @@ The tone rules come in pairs: "friendly but not childish," "scientific but not c
 
 {% Gallery images=[{src: "/images/projects/taco-labs/levelup-child-info.webp", alt: "Level Up Your Kid onboarding: a form asking for the child's name and age, with an XP counter at the top"}, {src: "/images/projects/taco-labs/levelup-first-win-celebration.webp", alt: "A celebration screen asking Do you feel it?, with a purple card about the transformation moment and a yellow card imagining six months ahead"}, {src: "/images/projects/taco-labs/levelup-launch.webp", alt: "Final onboarding screen with a large orange number 1 and a final systems check list of completed setup steps"}] columns="3" frame="phone" caption="Level Up Your Kid onboarding, rendered from the mock. Everything on these screens is hardcoded." /%}
 
-{% Spot src="/images/projects/taco-labs/spot-one-folder.webp" alt="A single thick paper folder with many small picture cards fanning out of it; the folder is orange-red." /%}
-
 ## One file for every picture
+
+{% Spot src="/images/projects/taco-labs/spot-one-folder.webp" alt="A single thick paper folder with many small picture cards fanning out of it; the folder is orange-red." side="left" /%}
 
 Every illustration and photo in the parenting app comes from one TOML manifest. It compiles to a TypeScript asset map, and a CLI generates the files from the manifest's prompts: FLUX Kontext for images, Veo 3 Fast for video, both through Replicate. A script checks the manifest for anything not generated yet. A 355-line style dictionary keeps the prompts consistent. The manifest says what to make, and the dictionary says how it should look.
 
@@ -61,9 +61,9 @@ It made about 14 illustrations for domains, onboarding, personas and badges, plu
 
 {% Gallery images=[{src: "/images/projects/taco-labs/badge-color-master.webp", alt: "Generated badge illustration: a rainbow medal labeled Color Mastery, Completed"}, {src: "/images/projects/taco-labs/badge-milestone-collector.webp", alt: "Generated badge illustration: a green shield with a treasure chest and a Milestone Achieved banner"}, {src: "/images/projects/taco-labs/badge-social-butterfly.webp", alt: "Generated badge illustration: a pink round badge with a butterfly and the words Social Skills"}] columns="3" caption="Badges generated from the manifest's prompts. All AI-generated." /%}
 
-{% Spot src="/images/projects/taco-labs/spot-paper-dolls.webp" alt="A row of three naive paper-doll cutouts holding hands, each with one dot eye; one doll is orange-red." /%}
-
 ## Testing with made-up people
+
+{% Spot src="/images/projects/taco-labs/spot-paper-dolls.webp" alt="A row of three naive paper-doll cutouts holding hands, each with one dot eye; one doll is orange-red." side="right" /%}
 
 The persona testing bot was a tool for the label, not a product. A planner model turns a synthetic persona card into test goals. A vision-language model then drives a headless browser through Playwright, deciding what to click from screenshots.
 

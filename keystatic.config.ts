@@ -129,6 +129,14 @@ export const richComponents = {
     schema: {
       src: fields.text({ label: "Image URL" }),
       alt: fields.text({ label: "Alt text" }),
+      side: fields.select({
+        label: "Side",
+        options: [
+          { label: "Right", value: "right" },
+          { label: "Left", value: "left" },
+        ],
+        defaultValue: "right",
+      }),
     },
   }),
   Gallery: block({

@@ -33,9 +33,9 @@ It started in February 2026 as retail demand simulation and ended as a one-shot 
 
 One number shows up a lot below. AUC measures how well a model ranks buyers above non-buyers. 0.5 is a coin flip and 1.0 is perfect.
 
-{% Spot src="/images/projects/personalm/spot-telescope-vs-box.webp" alt="A tall elaborate paper telescope knocked over on its tripod, and beside it a plain wooden index-card box standing upright tied with a ribbon; the ribbon is orange-red." /%}
-
 ## The LLM lost to a lookup table
+
+{% Spot src="/images/projects/personalm/spot-telescope-vs-box.webp" alt="A tall elaborate paper telescope knocked over on its tripod, and beside it a plain wooden index-card box standing upright tied with a ribbon; the ribbon is orange-red." side="right" /%}
 
 The first plan was the fashionable one. Fine-tune an LLM to act as a synthetic shopper: show it a persona and a product, ask whether they'd buy.
 
@@ -43,9 +43,9 @@ I ran a LoRA fine-tune of Qwen3-8B on 40,588 examples, then a GRPO reinforcement
 
 The fine-tuned model had learned to say yes to everyone. Early in training it predicted a purchase almost every time. GRPO never learned to tell buyers apart, and its JSON output kept breaking. The data didn't help either. 71.2% of shoppers had exactly one interaction, and demographics plus category plus price don't say much about what someone buys. RL can change how a model writes an answer. It can't add signal the input doesn't have. The slide I made afterwards said "Always build the dumb baseline first," and I should have done that on day one.
 
-{% Spot src="/images/projects/personalm/spot-leaking-jug.webp" alt="A paper water jug with a hairline crack, a thin drip falling into a cup below; the drip is orange-red." /%}
-
 ## 0.748 was a leak
+
+{% Spot src="/images/projects/personalm/spot-leaking-jug.webp" alt="A paper water jug with a hairline crack, a thin drip falling into a cup below; the drip is orange-red." side="left" /%}
 
 Next came XGBoost with extra features written by an LLM. Gemini scored things like how well a shopper's style matched a product. It hit 0.748 AUC, which looked like a real result.
 
@@ -65,9 +65,9 @@ I also tried replacing the OpenAI embedding with a fine-tuned open model, Qwen3-
 
 What did move the number was better text going in. When the preference documents went from about 282 characters to 620 and used every review instead of up to eight, the scorer gained a full point. That was more than any architecture change after the towers.
 
-{% Spot src="/images/projects/personalm/spot-crown-in-box.webp" alt="A charcoal-outline hand placing a small paper crown back into an open box; the crown is orange-red." /%}
-
 ## The champion I had to take back
+
+{% Spot src="/images/projects/personalm/spot-crown-in-box.webp" alt="A charcoal-outline hand placing a small paper crown back into an open box; the crown is orange-red." side="right" /%}
 
 In early March a variant scored 0.8019 and got promoted. Ten days later I couldn't reproduce it. Three seeds gave 0.7905. One config flag had been added to the champion three days earlier and the model re-promoted without a clean rerun. I reverted it.
 

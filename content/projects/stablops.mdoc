@@ -25,9 +25,9 @@ seo:
 ---
 I design and build stablops.com, the marketing site for StablOS, which the company calls a "Security Operating System": payroll, scheduling, dispatch and invoicing for security companies. I built the intake flow, a manifesto page and a brand guide that lives on the site, and I rebuilt the site when the positioning moved. Most of the fixes worth talking about were deletions. When the scroll animations caused a hydration flash, I pulled every one of them and brought back a much smaller CSS version. For the client's review I built a tool so they could mark up the live page instead of emailing screenshots. The repo has 204 commits in three bursts: 47 in August 2025, 15 in September, 142 in March 2026.
 
-{% Spot src="/images/projects/stablops/spot-weathervane.webp" alt="A weathervane on a pole with its arrow ghosted in two earlier charcoal positions; the current arrow is orange-red." /%}
-
 ## Three positionings
+
+{% Spot src="/images/projects/stablops/spot-weathervane.webp" alt="A weathervane on a pole with its arrow ghosted in two earlier charcoal positions; the current arrow is orange-red." side="right" /%}
 
 The brand started as Stabl Pay, earned wage access. From October 2024 to June 2025 that was Figma work: discovery, a UX audit, web design and a brand guide, with Mist `#C0D9DE`, Sand `#EDECE6`, Marble Blue `#546A7B` and Onyx `#393D3F`.
 
@@ -49,9 +49,9 @@ The backgrounds are three wave images I generated with GPT-5 Image through OpenR
 
 {% Figure src="/images/projects/stablops/brand-center-image-generator.webp" alt="Image generator on the StablOS brand page: a JSON style guide asking for organic wave formations in the navy to sky blue palette, five color chips, and a gallery of three sample outputs" caption="The style guide for the generated backgrounds lives on the brand page: wave shapes, the five palette tokens, no hard shadows. The gallery shows sample outputs." width="wide" frame="browser" /%}
 
-{% Spot src="/images/projects/stablops/spot-eraser-motion-lines.webp" alt="A pencil's eraser rubbing out a row of motion lines, eraser crumbs scattered; the eraser is orange-red." /%}
-
 ## Animation I deleted
+
+{% Spot src="/images/projects/stablops/spot-eraser-motion-lines.webp" alt="A pencil's eraser rubbing out a row of motion lines, eraser crumbs scattered; the eraser is orange-red." side="left" /%}
 
 The August site had framer-motion `whileInView` animations on most sections, and they caused a hydration flash. A section rendered visible, snapped to hidden, then animated back in.
 
@@ -67,9 +67,9 @@ The written scope said to lead with value and keep screenshots out of the hero. 
 
 The scope listed required fields: company, contact, employee count, payroll provider, monthly payroll volume, timeline. The form I built sends each submission to Resend and a Google Sheet and creates a HubSpot contact. On August 18, 2025 I took meeting creation out of the flow.
 
-{% Spot src="/images/projects/stablops/spot-touch-up-brush.webp" alt="A small brush touching up one stroke on a paper sheet already pinned to the wall; the brush tip is orange-red." /%}
-
 ## Review on the live page
+
+{% Spot src="/images/projects/stablops/spot-touch-up-brush.webp" alt="A small brush touching up one stroke on a paper sheet already pinned to the wall; the brush tip is orange-red." side="right" /%}
 
 For the v2 review I built collab-review, a click-to-annotate redline tool along the lines of Agentation. The client marks up the live page, the annotations go to Vercel Blob, and the reviewer doesn't need an account. It's one more thing to build and secure.
 

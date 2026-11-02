@@ -33,9 +33,9 @@ Stack: React 18, TanStack Router and Query, Tailwind, FastAPI, SQLModel, APSched
 
 {% Figure src="/images/projects/wonderstracker/price-history.webp" alt="Price history chart for one card on a log scale from September to January, with lowest ask, active listings and trend above it, and dashed lines marking the floor and the current ask" caption="Price history on a card page. Dots are sales, diamonds are active listings, and the dashed lines are the floor and the lowest ask." width="wide" frame="browser" /%}
 
-{% Spot src="/images/projects/wonderstracker/spot-trimmed-strips.webp" alt="A row of paper strips of different lengths with the longest and shortest snipped off by scissors; the middle strip is orange-red." /%}
-
 ## What sets the price
+
+{% Spot src="/images/projects/wonderstracker/spot-trimmed-strips.webp" alt="A row of paper strips of different lengths with the longest and shortest snipped off by scissors; the middle strip is orange-red." side="right" /%}
 
 If a card has at least 3 sales, the fair market price is a MAD-trimmed mean of its 8 most recent. MAD trimming throws out sales that sit too far from the median before averaging. With fewer than 3 sales it falls back to a formula: base set price times rarity, treatment and liquidity multipliers. The floor is the average of the 4 lowest sales in the last 30 days. On January 12 the market price switched to the fair price with a VWAP fallback, and deal ratings use VWAP too.
 
@@ -49,9 +49,9 @@ The design calls are in the training script's header: cards only, no sealed prod
 
 Nothing in the app loads the saved model, and the notebook has no saved outputs, so I don't have an accuracy number to put here.
 
-{% Spot src="/images/projects/wonderstracker/spot-upside-down-thermometer.webp" alt="An unmarked thermometer hung upside down from a nail, bulb at the top; the liquid is orange-red." /%}
-
 ## Confidence was upside down
+
+{% Spot src="/images/projects/wonderstracker/spot-upside-down-thermometer.webp" alt="An unmarked thermometer hung upside down from a nail, bulb at the top; the liquid is orange-red." side="left" /%}
 
 Before folding all the pricing into one service, I wrote an ADR that said to backtest the order-book estimator against the next actual sale first. The first run missed by a median of 34.4%, and the confidence score was worse than the error: higher confidence meant higher error.
 
@@ -65,9 +65,9 @@ After the fix, low-confidence predictions had the higher error (MAE $108.88) and
 
 {% Figure src="/images/projects/wonderstracker/confidence-mae.svg" alt="Bar chart of mean absolute error by confidence bucket after the fix: low confidence $108.88 over 28 predictions, medium $40.28 over 223, and no predictions in the high bucket" caption="After the fix, the less confident bucket has the bigger error, which is the right way round." width="wide" /%}
 
-{% Spot src="/images/projects/wonderstracker/spot-empty-rain-gauge.webp" alt="An empty glass rain gauge under small dry clouds, a single drop hanging above it; the drop is orange-red." /%}
-
 ## Ten days of zero
+
+{% Spot src="/images/projects/wonderstracker/spot-empty-rain-gauge.webp" alt="An empty glass rain gauge under small dry clouds, a single drop hanging above it; the drop is orange-red." side="right" /%}
 
 On December 20 the eBay sold-listings job stopped returning anything. A timezone bug in the date parser was dropping every result, and nothing alerted. The day it got fixed it pulled 29 sold listings, after 0 for the previous ten days.
 

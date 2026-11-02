@@ -29,9 +29,9 @@ I built it solo over two weeks in May 2026, with Claude Code and Codex agents wr
 
 I did the product, the brand, a FastAPI and Postgres backend, a Next.js front end and a Figma plugin. 258 commits between May 2 and May 16.
 
-{% Spot src="/images/projects/post2plate/spot-pancake-flip.webp" alt="A pancake mid-flip above a frying pan, a curved charcoal motion line; the pancake is orange-red." /%}
-
 ## Same product, flipped in one day
+
+{% Spot src="/images/projects/post2plate/spot-pancake-flip.webp" alt="A pancake mid-flip above a frying pan, a curved charcoal motion line; the pancake is orange-red." side="right" /%}
 
 The first plan was iOS-first and private by default, aimed at blog creators who already earn ad revenue from recipe sites. Success meant a user importing three recipes in a week.
 
@@ -49,9 +49,9 @@ Handles come from the social account that sent the DM, so a guest's recipes stay
 
 {% Gallery images=[{src: "/images/projects/post2plate/recipe-mobile-iter4.webp", alt: "Early mobile recipe page: photo header, a card of chips for time, servings, difficulty and cuisine, a creator card, and a plain Start Cooking bar"}, {src: "/images/projects/post2plate/recipe-mobile-pass1.webp", alt: "Mobile recipe page after the first Figma pass: the content sheet overlaps the photo, with sections for what people are saying, nutrition marked soon, and the creator"}, {src: "/images/projects/post2plate/recipe-mobile-pass2.webp", alt: "Mobile recipe page after the second Figma pass, showing the sticky bottom bar with a large orange Start Cooking button between back and share"}] columns="3" frame="phone" caption="Mobile, left to right: the first build, then two passes matching the Figma design. Start Cooking went from a text label to the loudest thing on the screen." /%}
 
-{% Spot src="/images/projects/post2plate/spot-colander-catch.webp" alt="A kitchen colander catching one crumpled paper scrap while flat blank cards fall through underneath; the caught scrap is orange-red." /%}
-
 ## A parser that's allowed to say no
+
+{% Spot src="/images/projects/post2plate/spot-colander-catch.webp" alt="A kitchen colander catching one crumpled paper scrap while flat blank cards fall through underneath; the caught scrap is orange-red." side="left" /%}
 
 The 2025 version of this project, which I threw out, returned a hardcoded pasta recipe whenever an import failed, so the demo always "worked." The rewrite bans that kind of fake success in CI.
 
@@ -61,9 +61,9 @@ Eight models went through the same 10 posts and four tied at 100%. The cheapest 
 
 I also dropped OCR on video text overlays. It mattered on 1 of 61 posts and added cost, plus noise from stickers, on every one. With OCR off and a faster hosted Whisper, the production setup ran all 60 posts for 19 cents.
 
-{% Spot src="/images/projects/post2plate/spot-three-scales.webp" alt="Three small kitchen scales in a row, their needles pointing in different directions; one needle is orange-red." /%}
-
 ## Three scores that were wrong
+
+{% Spot src="/images/projects/post2plate/spot-three-scales.webp" alt="Three small kitchen scales in a row, their needles pointing in different directions; one needle is orange-red." side="right" /%}
 
 Around the parser sit about ten small, cheap models, the kind that count word patterns instead of calling an LLM. They handle things like ingredient roles, substitutions, cooking temperatures and step timing. Their labels came from public recipe datasets, from larger LLMs, and from transcripts of people actually cooking.
 

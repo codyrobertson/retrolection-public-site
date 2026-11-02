@@ -1,3 +1,4 @@
+import type React from "react";
 import type { RenderableTreeNode } from "@markdoc/markdoc";
 import Link from "next/link";
 import type { Discipline, ProjectStatus } from "@/lib/content";
@@ -107,10 +108,16 @@ export function StoryHeader({ story, minutes, author }: { story: Story; minutes:
       </div>
       {art ? (
         <figure className={styles.lead}>
-          <div className={styles.art}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- CMS images have unknown dimensions */}
-            <img src={art} alt={artAlt || ""} fetchPriority="high" />
-            {loop && <video src={loop} poster={art} autoPlay muted loop playsInline aria-hidden />}
+          <div className={styles.sheet}>
+            <div className={styles.art}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- CMS images have unknown dimensions */}
+              <img src={art} alt={artAlt || ""} fetchPriority="high" />
+              {loop && <video src={loop} poster={art} autoPlay muted loop playsInline aria-hidden />}
+            </div>
+            {/* the sheet is taped to the page (tape-gl.js draws the strips) */}
+            <span className={styles.tape} data-tape data-tape-angle="-38" style={{ left: "-2.2rem", top: "0.6rem" }} />
+            <span className={styles.tape} data-tape data-tape-angle="34" style={{ right: "-2.2rem", top: "0.4rem" }} />
+            <span className={styles.tape} data-tape data-tape-angle="-4" style={{ left: "46%", bottom: "-1rem" }} />
           </div>
           <figcaption className={styles.column}>
             {artAlt && <span>{artAlt}</span>}
@@ -157,8 +164,10 @@ export function AtAGlance({ story, sections }: { story: Story; sections: { id: s
         <nav aria-label="In this case study">
           <h2 className={styles.label}>In this case study</h2>
           <ol className={styles.toc}>
-            {sections.map((s) => (
+            {sections.map((s, i) => (
               <li key={s.id}>
+                {/* a real span, not ::before: the ink layer only repaints DOM text */}
+                <span className={styles.tocN} aria-hidden>{String(i + 1).padStart(2, "0")}</span>
                 <a href={`#${s.id}`}>{s.title}</a>
               </li>
             ))}
@@ -169,27 +178,34 @@ export function AtAGlance({ story, sections }: { story: Story; sections: { id: s
   );
 }
 
-type Item = { slug: string; title: string; summary?: string | null; discipline: Discipline; cover?: string | null; coverAlt?: string | null };
+type Item = { slug: string; title: string; summary?: string | null; discipline: Discipline; cover?: string | null; coverAlt?: string | null; art?: string | null };
+
+/** Each polaroid's lean and tape, fixed per position so the wall doesn't reshuffle between builds. */
+const LEAN = [-3.2, 2.1, -1.4, 3.4, -2.6, 1.2];
+const TAPE = [-6, 5, -12, 3, 9, -4];
 
 export function MoreWork({ items }: { items: Item[] }) {
   if (!items.length) return null;
   return (
     <section className={styles.more} aria-labelledby="more-work">
       <h2 id="more-work" className={styles.label}>More case studies</h2>
-      <ul className={styles.moreList}>
-        {items.map((p) => (
-          <li key={p.slug}>
-            <Link href={`/projects/${p.slug}`} className={styles.moreItem}>
-              {p.cover && (
-                // eslint-disable-next-line @next/next/no-img-element -- CMS images have unknown dimensions
-                <img src={p.cover} alt="" loading="lazy" />
-              )}
-              <span className={styles.moreKicker}>{disciplineLabel[p.discipline]}</span>
-              <span className={styles.moreTitle}>{p.title}</span>
-              {p.summary && <span className={styles.moreDek}>{p.summary}</span>}
-            </Link>
-          </li>
-        ))}
+      <ul className={styles.wall}>
+        {items.map((p, i) => {
+          const pic = p.art || p.cover;
+          return (
+            <li key={p.slug} className={styles.pin} style={{ "--lean": `${LEAN[i % LEAN.length]}deg` } as React.CSSProperties}>
+              <Link href={`/projects/${p.slug}`} className={styles.polaroid}>
+                <span className={styles.photo}>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- CMS images have unknown dimensions */}
+                  {pic && <img src={pic} alt="" loading="lazy" />}
+                </span>
+                <span className={styles.moreTitle}>{p.title}</span>
+                <span className={styles.moreKicker}>{disciplineLabel[p.discipline]}</span>
+              </Link>
+              <span className={styles.pinTape} data-tape data-tape-angle={TAPE[i % TAPE.length]} />
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
