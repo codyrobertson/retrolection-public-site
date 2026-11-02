@@ -48,7 +48,7 @@
 .wood {
   inset: 0;
   background: var(--ink);
-  opacity: 0.16;
+  opacity: 0.09;
   -webkit-mask: url(/footer/wood-ink.webp) repeat-x left bottom / var(--wood-w) var(--wood-h);
   mask: url(/footer/wood-ink.webp) repeat-x left bottom / var(--wood-w) var(--wood-h);
 }

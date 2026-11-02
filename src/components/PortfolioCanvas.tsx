@@ -3,25 +3,24 @@
 import { useEffect, useRef } from "react";
 import styles from "./portfolio.module.css";
 
-/** a picture on the canvas: placed and sized in cells (x, y, w, h) */
-export type Print = { href: string; src: string; title: string; own: boolean; x: number; y: number; w: number; h: number };
+/** a picture on the canvas: placed and sized in cells (x, y, w, h); its column repeats every ph cells */
+export type Print = { href: string; src: string; title: string; own: boolean; x: number; y: number; w: number; h: number; ph: number };
 
 /** past the window's edge, how far a print is kept before it goes round to the other side */
 const MARGIN = 160;
 /** the dots' pitch, in px: the surface moves under the prints by this much, then repeats */
 const PITCH = 24;
-/** px/s the canvas drifts at when nobody has hold of it */
-const DRIFT = 12;
 
 /**
  * The portfolio as a surface that goes on in every direction: drag it (or swipe sideways, or a
- * trackpad's sideways scroll, or the arrow keys) and it carries on, with a throw. One tile of
- * prints, each sent round to the far side as it leaves the window: the tile is wider and taller
- * than any window, so a print is only ever in one place. The plane is the one layer that moves
+ * trackpad's sideways scroll, or the arrow keys) and it carries on, with a throw, then rests:
+ * nothing moves (or is drawn) unless someone moves it. One tile of columns, each print sent round
+ * to the far side as it leaves the window: the tile is wider than any window and every column
+ * longer than one, so a print is only ever in one place. The plane is the one layer that moves
  * (on the compositor); a print is written to only when it goes round, and then in 2D, so the
  * prints are painted into the plane rather than each made a layer of its own.
  */
-export default function PortfolioCanvas({ prints, width, height }: { prints: Print[]; width: number; height: number }) {
+export default function PortfolioCanvas({ prints, width }: { prints: Print[]; width: number }) {
   const view = useRef<HTMLDivElement>(null);
   const plane = useRef<HTMLDivElement>(null);
   const dots = useRef<HTMLDivElement>(null);
@@ -31,14 +30,13 @@ export default function PortfolioCanvas({ prints, width, height }: { prints: Pri
     if (!el || !pl || !dt) return;
     const items = [...pl.children] as HTMLElement[];
     const wrapped = items.map(() => [NaN, NaN]);
-    const still = matchMedia("(prefers-reduced-motion: reduce)");
-    let cell = 0, W = 0, H = 0, vw = 0, vh = 0;
+    let cell = 0, W = 0, vw = 0, vh = 0;
     let ox = 0, oy = 0, vx = 0, vy = 0;
-    let raf = 0, last = 0, seen = false, held = false, rest = 0;
+    let raf = 0, last = 0, seen = false, held = false;
 
     const measure = () => {
       cell = parseFloat(getComputedStyle(el).getPropertyValue("--cell")) || 280;
-      W = width * cell; H = height * cell; vw = el.clientWidth; vh = el.clientHeight;
+      W = width * cell; vw = el.clientWidth; vh = el.clientHeight;
     };
     const place = () => {
       pl.style.transform = `translate3d(${ox}px, ${oy}px, 0)`;
@@ -47,7 +45,7 @@ export default function PortfolioCanvas({ prints, width, height }: { prints: Pri
       for (let i = 0; i < prints.length; i++) {
         const p = prints[i];
         const kx = Math.ceil((-ox - MARGIN - (p.x + p.w) * cell) / W);
-        const ky = Math.ceil((-oy - MARGIN - (p.y + p.h) * cell) / H);
+        const H = p.ph * cell, ky = Math.ceil((-oy - MARGIN - (p.y + p.h) * cell) / H);
         const w = wrapped[i];
         if (w[0] !== kx || w[1] !== ky) { w[0] = kx; w[1] = ky; items[i].style.transform = `translate(${kx * W}px, ${ky * H}px)`; }
       }
@@ -55,20 +53,13 @@ export default function PortfolioCanvas({ prints, width, height }: { prints: Pri
     const frame = (t: number) => {
       raf = 0;
       const d = Math.min(0.05, last ? (t - last) / 1000 : 0); last = t;
-      let moved = false;
-      if (!held) {
-        if (Math.abs(vx) + Math.abs(vy) > 4) {
-          ox += vx * d; oy += vy * d; moved = true;
-          const f = Math.pow(0.04, d); vx *= f; vy *= f;    // a throw, run out in a second or so
-        } else if (!still.matches && t > rest) {
-          ox -= DRIFT * d; oy -= DRIFT * 0.45 * d; moved = true;
-        }
-      }
-      if (moved) place();
+      if (held || Math.abs(vx) + Math.abs(vy) <= 4) { vx = vy = 0; return; }   // at rest: no more frames
+      ox += vx * d; oy += vy * d;
+      const f = Math.pow(0.04, d); vx *= f; vy *= f;      // a throw, run out in a second or so
+      place();
       if (seen && !document.hidden) raf = requestAnimationFrame(frame);
     };
     const run = () => { if (!raf && seen) { last = 0; raf = requestAnimationFrame(frame); } };
-    const hold = (ms: number) => { rest = performance.now() + ms; };
 
     // a drag, from a mouse or a pen; a finger only sideways (touch-action), so the page still scrolls
     let px = 0, py = 0, pt = 0, id = -1, dragged = false;
@@ -90,32 +81,30 @@ export default function PortfolioCanvas({ prints, width, height }: { prints: Pri
       if (e.pointerId !== id) return;
       id = -1; held = false; delete el.dataset.dragging;
       if (e.timeStamp - pt > 80) vx = vy = 0;                 // held still before letting go: no throw
-      hold(2500); run();
+      run();
     };
     // a print dragged is not a print clicked
     const click = (e: MouseEvent) => { if (dragged) { e.preventDefault(); e.stopPropagation(); dragged = false; } };
     const wheel = (e: WheelEvent) => {
       if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;   // up and down is the page's
-      e.preventDefault(); ox -= e.deltaX; vx = vy = 0; hold(2500); place(); run();
+      e.preventDefault(); ox -= e.deltaX; vx = vy = 0; place();
     };
     const key = (e: KeyboardEvent) => {
       const step = e.shiftKey ? 480 : 160;
       const k = ({ ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] } as Record<string, number[]>)[e.key];
       if (!k || e.target !== el) return;
-      e.preventDefault(); vx = k[0] * 4; vy = k[1] * 4; hold(4000); run();
+      e.preventDefault(); vx = k[0] * 4; vy = k[1] * 4; run();
     };
     // a print focused from the keyboard is brought into the window
     const focus = (e: FocusEvent) => {
       const a = (e.target as HTMLElement).closest("a"); if (!a || !pl.contains(a)) return;
       const r = a.getBoundingClientRect(), v = el.getBoundingClientRect();
       ox += v.left + vw / 2 - (r.left + r.width / 2); oy += v.top + vh / 2 - (r.top + r.height / 2);
-      el.scrollLeft = el.scrollTop = 0; vx = vy = 0; hold(6000); place();
+      el.scrollLeft = el.scrollTop = 0; vx = vy = 0; place();
     };
-    const pause = (e: PointerEvent) => { if (e.pointerType === "mouse") hold(1e9); };
-    const resume = () => { if (!held) hold(1200); };
 
     measure();
-    ox = -(W - vw) / 2; oy = -(H - vh) / 2;
+    ox = -(W - vw) / 2; oy = -0.35 * cell;   // opened partway down, so it reads as running on above too
     place();
     el.dataset.live = "true";
     const io = new IntersectionObserver(([en]) => { seen = en.isIntersecting; if (seen) run(); });
@@ -126,7 +115,7 @@ export default function PortfolioCanvas({ prints, width, height }: { prints: Pri
     const on: [string, EventListener, AddEventListenerOptions?][] = [
       ["pointerdown", down as EventListener], ["pointermove", move as EventListener], ["pointerup", up as EventListener],
       ["pointercancel", up as EventListener], ["click", click as EventListener, { capture: true }], ["wheel", wheel as EventListener, { passive: false }],
-      ["keydown", key as EventListener], ["focusin", focus as EventListener], ["pointerenter", pause as EventListener], ["pointerleave", resume],
+      ["keydown", key as EventListener], ["focusin", focus as EventListener],
     ];
     on.forEach(([t, f, o]) => el.addEventListener(t, f, o));
     document.addEventListener("visibilitychange", vis);
@@ -135,7 +124,7 @@ export default function PortfolioCanvas({ prints, width, height }: { prints: Pri
       on.forEach(([t, f, o]) => el.removeEventListener(t, f, o));
       document.removeEventListener("visibilitychange", vis);
     };
-  }, [prints, width, height]);
+  }, [prints, width]);
 
   return (
     <div ref={view} className={styles.view} tabIndex={0} role="region" aria-label="Portfolio canvas: drag, or use the arrow keys, to look around">

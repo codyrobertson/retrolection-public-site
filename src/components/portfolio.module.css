@@ -1,14 +1,14 @@
 /* After the ledger, in the light again: the portfolio as a window-high surface, dotted, that goes
    on every way (PortfolioCanvas). Always the light stock, whatever the page's lights are doing
    as it comes up (the theme turns back to day once it is half up the window: plate.ts dawn).
-   Prints are placed and sized in cells (--x, --y, --w, --h); --cell is a cell in px. */
+   Prints are placed and sized in cells (--x, --y, --w, --h); --cell is a column in px. */
 .section {
   --paper: #f4f1e8;
   --paper-deep: #ebe7db;
   --ink: #1a1917;
   --ink-2: #4a4740;
   --ink-3: #8a857a;
-  --rule: rgb(26 25 23 / 0.14);
+  --rule: rgb(26 25 23 / 0.12);
   --vermilion: #d4462a;
   position: relative;
   color-scheme: light;
@@ -17,27 +17,21 @@
   scroll-margin-top: var(--masthead);
 }
 
-/* the title, over the canvas's top corner, on a little of the stock so it reads over the prints */
+/* the title, set as the other sections' are, above the surface */
 .head {
-  position: absolute;
-  inset: 0 0 auto;
-  z-index: 2;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 2ch;
-  padding: clamp(28px, 5vh, 56px) var(--gutter) 48px;
-  background: linear-gradient(var(--paper) 35%, transparent);
-  pointer-events: none;
+  padding: clamp(72px, 11vh, 128px) var(--gutter) clamp(20px, 3vh, 32px);
 }
-.head > * { pointer-events: auto; }
 .title {
   margin: 0;
   font-family: var(--font-sans);
   font-weight: 700;
-  font-size: clamp(36px, 7vw, 96px);
-  line-height: 0.95;
-  letter-spacing: -0.035em;
+  font-size: clamp(30px, 4.6vw, 52px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
   color: var(--ink);
 }
 .out {
@@ -53,9 +47,9 @@
 .out:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 3px; }
 
 .view {
-  --cell: 268px;
+  --cell: 248px;
   position: relative;
-  height: max(640px, 100svh);
+  height: clamp(560px, 88svh, 980px);
   overflow: hidden;
   background: var(--paper);
   cursor: grab;
@@ -65,20 +59,23 @@
 }
 .view[data-dragging="true"] { cursor: grabbing; }
 .view:focus-visible { outline: 2px solid var(--vermilion); outline-offset: -2px; }
-/* the foot fades into the stock, so the surface reads as going on under the page */
+/* both edges fade into the stock, so the surface reads as going on past them */
+.view::before,
 .view::after {
   content: "";
   position: absolute;
-  inset: auto 0 0;
-  height: 96px;
-  background: linear-gradient(transparent, var(--paper));
+  inset: 0 0 auto;
+  z-index: 1;
+  height: 72px;
+  background: linear-gradient(var(--paper), transparent);
   pointer-events: none;
 }
+.view::after { inset: auto 0 0; background: linear-gradient(transparent, var(--paper)); }
 
 .dots {
   position: absolute;
   inset: -24px;
-  background-image: radial-gradient(circle at 12px 12px, rgb(26 25 23 / 0.22) 1.1px, transparent 1.7px);
+  background-image: radial-gradient(circle at 12px 12px, rgb(26 25 23 / 0.13) 1px, transparent 1.5px);
   background-size: 24px 24px;
   will-change: transform;
 }
@@ -95,7 +92,7 @@
   top: calc(var(--y) * var(--cell));
   width: calc(var(--w) * var(--cell));
   height: calc(var(--h) * var(--cell));
-  border-radius: 6px;
+  border-radius: 4px;
   -webkit-user-drag: none;
 }
 .print img {
@@ -106,18 +103,24 @@
   object-position: top;
   border-radius: inherit;
   background: var(--paper-deep);
-  box-shadow: 0 0 0 1px var(--rule), 0 10px 22px -14px rgb(26 25 23 / 0.4);
+  box-shadow: 0 0 0 1px var(--rule);
+  transition: box-shadow 0.2s ease;
   pointer-events: none;
 }
-.print[data-own="true"] img { box-shadow: 0 0 0 1px rgb(26 25 23 / 0.22), 0 16px 32px -16px rgb(26 25 23 / 0.45); }
+@media (hover: hover) {
+  .view:not([data-dragging="true"]) .print:hover img { box-shadow: 0 0 0 1px rgb(26 25 23 / 0.4); }
+}
 .print:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 3px; }
 
-/* its name, under it, when pointed at */
+/* its name, over its foot, when pointed at */
 .tip {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(100% + 7px);
+  bottom: 0;
+  padding: 18px 10px 8px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(transparent, rgb(244 241 232 / 0.94) 55%);
   overflow: hidden;
   font-family: var(--font-sans);
   font-size: 12.5px;
@@ -135,9 +138,9 @@
 .print:focus-visible .tip { opacity: 1; }
 
 @media (max-width: 640px) {
-  .view { --cell: 168px; height: max(560px, 88svh); }
+  .view { --cell: 156px; height: clamp(480px, 80svh, 720px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tip { transition: none; }
+  .tip, .print img { transition: none; }
 }

@@ -71,9 +71,10 @@ async function hand() {
   const SCALE = (PX_MM * X) / MM;                  // sheet px per rig unit
   const STYLE = { grade: 3.2, tone: 1.2, wobble: 0.75, ghost: 0.05, paper: [255, 255, 255], ink: [26, 25, 23] };
   // the hero's own layers (scene.js), so the two hands are one hand drawn twice
-  const LAYERS = { contour: true, crease: true, fold: true, nail: true, model: true, palmcrease: true, tendon: false, vein: false, hatch: false, hair: false, print: false, ridge: false, bone: false };
+  // no joint creases or folds: at this size they ring each finger like a worm's segments
+  const LAYERS = { contour: true, crease: false, fold: false, nail: true, model: true, palmcrease: false, tendon: false, vein: false, hatch: false, hair: false, print: false, ridge: false, bone: false };
   if (args.lay) for (const k of Object.keys(LAYERS)) LAYERS[k] = args.lay.split(',').includes(k);   // debugging: just these layers
-  const DETAIL = { shade: +(args.shade ?? 0.7), vein: +(args.vein ?? 0.35), lattice: +(args.lattice ?? 0), hair: 0 };
+  const DETAIL = { shade: +(args.shade ?? 0.5), vein: +(args.vein ?? 0.35), lattice: +(args.lattice ?? 0), hair: 0 };
   const R = new RE.Renderer(HS, HS);
   const A = GK.anatomy.buildAnatomy(SEED, { chirality: 'right' }); R._an = A; R._anSeed = SEED;
   // shorter, fuller fingers than the engine's default: the photo's hand is a broad, relaxed one
@@ -85,11 +86,11 @@ async function hand() {
   const boils = [0, 1, 2].map((n) => new M.Noise(SEED * 7 + n * 101));
   const VIEW = { az: +(args.az ?? 0) * DEG, el: +(args.el ?? 10) * DEG, roll: +(args.roll ?? -14) * DEG };
 
-  const CURL = +(args.curl ?? 0.4);                    // how far the resting fingers bend: 1 as in the photo, toward 0 long and flat
-  const SPREAD = (args.spread ?? '0.3,0.08,0.4,0.6').split(',').map(Number);   // each finger's spread from the middle: the photo's, a relaxed open hand
+  const CURL = +(args.curl ?? 0.6);                    // how far the resting fingers bend: 1 as in the photo, toward 0 long and flat
+  const SPREAD = (args.spread ?? '0.06,0,0.1,0.18').split(',').map(Number);   // each finger's spread from the middle: a relaxed hand, the fingers loosely together
   const REST = {
     wrist: [0.03, +(args.dev ?? -0.6), +(args.pron ?? 0)], arch: +(args.arch ?? 0.22),
-    thumb: [+(args.thumb ?? -0.45), +(args.tabd ?? -0.4), +(args.topp ?? -0.7), +(args.tmcp ?? 0.15), +(args.tip ?? 0)],   // tucked along the index, pointing forward
+    thumb: [+(args.thumb ?? 0.2), +(args.tabd ?? 0.25), +(args.topp ?? -0.6), +(args.tmcp ?? 0.4), +(args.tip ?? 0)],   // tucked under the index, not thrown out to the side
     f: [[0.14, 0.30, 0.16, 0.14], [0.20, 0.40, 0.26, 0.03], [0.24, 0.46, 0.30, 0.06], [0.32, 0.54, 0.38, 0.16]]
       
       .map(([m, p, d], i) => [m * CURL, p * CURL * +(args.pipk ?? 1), d * CURL * +(args.dipk ?? 0.5), +(args.abd ?? 1) * SPREAD[i]]),
@@ -520,26 +521,18 @@ function tray() {
   }
   ink(arc(FLOOR, ZF, 0, 360, 140), { tone: 0.5, passes: 1, weight: 0.85, close: true, taper: 0 });
   ink(arc(FLOOR - 0.6, ZF, LIGHT - 70, LIGHT + 70), { grade: grade(1.4), tone: 0.5, passes: 2, weight: 1.05, taper: 0.8 });   // the dark crease where the wall in shade meets the floor
-  // under the floor, the base's cut star: a hobstar at the heart, NF V-cut rays out of it, long and short by turns,
-  // and between the long rays' ends, the fans' crossed cuts, as the photo's dish has them
-  const ZB = 0.5, HUB = 4.6, RL = FLOOR - 1.6, RS = FLOOR * 0.6, RW = 2.6;   // the rays' heads (mm wide at the hub)
-  const rayEnd = (k) => (k % 2 ? RS : RL);
-  for (let k = 0; k < NF; k++) {
-    const a = k * FA, r1 = rayEnd(k), hw = (RW / 2 / HUB) / DEG * (k % 2 ? 0.7 : 1);
+  // under the floor, the base's cut star, faint: a hobstar at the heart and NF/2 V-cut rays out of it, seen
+  // through the floor and the ash, so they are a hint of the cut and not a starburst over the dish
+  const ZB = 0.5, HUB = 4.6, RL = (FLOOR - 1.6) * 0.8, RW = 2.6;   // the rays' heads (mm wide at the hub)
+  for (let k = 0; k < NF; k += 2) {
+    const a = k * FA, hw = (RW / 2 / HUB) / DEG;
     for (const s of [-1, 1]) {
       const away = Math.cos((a + s * 90 - LIGHT) * DEG) < 0;
-      ink([pol(HUB, ZB, a + s * hw), pol(r1, ZB, a)], { grade: grade(away ? 1.6 : 0.8), tone: away ? 0.42 : 0.2, passes: 1, weight: 0.75, taper: 0.7, wobble: 0.25 });
-    }
-  }
-  for (let k = 1; k < NF; k += 2) {                       // the fans: from each short ray's point to its neighbours' sides
-    const a = k * FA, tip = pol(RS, ZB, a);
-    for (const s of [-1, 1]) {
-      ink([tip, pol(RL - 3, ZB, a + s * FA * 0.82)], { grade: grade(0.8), tone: 0.22, passes: 1, weight: 0.65, taper: 0.6, wobble: 0.25 });
-      ink([pol(RS + 4, ZB, a), pol(RL - 1, ZB, a + s * FA * 0.5)], { grade: grade(0.6), tone: 0.14, passes: 1, weight: 0.6, taper: 0.7, wobble: 0.25 });
+      ink([pol(HUB, ZB, a + s * hw), pol(RL, ZB, a)], { grade: grade(away ? 0.9 : 0.5), tone: away ? 0.22 : 0.1, passes: 1, weight: 0.65, taper: 0.8, wobble: 0.25 });
     }
   }
   // the hobstar: twelve points about a little cut ring
-  ink(Array.from({ length: 25 }, (_, i) => pol(i % 2 ? HUB * 0.5 : HUB, ZB, i * 15)), { grade: grade(1.2), tone: 0.36, passes: 1, weight: 0.75, close: true, taper: 0 });
+  ink(Array.from({ length: 25 }, (_, i) => pol(i % 2 ? HUB * 0.5 : HUB, ZB, i * 15)), { grade: grade(0.8), tone: 0.22, passes: 1, weight: 0.7, close: true, taper: 0 });
   ink(arc(HUB * 0.32, ZB, 0, 360, 30), { grade: grade(0.8), tone: 0.24, passes: 1, weight: 0.7, close: true, taper: 0 });
 
   const dish = coverage(g);
@@ -564,15 +557,16 @@ function tray() {
       const mx = (x - sc[0]) / (S * 0.97), my = -(y - sc[1]) / S, r = Math.hypot(mx, my);
       if (r < HUB * 0.9 || r > RL) continue;
       const a = Math.atan2(my, mx) / DEG, k = Math.round(a / FA), da = a - k * FA, kk = ((k % NF) + NF) % NF;
-      const r1 = rayEnd(kk), t = (r - HUB) / (r1 - HUB);
+      if (kk % 2) continue;                                 // the long rays only
+      const t = (r - HUB) / (RL - HUB);
       if (t > 1) continue;
-      const half = (RW / 2) * (kk % 2 ? 0.7 : 1) * (1 - t);   // the cut's half width (mm) here
+      const half = (RW / 2) * (1 - t);   // the cut's half width (mm) here
       if (Math.abs(da * DEG * r) > half) continue;
       const s = Math.sign(da) || 1, face = Math.cos((k * FA + s * 90 - LIGHT) * DEG);
       st[y * W + x] = face < 0 ? 0.55 * (1 - 0.4 * t) * -face + 0.18 : 0;
     }
     const sb = blur(st, W, H, 1, 1);
-    for (let i = 0; i < dish.length; i++) dish[i] = 1 - (1 - dish[i]) * (1 - sb[i] * 0.42 * (0.55 + 0.9 * hash2(i % W + 11, (i / W) | 0)));
+    for (let i = 0; i < dish.length; i++) dish[i] = 1 - (1 - dish[i]) * (1 - sb[i] * 0.24 * (0.55 + 0.9 * hash2(i % W + 11, (i / W) | 0)));
   }
 
   // the cigarette, on its own sheets (paper and ash), so the hand can take it out of the dish

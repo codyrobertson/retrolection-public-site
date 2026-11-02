@@ -20,6 +20,8 @@ import { linked } from "./gl-ready.js";
 import { NIGHT, night, nightIn, onNight } from "./night.js";
 
 export const TILE_H = 1024;
+/** how long a tile takes to settle in, its ink coming up (then it is still) */
+const SETTLE_MS = 3000;
 export const PAD = 16; // css px of mask beyond each tile edge so blur/halo cross seams
 const MARGIN = 512;
 
@@ -118,7 +120,6 @@ export function createLayer(cfg) {
   // the colours the layer was last drawn in, and where the lights' front is over it (night.js)
   let drawnDark = 0, nightY = -1e6;
   const origin = () => (scoped ? root.getBoundingClientRect().top : -scrollY);
-  const t0 = performance.now();
 
   const host = document.createElement("div");
   host.id = cfg.id;
@@ -196,16 +197,16 @@ export function createLayer(cfg) {
         pass(T.mask, T.tmp, 1, 0, s1 * dpr); pass(T.tmp.t, T.b1, 0, 1, s1 * dpr);
         pass(T.mask, T.tmpH, 1, 0, s2 * dpr * 0.5); pass(T.tmpH.t, T.b2, 0, 1, s2 * dpr * 0.5);
         g.bindFramebuffer(g.FRAMEBUFFER, null); g.viewport(0, 0, cw, ch);
-        tile.start = performance.now() - (settleFromZero ? 0 : 3000);
+        tile.start = performance.now() - (settleFromZero ? 0 : SETTLE_MS);
       },
       draw(now) {
         g.useProgram(compP.pr);
         [T.mask, T.b1.t, T.b2.t, T.meta].forEach((x, k) => { g.activeTexture(g.TEXTURE0 + k); g.bindTexture(g.TEXTURE_2D, x); });
         ["mask", "b1", "b2", "meta"].forEach((n, k) => g.uniform1i(compP.u(n), k));
         g.uniform2f(compP.u("res"), cv.width, cv.height); g.uniform1f(compP.u("dpr"), dpr);
-        g.uniform1f(compP.u("t"), cfg.animated ? (now - t0) / 1000 : 0);
+        g.uniform1f(compP.u("t"), 0);   // still once settled: drawn again only when something changes
         g.uniform1f(compP.u("y0"), tile.i * TILE_H); g.uniform1f(compP.u("th"), tile.th); g.uniform1f(compP.u("pad"), PAD);
-        g.uniform1f(compP.u("settle"), !cfg.animated || reduced.matches ? 1 : 1 - Math.pow(1 - Math.min(1, (now - tile.start) / 3000), 3));
+        g.uniform1f(compP.u("settle"), !cfg.animated || reduced.matches ? 1 : 1 - Math.pow(1 - Math.min(1, (now - tile.start) / SETTLE_MS), 3));
         g.uniform1f(compP.u("uFrom"), surface.from); g.uniform1f(compP.u("uTo"), surface.to); g.uniform1f(compP.u("uFront"), surface.front);
         g.uniform1f(compP.u("uNightY"), nightY); g.uniform1f(compP.u("uDark"), drawnDark);
         g.clearColor(0, 0, 0, 0); g.clear(g.COLOR_BUFFER_BIT); g.drawArrays(g.TRIANGLE_STRIP, 0, 4);
@@ -250,7 +251,7 @@ export function createLayer(cfg) {
         // a tile whose words are all as they were is drawn from the same textures: only the
         // tiles a change touched (under live typing, the one the letter went down in) are raised again
         const sig = sigOf(i, th);
-        if (sig !== null && sig === t.sig) t.start = now - 3000;
+        if (sig !== null && sig === t.sig) t.start = now - SETTLE_MS;
         else { t.load(i, th, false); t.sig = sig; }
         t.draw(now);
       }
@@ -289,12 +290,20 @@ export function createLayer(cfg) {
   }
   function loop(now) {
     raf = 0; if (!alive) return;
+    // only tiles still settling in are drawn on a clock; a settled tile is drawn once, and again
+    // only when its words, the window or the lights change (a canvas redrawn every frame is a
+    // full-window texture the compositor uploads every frame, for a shimmer no one could see)
+    let settling = false;
     if (now - lastDraw >= 30) {
       const { vlo, vhi } = wanted();
-      for (const [i, tile] of active) if (i >= vlo && i <= vhi && !tile.lost) tile.draw(now);
+      for (const [i, tile] of active) {
+        if (now - tile.start > SETTLE_MS + 100) continue;
+        settling = true;
+        if (i >= vlo && i <= vhi && !tile.lost) tile.draw(now);
+      }
       lastDraw = now;
-    }
-    if (cfg.animated && !reduced.matches && !document.hidden) raf = requestAnimationFrame(loop);
+    } else settling = true;
+    if (settling && cfg.animated && !reduced.matches && !document.hidden) raf = requestAnimationFrame(loop);
   }
   const offSurface = onSurface(() => {
     if (waiting && needed()) { clearTimeout(timer); timer = 0; build(); }
@@ -338,13 +347,16 @@ export function createLayer(cfg) {
     kick();
   }
   // a change waits for the page to settle (a burst of edits is one rebuild); under live typing
-  // (a short debounce) it is a steady beat instead, so the ink keeps up with the keys
+  // (a short debounce) it is a steady beat instead, so the ink keeps up with the keys. The beat
+  // is never less than three builds long: on a slow phone a build can take most of a frame, and
+  // the ink keeping up a letter sooner is not worth the scroll stuttering under it
   const wait = cfg.debounce ?? 120;
   let lastBuild = 0;
   function scheduleBuild() {
     if (wait >= 60) { clearTimeout(timer); timer = window.setTimeout(build, wait); return; }
     if (timer) return;
-    timer = window.setTimeout(() => { timer = 0; build(); }, Math.max(0, wait - (performance.now() - lastBuild)));
+    const beat = Math.max(wait, 3 * (perf.buildMs || 0));
+    timer = window.setTimeout(() => { timer = 0; build(); }, Math.max(0, beat - (performance.now() - lastBuild)));
   }
 
   const onScroll = () => { sync(); kick(); };

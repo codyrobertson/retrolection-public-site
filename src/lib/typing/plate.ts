@@ -213,8 +213,11 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
 
   // the clock: the frame on stage, time owed to the next, and the key of what was last painted
   let frameIdx = 0, acc = 0, shown = "", played = "", startAt = 0;
-  /** how far the board is down from its place, CSS px (as last painted): what is under it is cut there */
+  /** how far the board is down from its place, CSS px (as last painted; less than 0 as the hands lift
+   * it first): what is under it is cut there */
   let drop = 0;
+  /** how far out the board is as last painted, 0..1: the scroll's q, unless its drawings are behind */
+  let qp = 0;
   // the way out, 0..1 (eased behind the scroll), and where the performance was when it began
   let q = 0, resume: { phase: Phase; frame: number } = { phase: "idle", frame: 0 };
   // the rule's own clock (NaN: not set off; -Infinity: there whole), when the canvas first had
@@ -239,7 +242,7 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
       still: () => { shown = ""; if (Number.isNaN(ruledAt)) ruledAt = -Infinity; },
     },
     leave: {
-      exit: () => { frameIdx = resume.frame; acc = 0; shown = ""; seenAt = ""; },
+      exit: () => { frameIdx = resume.frame; acc = 0; shown = ""; seenAt = ""; qp = 0; },
       away: () => { const next = scene.nextElementSibling as HTMLElement | null; if (next) next.style.clipPath = ""; },
     },
     change: (to) => { out.phase(to); },
@@ -263,7 +266,10 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
   const prime = (s: Sched, at = 0) => {
     const loop0 = s.loop[0], N = s.frames.length;
     for (let k = 0; k < AHEAD; k++) { const i = loopIdx(s, at + k); layersOf(s.frames[i], i).forEach(([ty, r]) => want(ty, r, k)); }
-    s.exit.forEach((fr, j) => layersOf(fr, j).forEach(([ty, r]) => want(ty, r, AHEAD + j)));
+    // every fourth step of the way out early (a reader can scroll on in the first seconds): the
+    // board goes in bigger steps until the rest are drawn, but it goes
+    const E = s.exit.length, sparse = (j: number) => j % 4 === 0 || j === E - 1;
+    s.exit.forEach((fr, j) => layersOf(fr, j).forEach(([ty, r]) => want(ty, r, sparse(j) ? 16 + j / 4 : AHEAD + j)));
     for (let i = loop0; i < N; i++) layersOf(s.frames[i], i).forEach(([ty, r]) => want(ty, r, AHEAD + s.exit.length + i - loop0));
   };
   /** the opening has moved on a frame: one more frame into the window, and the one that played let go */
@@ -361,7 +367,7 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
       }
     }
     for (const { l, off } of hands) ctx.drawImage(l.bitmap, l.x + off[0], l.y + off[1]);
-    drop = Math.max(0, by - (sched ? sched.frames[sched.loop[0]].kb[1] : 0)) / P.k;
+    drop = (by - (sched ? sched.frames[sched.loop[0]].kb[1] : 0)) / P.k;
     if (retired.length && !retired.includes(board)) {
       for (const l of retired) l.bitmap.close();
       retired = [];
@@ -792,12 +798,17 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
       const E = s.exit, f = q * (E.length - 1), i0 = Math.floor(f), i1 = Math.min(E.length - 1, i0 + 1), a = f - i0;
       const key = frameKey("x", i0, E[i0], E[i1], a, sizeKey(), 3);
       if (shown === key) return;
-      if (paint(E[i0], E[i1], a, i0)) { shown = key; return; }
-      // not drawn yet: wanted before anything else, and meanwhile the nearest that is
+      if (paint(E[i0], E[i1], a, i0)) { shown = key; qp = f / (E.length - 1); return; }
+      // not drawn yet: wanted before anything else, and meanwhile the nearest that is (the board
+      // goes on in bigger steps, rather than standing still while the scroll goes on without it)
       layersOf(E[i0], i0).forEach(([ty, r]) => want(ty, r, -6));
-      for (let d = 1; d < 8; d++) {
+      if (!isReady(E[i1], i1)) layersOf(E[i1], i1).forEach(([ty, r]) => want(ty, r, -5));
+      for (let d = 1; d < E.length; d++) {
         const j = [i0 - d, i0 + d].find((jj) => jj >= 0 && jj < E.length && isReady(E[jj], jj));
-        if (j !== undefined && paint(E[j], E[j], 0, j)) { shown = `x${j}:0:${sizeKey()}`; break; }
+        if (j === undefined) continue;
+        const k = `x${j}:0:${sizeKey()}`;
+        if (shown === k || paint(E[j], E[j], 0, j)) { shown = k; qp = j / (E.length - 1); }
+        break;
       }
     },
     away() {
@@ -816,7 +827,7 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
   const alphaOf = (now: number) => {
     const ph = M.phase;
     if (ph === "boot" || Number.isNaN(shownAt)) return 0;
-    if (ph === "exit") return Math.min(lit, 1 - smoothstep(clamp01((q - 0.78) / 0.2)));
+    if (ph === "exit") return Math.min(lit, 1 - smoothstep(clamp01((Math.min(q, qp) - 0.78) / 0.2)));
     // a fresh entry has the board coming up from below the window, and needs no fade
     const up = startAt === 0 && sched && frameIdx < planOf(sched).typeAt + 1 ? 1 : clamp01((now - shownAt) / FADE_MS);
     return Math.min(lit, ph === "still" && o.reduced ? 1 : smoothstep(up));
@@ -847,7 +858,7 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
         if (ph === "load") steps.load(now, dt);
         lights(page.day ? "light" : "dark");
         if (PLAYING.has(M.phase) && s && !o.reduced) M.go("exit", "left above the window");
-        if (M.phase === "exit") { q = 1; board(true); M.go("away", "above the window"); }
+        if (M.phase === "exit") { q = qp = 1; board(true); M.go("away", "above the window"); }
       }
       for (const id of sets.keys()) whole(id);
       painted();
@@ -882,22 +893,25 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     // begins to move halfway out, and a front set to its edge put half the window in the dark at
     // once, then held it there. Once the board is gone the page's theme changes, with nothing
     // left in the light to show it; brought back up, the front goes back up the same way.
-    board(still ? past > 0 : q > 0.55);
+    // Where the board is drawn, not where the scroll would have it: with its drawings behind (a
+    // busy machine), it does not fade, nor the lights go, while it is still in the window.
+    const qv = M.phase === "exit" ? Math.min(q, qp) : q;
+    board(still ? past > 0 : qv > 0.55);
     if (still || page.day) lights(!page.day && past > 0 ? "dark" : "light", still);
     // (no fade when it does: what the GL layers draw has already turned)
-    else if (q >= 1) lights("dark", true);
+    else if (qv >= 0.999) lights("dark", true);
     else if (q <= 0) lights("light", true);
-    else setNight(Math.min(page.platenY + drop, q * q * (3 - 2 * q) * Math.max(winH() + 2, page.platenY + drop)));
+    else setNight(Math.min(page.platenY + drop, qv * qv * (3 - 2 * qv) * Math.max(winH() + 2, page.platenY + drop)));
     painted();
     Lv.open = M.phase === "idle" || M.phase === "live";
 
     // Nothing of the sheet, or of what follows it, shows under the board: both are cut at the
     // platen, and in the way out below it by as far as the board has gone down the page
     const edge = page.platenY + (M.phase === "exit" ? drop : 0);
-    clip(note, still || q >= 1 ? 0 : Math.max(0, Math.round(page.foot - edge)));
+    clip(note, still || qv >= 0.999 ? 0 : Math.max(0, Math.round(page.foot - edge)));
     if (page.nextBox) {
       const r = page.nextBox;
-      clip(page.next, still || q >= 1 || r.top > innerHeight ? 0 : Math.min(Math.round(r.height), Math.max(0, Math.round(r.bottom - edge))));
+      clip(page.next, still || qv >= 0.999 || r.top > innerHeight ? 0 : Math.min(Math.round(r.height), Math.max(0, Math.round(r.bottom - edge))));
     }
 
     steps[M.phase](now, dt);
