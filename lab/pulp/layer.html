@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pulp print layer</title>
+<style>:root{--background:#f6f2e9;--foreground:#1c1a17}body{margin:0;background:var(--background);color:var(--foreground);font:15px system-ui}main{max-width:36rem;margin:0 auto;padding:30px 20px}img,canvas{width:100%;height:auto;display:block}</style>
+<link rel="stylesheet" href="../../src/app/surface.css"></head>
+<body><main><h1>Pulp print layer</h1><p>img[data-pulp] → fine stochastic print.</p><img data-pulp src="test.jpg" alt="Selfie with sunglasses"></main>
+<button class="surface-toggle" data-surface-toggle type="button">Analog → Digital</button>
+<script type="module">
+const [sm, { startPulp }] = await Promise.all([import("../../src/lib/surface-mode.js"), import("../../src/lib/pulp-gl.js")]);
+window.sm = sm; sm.restoreSurfaceMode(); sm.bindSurfaceAttributes(); window.pulp = startPulp();
+</script></body></html>

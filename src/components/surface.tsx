@@ -6,7 +6,7 @@ type Layer = { destroy: () => void };
 type Mode = "analog" | "digital";
 
 /**
- * Starts the WebGL paper, marker, ink, frame, illustration and tape layers after first paint. The mode lives in the DOM:
+ * Starts the WebGL paper, marker, ink, frame, illustration, tape and pulp-print image layers after first paint. The mode lives in the DOM:
  * `<html data-surface="analog|digital">`, or any element with `data-surface-toggle`. The button below is just one such element.
  */
 export function Surface() {
@@ -19,8 +19,8 @@ export function Surface() {
     let unsync = () => {};
     let frame = 0, step = 0;
     const start = () =>
-      Promise.all([import("@/lib/surface-mode"), import("@/lib/paper-gl"), import("@/lib/marker-gl"), import("@/lib/ink-gl"), import("@/lib/frame-gl"), import("@/lib/illo-gl"), import("@/lib/tape-gl")]).then(
-        ([s, p, m, i, f, l, tp]) => {
+      Promise.all([import("@/lib/surface-mode"), import("@/lib/paper-gl"), import("@/lib/marker-gl"), import("@/lib/ink-gl"), import("@/lib/frame-gl"), import("@/lib/illo-gl"), import("@/lib/tape-gl"), import("@/lib/pulp-gl")]).then(
+        ([s, p, m, i, f, l, tp, u]) => {
           if (cancelled) return;
           s.restoreSurfaceMode();
           unbind = s.bindSurfaceAttributes();
@@ -29,7 +29,7 @@ export function Surface() {
           // a frame a layer: each makes its contexts and programs and draws its first tiles (the GPU answers
           // some of that synchronously), and the four before one frame held it for 60 ms. A task each is not
           // enough: the frame waits for every task queued ahead of it, so the next starts after it is drawn
-          const starts = [p.startPaper, m.startMarker, i.startInk, f.startFrames, l.startIllos, tp.startTape];
+          const starts = [p.startPaper, m.startMarker, i.startInk, f.startFrames, l.startIllos, tp.startTape, u.startPulp];
           const next = () => {
             if (cancelled) return;
             layers.push(starts.shift()!());

@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulp print · image shader</title>
+<style>
+:root{--bg:#171512;--fg:#ece6d8;--mut:#9a927f;--line:#3a352c}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--fg);font:14px/1.45 ui-sans-serif,system-ui,sans-serif}
+header{position:sticky;top:0;z-index:5;background:rgb(23 21 18/.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px 20px;display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center}
+h1{font-size:15px;font-weight:700;letter-spacing:.02em;margin-right:8px}
+label{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:12px}
+input[type=range]{width:110px;accent-color:#d9c9a3}
+select,button,input[type=file]{background:#26221c;color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:5px 8px;font:inherit;font-size:12px}
+button:active{background:#3a352c}
+main{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:26px;padding:24px 20px 60px;max-width:1500px;margin:0 auto}
+figure canvas{width:100%;height:auto;display:block;background:#222;border:1px solid var(--line)}
+figcaption{margin-top:8px}
+figcaption b{display:block;font-size:13px}
+figcaption span{color:var(--mut);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Pulp print</h1>
+  <input type="file" id="file" accept="image/*">
+  <label>paper scale <input type="range" id="scale" min=".6" max="2.2" step=".05" value="1"></label>
+  <label>ink gain <input type="range" id="gain" min="0" max="2" step=".05" value="1"></label>
+  <label>fibre <input type="range" id="fibre" min="0" max="2" step=".05" value="1"></label>
+  <label>seed <input type="range" id="seed" min="1" max="40" step="1" value="7"></label>
+  <label>stock <select id="tint"><option value="0">bright white</option><option value=".45" selected>cream pulp</option><option value="1">yellowed</option></select></label>
+  <button id="cmp">hold: original</button>
+</header>
+<main id="grid"></main>
+<script>
+const COMMON = `precision highp float;
+uniform sampler2D tex; uniform vec2 res; uniform float dpr,scale,gain,fibreAmt,seed,tint,orig;
+float h21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h21(i),h21(i+vec2(1,0)),f.x),mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x),f.y);}
+float fbm(vec2 p){float s=0.,a=.5;for(int i=0;i<4;i++){s+=a*vn(p);p=p*2.03+17.;a*=.5;}return s;}
+float lum(vec3 c){return dot(c,vec3(.299,.587,.114));}
+vec3 im(vec2 uv){return texture2D(tex,clamp(uv,0.,1.)).rgb;}
+vec3 imS(vec2 uv){vec2 o=.55*dpr/res;return (im(uv)*2.+im(uv+vec2(o.x,0.))+im(uv-vec2(o.x,0.))+im(uv+vec2(0.,o.y))+im(uv-vec2(0.,o.y)))/6.;}
+float fibAngle(vec2 q){return fbm(q*.012+seed)*6.2832;}
+float fibres(vec2 q){                      // long thin streaks along a slowly turning direction field
+  float a=fibAngle(q); vec2 d=vec2(cos(a),sin(a)); vec2 r=vec2(dot(q,d),dot(q,vec2(-d.y,d.x)));
+  return .6*vn(r*vec2(.12,1.5)+seed*3.1)+.4*vn(r*vec2(.3,3.)+9.7);}
+vec3 paperCol(vec2 q,out float fib,out float tooth){
+  fib=fibres(q); tooth=.6*fbm(q*.8+seed)+.4*vn(q*2.1+3.);
+  float form=fbm(q*.02+seed*2.);
+  vec3 b=mix(vec3(.965,.96,.945),vec3(.93,.885,.79),tint)*(.95+.1*form);
+  b*=1.-fibreAmt*.10*(fib-.45); b*=1.-.07*(tooth-.45);
+  vec2 c=floor(q*.2); float hs=h21(c+seed); vec2 ctr=c+.2+.6*vec2(h21(c+3.),h21(c+8.));
+  float sp=step(.96,hs)*smoothstep(.2,.0,length(q*.2-ctr));
+  return mix(b,vec3(.36,.26,.16),sp*.5*fibreAmt);}
+vec3 render(vec2 uv,vec2 p,vec2 q,vec3 pc,float fib,float tooth);
+void main(){
+  vec2 uv=gl_FragCoord.xy/res; vec2 p=gl_FragCoord.xy/dpr; vec2 q=p/scale;
+  float fib,tooth; vec3 pc=paperCol(q,fib,tooth);
+  vec3 col=orig>.5?im(uv):render(uv,p,q,pc,fib,tooth);
+  gl_FragColor=vec4(clamp(col,0.,1.),1.);}
+`;
+
+const HALF = `
+float screen(vec2 p,float ang,float cov,vec2 off,float cell,float rj){
+  float ca=cos(ang),sa=sin(ang); vec2 r=mat2(ca,-sa,sa,ca)*(p+off)/cell; vec2 f=fract(r)-.5;
+  float rad=sqrt(clamp(cov,0.,1.))*.72*rj; float aa=.8/(cell*dpr);
+  return smoothstep(rad+aa,rad-aa,length(f));}
+vec3 halftone(vec2 p,vec3 c,float cell,float gm,float tooth,float fib,float reg){
+  vec3 cmy=1.-c; float k=min(cmy.r,min(cmy.g,cmy.b)); k=smoothstep(.55,1.,k)*.8; cmy=pow(clamp((cmy-k*.85)/(1.-k*.85),0.,1.),vec3(1.25));
+  float rj=(1.+gain*.12*gm)*(1.-.10*(tooth-.5)*fibreAmt);
+  float iC=screen(p,.2618,cmy.r,vec2(0),cell,rj), iM=screen(p,1.309,cmy.g,vec2(.3,-.2)*reg,cell,rj),
+        iY=screen(p,0.,cmy.b,vec2(-.25,.3)*reg,cell,rj), iK=screen(p,.7854,k,vec2(.1,.15)*reg,cell,rj);
+  vec3 col=vec3(1.);
+  col*=mix(vec3(1),vec3(.16,.56,.78),iC*.95); col*=mix(vec3(1),vec3(.82,.22,.5),iM*.93);
+  col*=mix(vec3(1),vec3(.97,.86,.28),iY*.9);  col*=mix(vec3(1),vec3(.16,.15,.17),iK*.95);
+  return col;}`;
+const V = [
+{ name: "Uncoated offset", note: "Fine four-colour rosette, a quarter-pixel of register, ink pulled a touch short by the tooth. Reads as a photograph until you lean in.", glsl: HALF + `
+vec3 render(vec2 uv,vec2 p,vec2 q,vec3 pc,float fib,float tooth){
+  vec3 c=pow(imS(uv),vec3(.9))*.94+.04;
+  return pc*halftone(p,c,2.6,1.,tooth,fib,1.);}` },
+
+{ name: "Cotton rag, continuous", note: "No screen. Pigment sinks into the sheet: a fibre-length of feathering only where edges are hard, grain in the midtones, whites and solids left alone.", glsl: `
+vec3 render(vec2 uv,vec2 p,vec2 q,vec3 pc,float fib,float tooth){
+  vec3 c=imS(uv); float a=fibAngle(q); vec2 d=vec2(cos(a),sin(a))*1.3*dpr/res*gain;
+  vec3 w=(im(uv+d)+im(uv-d)+2.*c)/4.; float edge=clamp(length(c-w)*4.,0.,1.); c=mix(c,w,edge*.7*fibreAmt);
+  c=mix(vec3(lum(c)),c,.9)*.95+.025; float l=lum(c); float m=4.*l*(1.-l);
+  c*=1.-.09*fibreAmt*(tooth-.5)*2.*m;
+  return pc*c;}` },
+
+{ name: "Photogravure duotone", note: "Two inks from one tonal plate: warm grey in the lights, blue-black in the depths, with the faint cell structure of an etched copper screen.", glsl: `
+vec3 render(vec2 uv,vec2 p,vec2 q,vec3 pc,float fib,float tooth){
+  float t=1.-lum(imS(uv)); t=clamp((t-.04)*1.06,0.,1.);
+  vec2 r=mat2(.7071,-.7071,.7071,.7071)*p/1.9; float cp=.5+.5*sin(r.x*6.2832)*sin(r.y*6.2832);
+  t=clamp(t*(1.-.10*gain*(cp-.5))*(1.-.05*(tooth-.5)*fibreAmt),0.,1.);
+  vec3 ink=mix(vec3(.68,.6,.5),vec3(.08,.09,.12),smoothstep(.25,1.,t));
+  return pc*mix(vec3(1.),ink,clamp(t*1.12,0.,1.));}` },
+
+{ name: "Quiet riso", note: "Two soft inks, a deep blue for structure and coral for warmth, split by tone and temperature instead of channel. Fine grain, sub-pixel slip, nothing shouting.", glsl: `
+vec3 render(vec2 uv,vec2 p,vec2 q,vec3 pc,float fib,float tooth){
+  vec2 px=dpr/res; vec3 c=imS(uv), c2=imS(uv+vec2(.8,-.6)*px*gain); float l=lum(c);
+  float s1=pow(clamp((1.-l)*1.1-.04,0.,1.),1.35); float s2=clamp((c2.r-c2.b)*1.6+.15*(1.-lum(c2)),0.,1.)*(1.-.35*s1);
+  float n=h21(floor(gl_FragCoord.xy)+seed); float thr=.55*n+.45*tooth+.03*(fib-.5)*fibreAmt;
+  float a1=smoothstep(thr-.2,thr+.2,s1), a2=smoothstep(thr-.2,thr+.2,s2);
+  float mot=.92+.08*fbm(p*.05+seed);
+  return pc*mix(vec3(1),vec3(.2,.3,.52),a1*mot*.8)*mix(vec3(1),vec3(.95,.5,.4),a2*mot*.7);}` },
+
+{ name: "Fine stochastic", note: "Frequency-modulated: four plates of single-pixel grains, no angles, no rosettes. Invisible at arm's length, the sheet's fibres only steer where the grains clump.", glsl: `
+float ign(vec2 p){return fract(52.9829189*fract(dot(p,vec2(.06711056,.00583715))));}
+vec3 render(vec2 uv,vec2 p,vec2 q,vec3 pc,float fib,float tooth){
+  vec3 c=imS(uv)*.965+.02; vec3 cmy=1.-c; float k=min(cmy.r,min(cmy.g,cmy.b)); k=smoothstep(.55,1.,k)*.8; cmy=clamp((cmy-k*.85)/(1.-k*.85),0.,1.);
+  vec2 g=floor(gl_FragCoord.xy); float fb=(fib-.5)*.16*fibreAmt;
+  float tC=ign(g)*.8+.1+fb, tM=ign(g+vec2(17.,31.))*.8+.1+fb, tY=ign(g+vec2(41.,7.))*.8+.1+fb, tK=ign(g+vec2(5.,53.))*.8+.1+fb;
+  float e=.07/(1.+gain*.3);
+  float iC=smoothstep(tC-e,tC+e,cmy.r), iM=smoothstep(tM-e,tM+e,cmy.g), iY=smoothstep(tY-e,tY+e,cmy.b), iK=smoothstep(tK-e,tK+e,k);
+  vec3 col=mix(vec3(1),vec3(.16,.56,.78),iC*.95); col*=mix(vec3(1),vec3(.82,.22,.5),iM*.93);
+  col*=mix(vec3(1),vec3(.97,.86,.28),iY*.9); col*=mix(vec3(1),vec3(.16,.15,.17),iK*.95);
+  return pc*col;}` },
+
+{ name: "Careful newsprint", note: "The same offset process on the cheap sheet: coarser screen, heavier dot gain, greyer stock, flatter contrast. Nothing broken, just honest about the paper.", glsl: HALF + `
+vec3 render(vec2 uv,vec2 p,vec2 q,vec3 pc,float fib,float tooth){
+  vec3 c=mix(vec3(.5),imS(uv),.9); c=mix(vec3(lum(c)),c,.85)*.95+.03;
+  return pc*vec3(.95,.945,.9)*halftone(p,c,4.4,1.7,tooth,fib,1.8);}` },
+];
+
+const grid = document.getElementById("grid");
+const els = Object.fromEntries(["scale", "gain", "fibre", "seed", "tint", "cmp", "file"].map((k) => [k, document.getElementById(k)]));
+const view = [];
+let img = null, orig = 0, queued = false;
+
+function compile(gl, type, src) {
+  const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+  return s;
+}
+for (const v of V) {
+  const fig = document.createElement("figure"), cv = document.createElement("canvas"), cap = document.createElement("figcaption");
+  cap.innerHTML = `<b>${v.name}</b><span>${v.note}</span>`; fig.append(cv, cap); grid.append(fig);
+  const gl = cv.getContext("webgl", { preserveDrawingBuffer: true, antialias: false });
+  const pr = gl.createProgram();
+  try {
+    gl.attachShader(pr, compile(gl, gl.VERTEX_SHADER, "attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}"));
+    gl.attachShader(pr, compile(gl, gl.FRAGMENT_SHADER, COMMON + v.glsl));
+    gl.linkProgram(pr);
+  } catch (e) { cap.innerHTML += `<span style="color:#f88"> shader error: ${e.message}</span>`; console.error(v.name, e); continue; }
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  const tex = gl.createTexture();
+  view.push({ v, cv, gl, pr, buf, tex });
+}
+
+function upload() {
+  for (const o of view) {
+    const { gl, tex } = o; gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
+}
+function draw() {
+  queued = false; if (!img) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  for (const o of view) {
+    const { gl, cv, pr, buf, tex } = o;
+    const w = Math.round(cv.clientWidth * dpr) || 340, h = Math.round(w * img.height / img.width);
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    gl.viewport(0, 0, w, h); gl.useProgram(pr);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf); const loc = gl.getAttribLocation(pr, "a"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex); gl.uniform1i(gl.getUniformLocation(pr, "tex"), 0);
+    const f = (n, ...a) => gl["uniform" + a.length + "f"](gl.getUniformLocation(pr, n), ...a);
+    f("res", w, h); f("dpr", dpr); f("scale", +els.scale.value); f("gain", +els.gain.value); f("fibreAmt", +els.fibre.value);
+    f("seed", +els.seed.value); f("tint", +els.tint.value); f("orig", orig);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+}
+const redraw = () => { if (!queued) { queued = true; requestAnimationFrame(draw); } };
+for (const k of ["scale", "gain", "fibre", "seed", "tint"]) els[k].addEventListener("input", redraw);
+addEventListener("resize", redraw);
+const hold = (v) => () => { orig = v; redraw(); };
+els.cmp.addEventListener("pointerdown", hold(1)); addEventListener("pointerup", hold(0)); els.cmp.addEventListener("pointerleave", hold(0));
+function load(src) { const i = new Image(); i.onload = () => { img = i; upload(); redraw(); }; i.src = src; }
+els.file.addEventListener("change", () => { const f = els.file.files[0]; if (f) load(URL.createObjectURL(f)); });
+load("test.jpg");
+</script>
+</body>
+</html>

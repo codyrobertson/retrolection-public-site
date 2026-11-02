@@ -41,6 +41,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# local test photo for lab/pulp
+/lab/pulp/test.jpg
+
 # local tooling
 /.harness/
 /.playwright-mcp/
