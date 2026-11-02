@@ -6,6 +6,8 @@
  * only the strokes under way are written, and only when they have moved: the rest cost nothing.
  */
 
+import { scratch } from "./sound";
+
 type Job = { paths: SVGGeometryElement[]; start: number; gap: number; dur: number; next: number; last: Float32Array };
 
 const jobs = new Map<Element, Job>();
@@ -52,5 +54,6 @@ export function draw(svg: Element, sel: string, gap: number, dur: number) {
   if (inked.has(svg)) for (const p of paths) p.style.strokeDashoffset = "1";
   inked.add(svg);
   jobs.set(svg, { paths, start: performance.now(), gap, dur, next: 0, last });
+  scratch(paths.length, gap, dur);                         // the pencil, heard (lib/sound: nothing while the sound is off)
   if (!raf) raf = requestAnimationFrame(tick);
 }

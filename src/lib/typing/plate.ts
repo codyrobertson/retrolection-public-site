@@ -3,6 +3,7 @@ import { createMachine, PLAYING, type Phase } from "./machine";
 import { markRows, markTyped, visit } from "./session";
 import { markFade, unmarkFade, watchFade } from "@/lib/theme-fade";
 import { night, setNight } from "@/lib/night";
+import { strike } from "@/lib/sound";
 
 // Plate 01's director. The hands are solved and drawn in workers while the page plays; this is
 // the one clock on the main thread that puts them on the stage, and the one machine (machine.ts)
@@ -702,7 +703,10 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     let i = frameIdx;
     if (acc >= step) {
       const next = i + 1 >= N ? loop0 : i + 1;
-      if (isReady(s.frames[next], next)) { const from = i; i = frameIdx = next; acc -= step; arrive(s.frames[i]); advance(s, from, next); }
+      if (isReady(s.frames[next], next)) {
+        const from = i; i = frameIdx = next; acc -= step; arrive(s.frames[i]); advance(s, from, next);
+        const fr = s.frames[i]; if (fr.clunkShift) strike(fr.clunkShift); if (fr.clunk) strike(fr.clunk);   // heard as it bottoms out (lib/sound)
+      }
       else { acc = step; if (debug) { debug.under++; debug.holds.push([Math.round(performance.now()), next]); } }
     }
     const nx = i + 1 >= N ? loop0 : i + 1, a = Math.min(1, acc / step);

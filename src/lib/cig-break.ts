@@ -25,6 +25,7 @@
  * and shifts (0.23, -0.05) h mm on the page; the cigarette's shadow and the hand's are thrown by the
  * art's light and soften with height; the plume trails the ember.
  */
+import { flick } from "./sound";
 import ART from "@/lib/footer-art.json";
 import { ASH_AT, Cigarette, G, REST_AXIS, ashStep, restAt, station, type Fleck, type Grip, type V3 } from "@/lib/cig-physics";
 
@@ -305,6 +306,7 @@ export function cigBreak(rig: BreakRig, active: () => boolean, done: (finished: 
       if (holding && armed && fBefore > 0.3 && f.x <= 0.3 && f.v < 0) {
         armed = false;
         body.strike(GRIP, across(body.d), rnd(8.5, 11) * (strikes++ ? 0.85 : 1));
+        flick();
         h.v -= 45;
       }
       body.step(STEP, grip(r, dr));

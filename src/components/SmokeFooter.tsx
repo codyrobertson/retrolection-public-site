@@ -4,6 +4,7 @@ import { useEffect, useRef, type CSSProperties } from "react";
 import ART from "@/lib/footer-art.json";
 import { startTapping } from "@/lib/tap-schedule";
 import { cigBreak, cigRedraw } from "@/lib/cig-break";
+import { knock, lighter } from "@/lib/sound";
 import styles from "./smoke-footer.module.css";
 
 /**
@@ -79,6 +80,7 @@ export default function SmokeFooter() {
     const show = (f: number) => {
       if (f === frame || !ready.has(f)) return;
       frame = f;
+      if (A.hand.frames[f]?.name === "strike") knock();   // a fingertip on the wood (lib/sound)
       hd.style.setProperty("--hand-ink", `url(/footer/hand-ink-${f}.webp)`);
       hd.style.setProperty("--hand-body", `url(/footer/hand-body-${f}.webp)`);
     };
@@ -101,6 +103,7 @@ export default function SmokeFooter() {
             measure();
             smoke = startSmoke(cv, { ember: () => held ?? at, onFrame: (ok = true) => el.toggleAttribute("data-live", ok) });
             if (!smoke) cv.hidden = true;
+            else lighter();                               // the cigarette catching, as the smoke first rises (lib/sound)
             sync();
           });
         }
