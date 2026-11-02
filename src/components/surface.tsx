@@ -17,6 +17,7 @@ export function Surface() {
     let cancelled = false;
     let unbind = () => {};
     let unsync = () => {};
+    let frame = 0, step = 0;
     const start = () =>
       Promise.all([import("@/lib/surface-mode"), import("@/lib/paper-gl"), import("@/lib/marker-gl"), import("@/lib/ink-gl"), import("@/lib/frame-gl")]).then(
         ([s, p, m, i, f]) => {
@@ -25,7 +26,16 @@ export function Surface() {
           unbind = s.bindSurfaceAttributes();
           unsync = s.onSurface(() => setMode(s.getSurfaceMode()));
           setMode(s.getSurfaceMode());
-          layers.push(p.startPaper(), m.startMarker(), i.startInk(), f.startFrames());
+          // a frame a layer: each makes its contexts and programs and draws its first tiles (the GPU answers
+          // some of that synchronously), and the four before one frame held it for 60 ms. A task each is not
+          // enough: the frame waits for every task queued ahead of it, so the next starts after it is drawn
+          const starts = [p.startPaper, m.startMarker, i.startInk, f.startFrames];
+          const next = () => {
+            if (cancelled) return;
+            layers.push(starts.shift()!());
+            if (starts.length) frame = requestAnimationFrame(() => (step = window.setTimeout(next, 0)));
+          };
+          next();
         },
       );
     const idle = typeof window.requestIdleCallback === "function";
@@ -34,6 +44,8 @@ export function Surface() {
       cancelled = true;
       if (idle) window.cancelIdleCallback(id as number);
       else clearTimeout(id);
+      cancelAnimationFrame(frame);
+      clearTimeout(step);
       layers.forEach((l) => l.destroy());
       unbind();
       unsync();

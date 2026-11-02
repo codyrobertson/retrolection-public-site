@@ -389,10 +389,15 @@ async function hand() {
   });
   // the body is the silhouette softened a pixel: it hides the wood, ink sits on it
   const bodyS = boxBlur(bodyG, gw, gh);
-  if (!probeOnly) { writeMask('hand-ink', inkG, gw, gh, +(args.hq ?? 55), +(args.haq ?? 70)); writeMask('hand-body', bodyS, gw, gh, 40, 50); }
+  // a file a frame, not the sheet: the page decodes only the frames it shows, a few ms each, where the
+  // whole sheet (16 Mpx a layer) stalled the scroll that brought the foot into view
+  const cell = (g, n) => { const o = new Float32Array(cw * ch), ox = (n % COLS) * cw, oy = ((n / COLS) | 0) * ch;
+    for (let y = 0; y < ch; y++) o.set(g.subarray((oy + y) * gw + ox, (oy + y) * gw + ox + cw), y * cw);
+    return o; };
+  if (!probeOnly) FRAMES.forEach((_, n) => { writeMask(`hand-ink-${n}`, cell(inkG, n), cw, ch, +(args.hq ?? 55), +(args.haq ?? 70)); writeMask(`hand-body-${n}`, cell(bodyS, n), cw, ch, 40, 50); });
   meta.hand = {
-    cell: [cw / X, ch / X], cols: COLS, rows: ROWS, px: [gw, gh], under: Math.round((under / X) * 10) / 10, vis: [(vx1 - bx0 + 1) / X, (visCut - by0 + 1) / X],
-    frames: FRAMES.map(([name], n) => ({ name, col: n % COLS, row: (n / COLS) | 0 })),
+    cell: [cw / X, ch / X], under: Math.round((under / X) * 10) / 10, vis: [(vx1 - bx0 + 1) / X, (visCut - by0 + 1) / X],
+    frames: FRAMES.map(([name]) => ({ name })),
   };
   for (const [name, , spec] of shown) if (spec.grip) GRIP[name] = [Math.round(((MIRROR ? bx1 - spec.grip[0] : spec.grip[0] - bx0) / X) * 10) / 10, Math.round(((spec.grip[1] - by0) / X) * 10) / 10];
   meta.hand.grip = GRIP;

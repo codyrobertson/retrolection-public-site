@@ -27,7 +27,7 @@ const ENTER_MS = 1900;                                    // the hand coming in 
 const px = (n: number) => `${n}px`;
 const VARS = {
   "--group": A.groupW,
-  "--hand-w": A.hand.cell[0], "--hand-h": A.hand.cell[1], "--hand-vw": A.hand.vis[0], "--hand-vh": A.hand.vis[1], "--hand-under": A.hand.under, "--hand-cols": A.hand.cols, "--hand-rows": A.hand.rows,
+  "--hand-w": A.hand.cell[0], "--hand-h": A.hand.cell[1], "--hand-vw": A.hand.vis[0], "--hand-vh": A.hand.vis[1], "--hand-under": A.hand.under,
   "--tray-w": A.tray.w, "--tray-h": A.tray.h, "--tray-gap": A.tray.gap, "--ember-x": A.tray.ember[0], "--ember-y": A.tray.ember[1],
   "--cig-ex": A.cig.ember[0], "--cig-ey": A.cig.ember[1],
   "--wisp-w": A.wisp.w, "--wisp-h": A.wisp.h,
@@ -63,12 +63,24 @@ export default function SmokeFooter() {
     };
     const resized = () => { cigRedraw(cg, cs); measure(); smoke?.resize(); };
 
-    let frame = -1;
+    // a file a frame (footer-art.mjs), fetched as the foot nears; one not yet in hand is passed over (its mask would hide the hand)
+    // and the next call shows it. crossOrigin as the mask's own fetch, so the page reuses what this fetched
+    const ready = new Set([0]);
+    let fetched = false;
+    const fetchFrames = () => {
+      if (fetched) return;
+      fetched = true;
+      for (let n = 1; n < A.hand.frames.length; n++) {
+        Promise.all(["ink", "body"].map((k) => { const im = new Image(); im.crossOrigin = "anonymous"; im.src = `/footer/hand-${k}-${n}.webp`; return im.decode(); }))
+          .then(() => ready.add(n), () => {});
+      }
+    };
+    let frame = 0;
     const show = (f: number) => {
-      if (f === frame) return;
+      if (f === frame || !ready.has(f)) return;
       frame = f;
-      hd.style.setProperty("--hc", String(f % A.hand.cols));
-      hd.style.setProperty("--hr", String(Math.floor(f / A.hand.cols)));
+      hd.style.setProperty("--hand-ink", `url(/footer/hand-ink-${f}.webp)`);
+      hd.style.setProperty("--hand-body", `url(/footer/hand-body-${f}.webp)`);
     };
     let held: [number, number, number, number, number] | null = null;
     const brk = (done: (finished: boolean) => void) => cigBreak({
@@ -97,7 +109,7 @@ export default function SmokeFooter() {
       } else smoke?.pause();
     };
 
-    const io = new IntersectionObserver(([e]) => { near = e.isIntersecting; sync(); }, { rootMargin: "200px" });
+    const io = new IntersectionObserver(([e]) => { near = e.isIntersecting; if (near) fetchFrames(); sync(); }, { rootMargin: "200px" });
     io.observe(el);
     // in: the hand's own transition (smoke-footer.module.css), and the drumming once it has settled
     const enter = new IntersectionObserver(([e]) => {

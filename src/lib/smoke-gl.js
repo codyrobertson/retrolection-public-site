@@ -11,6 +11,8 @@
  * is always on the light stock: graphite, even where the page above has gone dark).
  */
 
+import { linked } from "./gl-ready.js";
+
 const VS = `attribute vec2 p;void main(){gl_Position=vec4(p,0,1);}`;
 
 const FS = `#ifdef GL_FRAGMENT_PRECISION_HIGH
@@ -90,8 +92,8 @@ export function startSmoke(canvas, { ember, onFrame }) {
   const pr = g.createProgram();
   g.attachShader(pr, sh(g.VERTEX_SHADER, VS)); g.attachShader(pr, sh(g.FRAGMENT_SHADER, FS));
   g.bindAttribLocation(pr, 0, "p"); g.linkProgram(pr);
-  if (!g.getProgramParameter(pr, g.LINK_STATUS)) return null;
-  g.useProgram(pr);
+  // its link is waited for, frame by frame (gl-ready), not asked for now: that would hold the scroll bringing the foot in
+  let linkedYet = false;
   const loc = {};
   const u = (n) => (loc[n] ??= g.getUniformLocation(pr, n));
   g.bindBuffer(g.ARRAY_BUFFER, g.createBuffer());
@@ -111,6 +113,11 @@ export function startSmoke(canvas, { ember, onFrame }) {
   }
   function draw(now) {
     if (!alive || g.isContextLost()) return;
+    if (!linkedYet) {
+      if (!linked(g, pr)) return;
+      if (!g.getProgramParameter(pr, g.LINK_STATUS)) { alive = false; canvas.hidden = true; onFrame?.(false); return; }
+      g.useProgram(pr); linkedYet = true;
+    }
     const T = (now - t0 - paused) / 1000, [ex, ey, grow, span = 1, drift = 0] = ember();
     const breath = 0.5 + 0.5 * (0.6 * Math.sin(T * 0.9) + 0.25 * Math.sin(T * 2.7 + 1.3) + 0.15 * Math.sin(T * 0.23));
     g.uniform2f(u("res"), canvas.width, canvas.height); g.uniform2f(u("ember"), ex, ey);

@@ -16,6 +16,7 @@
  */
 
 import { surface, onSurface } from "./surface-mode.js";
+import { linked } from "./gl-ready.js";
 
 export const TILE_H = 1024;
 export const PAD = 16; // css px of mask beyond each tile edge so blur/halo cross seams
@@ -73,12 +74,31 @@ const noop = { rebuild() {}, destroy() {} };
  *                                     layer under live typing wants about a frame
  */
 
+/** the largest texture the GPU takes, 0 without WebGL: asked once a page, of a context made and let go for the asking */
+let maxTex = -1;
+function maxTexture() {
+  if (maxTex < 0) {
+    const probe = document.createElement("canvas").getContext("webgl");
+    maxTex = probe ? probe.getParameter(probe.MAX_TEXTURE_SIZE) : 0;
+    probe?.getExtension("WEBGL_lose_context")?.loseContext();
+  }
+  return maxTex;
+}
+
+/** one new context a frame, across every layer on the page: each is ~3-20 ms of the GPU's answering, and the
+ *  page's layers starting together made a dozen in one frame */
+let spent = false;
+function spend() {
+  if (spent) return false;
+  spent = true;
+  requestAnimationFrame(() => setTimeout(() => (spent = false), 0));
+  return true;
+}
+
 /** @param {LayerConfig} cfg */
 export function createLayer(cfg) {
-  const probe = document.createElement("canvas").getContext("webgl");
-  if (!probe) return noop; // no WebGL → page is left exactly as authored
-  const maxTex = probe.getParameter(probe.MAX_TEXTURE_SIZE);
-  probe.getExtension("WEBGL_lose_context")?.loseContext();
+  const maxTex = maxTexture();
+  if (!maxTex) return noop; // no WebGL → page is left exactly as authored
 
   const root = cfg.root ?? document.body;
   const scoped = root !== document.body;
@@ -98,7 +118,7 @@ export function createLayer(cfg) {
   host.id = cfg.id;
   host.setAttribute("data-gl-host", "");
   host.setAttribute("aria-hidden", "true");
-  host.style.cssText = `position:absolute;top:0;left:0;pointer-events:none;overflow:hidden;z-index:${cfg.z}`;
+  host.style.cssText = `position:absolute;top:0;left:0;pointer-events:none;overflow:hidden;z-index:${cfg.z};visibility:hidden`;
   root.appendChild(host);
 
   function bucketize() {
@@ -137,8 +157,10 @@ export function createLayer(cfg) {
       g.uniform2f(blurP.u("stp"), (dx * sig) / dst.w, (dy * sig) / dst.h); g.drawArrays(g.TRIANGLE_STRIP, 0, 4); g.enable(g.BLEND);
     };
 
+    cv.style.display = "none";
     const tile = {
       i: -1, th: 0, cv, lost: false, start: 0, sig: "",
+      linked: () => linked(g, blurP.pr, compP.pr),
       load(i, th, settleFromZero) {
         tile.i = i; tile.th = th;
         const mhC = th + 2 * PAD, ty = i * TILE_H - PAD;
@@ -209,8 +231,10 @@ export function createLayer(cfg) {
     const vlo = Math.max(0, Math.floor(top / TILE_H)), vhi = Math.floor((top + innerHeight) / TILE_H);
     return { lo, hi, vlo, vhi };
   }
+  let left = false, tickF = 0, tickT = 0;
+  /** @type {any[]} */ const baking = [];
   function sync(force = false) {
-    const { lo, hi } = wanted();
+    const { lo, hi, vlo, vhi } = wanted();
     const now = performance.now();
     for (const [i, t] of active) {
       const th = Math.min(TILE_H, docH - i * TILE_H);
@@ -224,14 +248,37 @@ export function createLayer(cfg) {
         t.draw(now);
       }
     }
-    for (let i = lo; i <= hi; i++) {
+    // new tiles, the window's first, one a frame where one can wait. A tile is a context (one a frame, page-wide:
+    // spend), two programs that link off the thread (made ahead into `baking`, used once linked: gl-ready) and its
+    // first textures. One in the window once the page's glyphs are hidden cannot wait: it is made now, and waits
+    const todo = [];
+    for (let i = lo; i <= hi; i++) if (i * TILE_H < docH && !active.has(i) && buckets.get(i)?.length) todo.push(i);
+    const seen = (i) => i >= vlo && i <= vhi;
+    todo.sort((a, b) => +seen(b) - +seen(a));
+    let made = 0;
+    left = false;
+    for (const i of todo) {
+      const must = seen(i) && !first;
+      if (made && !must) { left = true; break; }
+      const k = baking.findIndex((b) => b.linked());
+      let t = free.pop() ?? (k >= 0 ? baking.splice(k, 1)[0] : must ? baking.shift() ?? createTile() : null);
+      if (!t) {
+        if (must) continue;
+        if (!baking.length && spend()) { const n = createTile(); if (n) baking.push(n); }
+        left = true; break;
+      }
       const th = Math.min(TILE_H, docH - i * TILE_H);
-      if (th <= 0 || active.has(i) || !buckets.get(i)?.length) continue;
-      const t = free.pop() || createTile();
-      if (!t) continue;
-      t.load(i, th, first); t.sig = sigOf(i, th); t.draw(now); active.set(i, t);
+      t.load(i, th, first); t.sig = sigOf(i, th); t.draw(now); active.set(i, t); made++;
     }
     perf.tiles = active.size;
+    if (left && !tickF) tickF = requestAnimationFrame(() => (tickT = window.setTimeout(() => { tickF = tickT = 0; sync(); reveal(); }, 0)));
+  }
+  /** the first tiles all made: the layer shows, and the page's own glyphs go, in the same frame */
+  function reveal() {
+    if (!first || left || !alive) return;
+    host.style.visibility = "";
+    docEl.classList.add(cfg.readyClass); if (scoped) root.setAttribute("data-inked", "");
+    first = false;
   }
   function loop(now) {
     raf = 0; if (!alive) return;
@@ -243,12 +290,19 @@ export function createLayer(cfg) {
     if (cfg.animated && !reduced.matches && !document.hidden) raf = requestAnimationFrame(loop);
   }
   const offSurface = onSurface(() => {
+    if (waiting && needed()) { clearTimeout(timer); timer = 0; build(); }
     const { vlo, vhi } = wanted(), now = performance.now();
     for (const [i, tile] of active) if (i >= vlo && i <= vhi && !tile.lost) tile.draw(now);
   });
   const kick = () => { if (cfg.animated && !raf && alive) raf = requestAnimationFrame(loop); };
 
+  // a layer gated to the other surface draws nothing, so it makes no tiles (their contexts and programs are most of
+  // a page's start) until the surface turns, or is turning, to its own
+  const needed = () => !cfg.gate || (cfg.gate === "digital" ? !!(surface.from || surface.to) : !surface.from || !surface.to);
+  let waiting = false;
   function build() {
+    if (!needed()) { waiting = true; return; }
+    waiting = false;
     const t1 = performance.now();
     docW = scoped ? root.clientWidth : docEl.clientWidth; docH = Math.max(scoped ? root.scrollHeight : docEl.scrollHeight, 1);
     dpr = Math.min(devicePixelRatio || 1, 2, maxTex / Math.max(docW, 1));
@@ -257,7 +311,7 @@ export function createLayer(cfg) {
     const tc = performance.now(); items = cfg.collect(root, host); perf.items = items.length; perf.collectMs = performance.now() - tc;
     bucketize();
     sync(true);
-    if (first) { docEl.classList.add(cfg.readyClass); if (scoped) root.setAttribute("data-inked", ""); first = false; }
+    reveal();
     perf.buildMs = performance.now() - t1; lastBuild = performance.now();
     for (const k of ["buildMs", "collectMs", "rasterMs"]) perf[k] = +perf[k].toFixed(2);
     kick();
@@ -294,7 +348,7 @@ export function createLayer(cfg) {
   return {
     rebuild: build,
     destroy() {
-      alive = false; cancelAnimationFrame(raf); clearTimeout(timer); offSurface();
+      alive = false; cancelAnimationFrame(raf); clearTimeout(timer); cancelAnimationFrame(tickF); clearTimeout(tickT); offSurface();
       removeEventListener("scroll", onScroll); ro.disconnect(); mo.disconnect(); themeMo.disconnect();
       root.removeEventListener("transitionend", landed);
       scheme.removeEventListener("change", scheduleBuild); document.fonts?.removeEventListener("loadingdone", scheduleBuild);

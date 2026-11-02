@@ -10,6 +10,7 @@
  * rides the front. Everything, including the wash and the bar, is drawn in the shader.
  */
 import { surface, onSurface } from "./surface-mode.js";
+import { linked } from "./gl-ready.js";
 
 const SIZE = 400; // css px per tile; only periodicity matters
 
@@ -132,7 +133,7 @@ export function startPaper() {
     for (const k of [g.TEXTURE_WRAP_S, g.TEXTURE_WRAP_T]) g.texParameteri(g.TEXTURE_2D, k, g.CLAMP_TO_EDGE); return t; };
   const tex = [mkTex(false), mkTex(true)], fb = g.createFramebuffer();
 
-  let alive = true, raf = 0, dpr = 1, px = 0, docW = 1, docH = 1, ready = false;
+  let alive = true, raf = 0, dpr = 1, px = 0, docW = 1, docH = 1, ready = false, compiled = false, wait = 0;
   const col = { wA: [0, 0, 0, 0], wB: [0, 0, 0, 0], fg: [0, 0, 0] };
 
   function readColours() {
@@ -145,8 +146,9 @@ export function startPaper() {
     return bg.length >= 3 ? (bg[0] + bg[1] + bg[2]) / 3 < 128 : false;
   }
 
-  /** render both tiles into textures (with a 1px periodic border) */
+  /** render both tiles into textures (with a 1px periodic border); nothing until the programs have linked */
   function bake() {
+    if (!compiled) return;
     const dark = readColours();
     dpr = Math.min(devicePixelRatio || 1, 2);
     px = Math.round(SIZE * dpr);
@@ -201,13 +203,20 @@ export function startPaper() {
   cv.addEventListener("webglcontextlost", (e) => e.preventDefault());
   cv.addEventListener("webglcontextrestored", () => location.reload());
 
-  bake();
-  docEl.classList.add("paper-gl");
+  // the paper comes in the frame its programs are linked (gl-ready): until then the page's own stock shows
+  const start = () => {
+    wait = 0;
+    if (!alive) return;
+    if (!linked(g, tileP.pr, compP.pr)) { wait = requestAnimationFrame(start); return; }
+    compiled = true; bake();
+    docEl.classList.add("paper-gl");
+  };
+  start();
 
   return {
     rebuild: bake,
     destroy() {
-      alive = false; cancelAnimationFrame(raf); off(); ro.disconnect(); mo.disconnect(); document.body.removeEventListener("transitionend", landed);
+      alive = false; cancelAnimationFrame(raf); cancelAnimationFrame(wait); off(); ro.disconnect(); mo.disconnect(); document.body.removeEventListener("transitionend", landed);
       scheme.removeEventListener("change", bake); removeEventListener("scroll", request); removeEventListener("resize", onResize);
       g.getExtension("WEBGL_lose_context")?.loseContext(); cv.remove(); docEl.classList.remove("paper-gl");
     },
