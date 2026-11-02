@@ -98,10 +98,17 @@ body {
     background-color var(--theme-time) var(--theme-ease),
     border-color var(--theme-time) var(--theme-ease) !important;
 }
-html[data-theme-moving] :where([data-fade], [data-fade] *) {
+html[data-theme-moving] :where([data-fade=""], [data-fade=""] *) {
   transition:
     background-color var(--theme-time) var(--theme-ease),
     border-color var(--theme-time) var(--theme-ease),
+    color var(--theme-time) var(--theme-ease),
+    fill var(--theme-time) var(--theme-ease),
+    stroke var(--theme-time) var(--theme-ease) !important;
+}
+/* a block whose letters the GL ink paints (lib/theme-fade): only its drawings fade with the ground */
+html[data-theme-moving] :where([data-fade="ink"] svg, [data-fade="ink"] svg *) {
+  transition:
     color var(--theme-time) var(--theme-ease),
     fill var(--theme-time) var(--theme-ease),
     stroke var(--theme-time) var(--theme-ease) !important;

@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import type { Discipline, ProjectStatus } from "@/lib/content";
 import { disciplineLabel, statusLabel } from "@/lib/taxonomy";
 import { ART_BOX, tileArt } from "@/lib/tileArt";
@@ -47,7 +46,7 @@ function Mark({ slug, discipline, active }: { slug: string; discipline: Discipli
         <path key={`h${i}`} className={styles.tone} d={h.d} clipPath={`url(#${h.clip})`} strokeOpacity={h.tone} />
       ))}
       {art.strokes.map((s, i) => (
-        <path key={i} className={s.accent ? styles.accent : styles.stroke} d={s.d} pathLength={1} strokeWidth={s.w} strokeOpacity={s.tone} style={{ "--i": i } as CSSProperties} />
+        <path key={i} className={s.accent ? styles.accent : styles.stroke} d={s.d} pathLength={1} strokeWidth={s.w} strokeOpacity={s.tone} />
       ))}
     </svg>
   );

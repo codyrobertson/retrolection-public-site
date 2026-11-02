@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, memo, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, memo, useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import type { Discipline } from "@/lib/content";
+import { draw } from "@/lib/pen";
 import styles from "./work.module.css";
 
 /** a line of the index, made on the server (WorkPlate): the mark is the tile art, drawn there */
@@ -19,6 +20,14 @@ const TABS: [Filter, string][] = [["all", "All"], ["design", "Design"], ["code",
 const shows = (f: Filter, d: Discipline) => f === "all" || d === f || (d === "design-code" && f !== "design-code");
 /** "01  ": the number and its gap, set in the box's mono; there as soon as the line is up, before its name is typed */
 export const NUM = 4;
+/** a mark's strokes, for the pen (lib/pen): all of them the first time, the ink alone when pointed at */
+const INK = `.${styles.stroke}`, STROKES = `${INK}, .${styles.accent}`;
+const still = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+/** pointed at, a mark that has been drawn draws itself again */
+const redraw = (e: PointerEvent<HTMLElement>) => {
+  const art = e.currentTarget.querySelector("svg");
+  if (e.pointerType === "mouse" && e.currentTarget.dataset.seen && art && !still()) draw(art, INK, 14, 800);
+};
 
 /**
  * Plate 02 is the rest of the hero's sheet: the work, as an index the hands type as each line
@@ -33,7 +42,7 @@ const Row = memo(function Row({ t, n, caret }: { t: WorkItem; n: number | undefi
   const state = n === undefined ? "under" : n >= t.label.length ? "done" : "typing";
   return (
     <li style={{ viewTransitionName: `tile-${t.slug}` } as CSSProperties}>
-      <Link href={`/projects/${t.slug}`} className={styles.row} data-row={t.slug} data-label={t.label} data-state={state} data-active={t.active}>
+      <Link href={`/projects/${t.slug}`} className={styles.row} data-row={t.slug} data-label={t.label} data-state={state} data-active={t.active} onPointerEnter={redraw}>
         <span className={styles.sr}>{`${t.title}. ${t.meta}. ${t.status}.`}</span>
         <span className={styles.typed} aria-hidden>
           {[...t.label].map((ch, j) => (
@@ -64,7 +73,11 @@ export default memo(function WorkIndex({ items, total = items.length, typed, cur
   // a mark draws itself in once, the first time its line is done
   const list = useRef<HTMLOListElement>(null);
   useEffect(() => {
-    list.current?.querySelectorAll<HTMLElement>(`[data-state="done"]:not([data-seen])`).forEach((r) => requestAnimationFrame(() => { r.dataset.seen = "true"; }));
+    list.current?.querySelectorAll<HTMLElement>(`[data-state="done"]:not([data-seen])`).forEach((r) => requestAnimationFrame(() => {
+      r.dataset.seen = "true";
+      const art = r.querySelector("svg");
+      if (art && !still()) draw(art, STROKES, 22, 900);
+    }));
   });
 
   const shown = items.filter((t) => shows(filter, t.discipline));

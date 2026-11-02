@@ -146,7 +146,8 @@
 .thumb::after { right: -3px; bottom: -6px; }
 
 /* the mark: ink strokes that draw themselves in the first time the line is done, and again
-   when it is pointed at; the tone laid in under them comes up after */
+   when it is pointed at (lib/pen writes each stroke's offset as it goes); the tone laid in under
+   them comes up after */
 .art {
   position: absolute;
   inset: 0;
@@ -164,17 +165,10 @@
    from the row) as it fades: hundreds of them each running a transition of their own was the jank */
 :global(html[data-theme-moving]) .art :not(.accent),
 :global(html[data-theme-moving]) .ch { transition: none !important; }
-.stroke, .accent {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  transition: stroke-dashoffset 0.9s cubic-bezier(0.5, 0, 0.2, 1) calc(var(--i) * 22ms);
-}
+.stroke, .accent { stroke-dasharray: 1; stroke-dashoffset: 1; }
 .accent { stroke: var(--vermilion); }
 .tone { stroke-width: 0.7; opacity: 0; transition: opacity 0.8s ease 0.5s; }
-.row[data-seen="true"] .stroke, .row[data-seen="true"] .accent { stroke-dashoffset: 0; }
 .row[data-seen="true"] .tone { opacity: 1; }
-.row[data-seen="true"]:hover .stroke { animation: redraw 0.8s cubic-bezier(0.5, 0, 0.2, 1) calc(var(--i) * 14ms) backwards; }
-@keyframes redraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 
 ::view-transition-group(*) { animation-duration: 0.45s; animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
 
@@ -199,9 +193,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stroke, .accent { transition: none; stroke-dashoffset: 0; }
+  .stroke, .accent { stroke-dashoffset: 0; }
   .tone { transition: none; opacity: 1; }
-  .row[data-seen="true"]:hover .stroke { animation: none; }
   .meta, .status, .thumb, .art { transition: none; }
   .row[data-state="done"] .meta { animation: none; }
   .caret { animation: none; }
