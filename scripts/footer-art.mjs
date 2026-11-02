@@ -497,16 +497,50 @@ function tray() {
     ink(Array.from({ length: 9 }, (_, i) => { const t = i / 8, r = RIM - (RIM - LIP) * t; return pol(r, ZR - GD, c); }), { grade: grade(1), tone: 0.28, passes: 1, weight: 0.8, taper: 0.7 });   // the groove's bed, seen through
   }
 
-  // the outside: the foot's arc, where the eye reaches round the dish's left
+  // the outside: the foot's arc, where the eye reaches round the dish's left, and the wall's cut panels standing
+  // between it and the rim (NF of them round the dish, each a flat face), their edges caught where they face away
+  const NF = 24, FA = 360 / NF;
   { const pts = arc(RIM - 1, 0, 100, 262), vis = pts.map((_, i) => 0.35 + 0.65 * Math.sin((i / 120) * Math.PI)); ink(pts, { tone: 0.75, passes: 2, vis, taper: 0.5 }); }
-  // the inside: the floor's edge, and under the glass, the base's cut star, faint
+  for (let k = 0; k < NF; k++) {
+    const a = k * FA, side = Math.sin(((a - 100) / 162) * Math.PI);   // how far round the left the wall shows
+    if (a < 104 || a > 258) continue;
+    ink([pol(RIM - 0.9, 0.6, a), pol(RIM - 0.2, ZR - 1.2, a)], { grade: grade(1.6), tone: 0.35 + 0.35 * (1 - lit(a)), passes: 1, weight: 0.8, taper: 0.5, vis: [0.3 + 0.7 * side, 0.3 + 0.7 * side] });
+  }
+  // the rim's top: each panel's head met by the bevel, a short tick
+  for (let k = 0; k < NF; k++) {
+    const a = k * FA + FA / 2;
+    if (inRest(a, RIM - 1)) continue;
+    ink([pol(RIM - 0.3, ZR, a), pol(RIM - 2.6, ZR, a)], { grade: grade(1), tone: 0.22 + 0.3 * (1 - lit(a)), passes: 1, weight: 0.7, taper: 0.6 });
+  }
+  // the inside: the panels seen again through the thick glass, bent down the wall toward the floor
+  for (let k = 0; k < NF; k++) {
+    const a = k * FA, bend = 3.5 * Math.sin((a - LIGHT) * DEG);
+    if (inRest(a, LIP)) continue;
+    ink(Array.from({ length: 7 }, (_, i) => { const t = i / 6, w = wall(0.08 + 0.84 * t); return pol(w.r, w.z, a + bend * t); }), { grade: grade(0.8), tone: 0.12 + 0.24 * lit(a), passes: 1, weight: 0.7, taper: 0.8, wobble: 0.3 });
+  }
   ink(arc(FLOOR, ZF, 0, 360, 140), { tone: 0.5, passes: 1, weight: 0.85, close: true, taper: 0 });
   ink(arc(FLOOR - 0.6, ZF, LIGHT - 70, LIGHT + 70), { grade: grade(1.4), tone: 0.5, passes: 2, weight: 1.05, taper: 0.8 });   // the dark crease where the wall in shade meets the floor
-  for (let k = 0; k < 16; k++) {
-    const a = k * 22.5 + 11.25;
-    ink([pol(5, 0.5, a), pol(FLOOR - 4, 0.5, a)], { grade: grade(0.6), tone: 0.13, passes: 1, weight: 0.7, taper: 0.9, wobble: 0.3 });
+  // under the floor, the base's cut star: a hobstar at the heart, NF V-cut rays out of it, long and short by turns,
+  // and between the long rays' ends, the fans' crossed cuts, as the photo's dish has them
+  const ZB = 0.5, HUB = 4.6, RL = FLOOR - 1.6, RS = FLOOR * 0.6, RW = 2.6;   // the rays' heads (mm wide at the hub)
+  const rayEnd = (k) => (k % 2 ? RS : RL);
+  for (let k = 0; k < NF; k++) {
+    const a = k * FA, r1 = rayEnd(k), hw = (RW / 2 / HUB) / DEG * (k % 2 ? 0.7 : 1);
+    for (const s of [-1, 1]) {
+      const away = Math.cos((a + s * 90 - LIGHT) * DEG) < 0;
+      ink([pol(HUB, ZB, a + s * hw), pol(r1, ZB, a)], { grade: grade(away ? 1.6 : 0.8), tone: away ? 0.42 : 0.2, passes: 1, weight: 0.75, taper: 0.7, wobble: 0.25 });
+    }
   }
-  ink(arc(4.2, 0.5, 0, 360, 40), { grade: grade(0.6), tone: 0.16, passes: 1, weight: 0.7, close: true, taper: 0 });
+  for (let k = 1; k < NF; k += 2) {                       // the fans: from each short ray's point to its neighbours' sides
+    const a = k * FA, tip = pol(RS, ZB, a);
+    for (const s of [-1, 1]) {
+      ink([tip, pol(RL - 3, ZB, a + s * FA * 0.82)], { grade: grade(0.8), tone: 0.22, passes: 1, weight: 0.65, taper: 0.6, wobble: 0.25 });
+      ink([pol(RS + 4, ZB, a), pol(RL - 1, ZB, a + s * FA * 0.5)], { grade: grade(0.6), tone: 0.14, passes: 1, weight: 0.6, taper: 0.7, wobble: 0.25 });
+    }
+  }
+  // the hobstar: twelve points about a little cut ring
+  ink(Array.from({ length: 25 }, (_, i) => pol(i % 2 ? HUB * 0.5 : HUB, ZB, i * 15)), { grade: grade(1.2), tone: 0.36, passes: 1, weight: 0.75, close: true, taper: 0 });
+  ink(arc(HUB * 0.32, ZB, 0, 360, 30), { grade: grade(0.8), tone: 0.24, passes: 1, weight: 0.7, close: true, taper: 0 });
 
   const dish = coverage(g);
   // the inner wall in shade as hatching, the hand's; the rest of the wall is left to the light
@@ -517,10 +551,28 @@ function tray() {
       const rl = Math.hypot(x - lc[0], y - lc[1]) / S, rf = Math.hypot(x - fc[0], y - fc[1]) / S;
       if (rl > LIP - 0.4 || rf < FLOOR + 0.4) continue;
       const a = Math.atan2(-(y - lc[1]), x - lc[0]) / DEG, f = clamp01((LIP - rl) / (LIP - FLOOR));
-      tw[y * W + x] = Math.pow(lit(a), 2.2) * (0.35 + 0.65 * f) * 1.05;
+      const panel = Math.floor((((a % 360) + 360) % 360) / FA) % 2;   // the cut panels, darker and lighter by turns
+      tw[y * W + x] = Math.pow(lit(a), 2.2) * (0.35 + 0.65 * f) * 1.05 * (panel ? 1.1 : 0.78) + 0.1 * panel * f;
     }
     const hv = hatch(tw, W, H, { noise: new M.Noise(55), pitch: 3.2, floor: 0.14, angle: 52 });
     for (let i = 0; i < dish.length; i++) dish[i] = 1 - (1 - dish[i]) * (1 - hv[i]);
+  }
+  // the star's rays in tone: each V cut is two faces, the one turned from the light shaded, rubbed in with the pencil's grain
+  {
+    const sc = pr(0, 0, ZB), st = new Float32Array(W * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const mx = (x - sc[0]) / (S * 0.97), my = -(y - sc[1]) / S, r = Math.hypot(mx, my);
+      if (r < HUB * 0.9 || r > RL) continue;
+      const a = Math.atan2(my, mx) / DEG, k = Math.round(a / FA), da = a - k * FA, kk = ((k % NF) + NF) % NF;
+      const r1 = rayEnd(kk), t = (r - HUB) / (r1 - HUB);
+      if (t > 1) continue;
+      const half = (RW / 2) * (kk % 2 ? 0.7 : 1) * (1 - t);   // the cut's half width (mm) here
+      if (Math.abs(da * DEG * r) > half) continue;
+      const s = Math.sign(da) || 1, face = Math.cos((k * FA + s * 90 - LIGHT) * DEG);
+      st[y * W + x] = face < 0 ? 0.55 * (1 - 0.4 * t) * -face + 0.18 : 0;
+    }
+    const sb = blur(st, W, H, 1, 1);
+    for (let i = 0; i < dish.length; i++) dish[i] = 1 - (1 - dish[i]) * (1 - sb[i] * 0.42 * (0.55 + 0.9 * hash2(i % W + 11, (i / W) | 0)));
   }
 
   // the cigarette, on its own sheets (paper and ash), so the hand can take it out of the dish
