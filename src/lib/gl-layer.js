@@ -17,6 +17,7 @@
 
 import { surface, onSurface } from "./surface-mode.js";
 import { linked } from "./gl-ready.js";
+import { NIGHT, night, nightIn, onNight } from "./night.js";
 
 export const TILE_H = 1024;
 export const PAD = 16; // css px of mask beyond each tile edge so blur/halo cross seams
@@ -41,12 +42,14 @@ const withSurface = (frag, gate) => {
   const i = frag.lastIndexOf("void main(){");
   const body = frag.slice(i + "void main(){".length);
   const head = frag.slice(0, i).replace("varying vec2 uv;", "varying vec2 uvv;vec2 uv;");
-  return head + SURF + "void main0(){" + body +
+  return head + SURF + NIGHT + "void main0(){" + body +
     `void main(){uv=uvv;float fl=1.;
   if(uFront<1e8) fl=uFront;
   DG=mix(uFrom,uTo,step(bayer8(gl_FragCoord.xy*.5),fl));
   ${gate === "analog" ? "if(DG>.5){gl_FragColor=vec4(0.);return;}" : gate === "digital" ? "if(DG<.5){gl_FragColor=vec4(0.);return;}" : ""}
-  main0();}`;
+  main0();
+  vec4 o=gl_FragColor;                                        // the lights' front (night.js), in the layer's own px
+  if(o.a>.0){float y=y0+(1.-uv.y)*th;gl_FragColor=vec4(lights(o.rgb/o.a,y)*o.a,o.a);}}`;
 };
 
 const noop = { rebuild() {}, destroy() {} };
@@ -112,6 +115,9 @@ export function createLayer(cfg) {
   /** @type {Map<number, any>} */ const active = new Map();
   /** @type {any[]} */ const free = [];
   let docW = 0, docH = 0, dpr = 1, alive = true, raf = 0, lastDraw = 0, first = true, timer = 0, roReady = false;
+  // the colours the layer was last drawn in, and where the lights' front is over it (night.js)
+  let drawnDark = 0, nightY = -1e6;
+  const origin = () => (scoped ? root.getBoundingClientRect().top : -scrollY);
   const t0 = performance.now();
 
   const host = document.createElement("div");
@@ -201,6 +207,7 @@ export function createLayer(cfg) {
         g.uniform1f(compP.u("y0"), tile.i * TILE_H); g.uniform1f(compP.u("th"), tile.th); g.uniform1f(compP.u("pad"), PAD);
         g.uniform1f(compP.u("settle"), !cfg.animated || reduced.matches ? 1 : 1 - Math.pow(1 - Math.min(1, (now - tile.start) / 3000), 3));
         g.uniform1f(compP.u("uFrom"), surface.from); g.uniform1f(compP.u("uTo"), surface.to); g.uniform1f(compP.u("uFront"), surface.front);
+        g.uniform1f(compP.u("uNightY"), nightY); g.uniform1f(compP.u("uDark"), drawnDark);
         g.clearColor(0, 0, 0, 0); g.clear(g.COLOR_BUFFER_BIT); g.drawArrays(g.TRIANGLE_STRIP, 0, 4);
       },
     };
@@ -295,6 +302,16 @@ export function createLayer(cfg) {
     for (const [i, tile] of active) if (i >= vlo && i <= vhi && !tile.lost) tile.draw(now);
   });
   const kick = () => { if (cfg.animated && !raf && alive) raf = requestAnimationFrame(loop); };
+  // the lights' front moved (or the page under it): every tile made is drawn again, if it is over them at all
+  const offNight = onNight(() => {
+    if (!alive) return;
+    const y = nightIn(origin()), was = nightY;
+    nightY = y;
+    const lo = Math.min(y, was), hi = Math.max(y, was);
+    if (hi < -60 || lo > docH + 60) return;
+    const now = performance.now();
+    for (const tile of active.values()) if (!tile.lost) tile.draw(now);
+  });
 
   // a layer gated to the other surface draws nothing, so it makes no tiles (their contexts and programs are most of
   // a page's start) until the surface turns, or is turning, to its own
@@ -308,6 +325,10 @@ export function createLayer(cfg) {
     dpr = Math.min(devicePixelRatio || 1, 2, maxTex / Math.max(docW, 1));
     host.style.width = docW + "px"; host.style.height = docH + "px";
     perf.rasterMs = 0;
+    // what the colours are: the stock they were chosen for, where the layer is (a part of the page can be in the other theme's)
+    const paper = getComputedStyle(root).getPropertyValue("--paper").trim(), hex = /^#([\da-f]{6})$/i.exec(paper);
+    drawnDark = hex && parseInt(hex[1].slice(0, 2), 16) + parseInt(hex[1].slice(2, 4), 16) + parseInt(hex[1].slice(4), 16) < 384 ? 1 : 0;
+    nightY = nightIn(origin());
     const tc = performance.now(); items = cfg.collect(root, host); perf.items = items.length; perf.collectMs = performance.now() - tc;
     bucketize();
     sync(true);
@@ -341,14 +362,14 @@ export function createLayer(cfg) {
   root.addEventListener("transitionend", landed);
   mo.observe(root, { childList: true, subtree: true, characterData: true, ...(cfg.attributes ? { attributes: true, attributeFilter: cfg.attributes } : {}) });
   const scheme = matchMedia("(prefers-color-scheme: dark)"); scheme.addEventListener("change", scheduleBuild);
-  const themeMo = new MutationObserver(scheduleBuild); themeMo.observe(docEl, { attributes: true, attributeFilter: ["data-theme"] });
+  const themeMo = new MutationObserver(scheduleBuild); themeMo.observe(docEl, { attributes: true, attributeFilter: ["data-theme", "data-theme-moving"] });   // and again once the fade has landed
   document.fonts?.addEventListener("loadingdone", scheduleBuild);
   document.fonts.ready.then(() => { if (!alive) return; build(); roReady = true; });
 
   return {
     rebuild: build,
     destroy() {
-      alive = false; cancelAnimationFrame(raf); clearTimeout(timer); cancelAnimationFrame(tickF); clearTimeout(tickT); offSurface();
+      alive = false; cancelAnimationFrame(raf); clearTimeout(timer); cancelAnimationFrame(tickF); clearTimeout(tickT); offSurface(); offNight();
       removeEventListener("scroll", onScroll); ro.disconnect(); mo.disconnect(); themeMo.disconnect();
       root.removeEventListener("transitionend", landed);
       scheme.removeEventListener("change", scheduleBuild); document.fonts?.removeEventListener("loadingdone", scheduleBuild);

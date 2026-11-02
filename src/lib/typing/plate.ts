@@ -2,6 +2,7 @@ import { createPool, STALE } from "./pool";
 import { createMachine, PLAYING, type Phase } from "./machine";
 import { markRows, markTyped, visit } from "./session";
 import { markFade, unmarkFade, watchFade } from "@/lib/theme-fade";
+import { night, setNight } from "@/lib/night";
 
 // Plate 01's director. The hands are solved and drawn in workers while the page plays; this is
 // the one clock on the main thread that puts them on the stage, and the one machine (machine.ts)
@@ -39,6 +40,8 @@ const AHEAD = 48;
 const RULED_MS = 520;
 /** the index's lines are drawn after this many frames of what is on stage (the reader's keys go before it) */
 const ROW_PRI = 12;
+/** a line the hands can't get to sets itself, a letter every this many ms, each a beat after the one above */
+const SET_MS = 16, SET_GAP = 70;
 /** a scene that was already on stage (a resize, back from another page) comes up over this long */
 const FADE_MS = 320;
 // the phone layout: the same query as typing.module.css, so the stage and the box never
@@ -104,15 +107,19 @@ function hatch() {
  * (html[data-theme-moving]), and only in what is on screen (theme-fade).
  */
 let lightsTimer = 0;
+/** the window's height as layout sees it: on a phone, without the URL bar's coming and going
+ * (innerHeight follows the bar; anything laid out or lit by it bounces and flickers as it does) */
+const winH = () => document.documentElement.clientHeight;
 /** night is only over the ledger: once the contact plate (light stock) is up to mid-window, the
  * lights come back on for it and the foot. A little either side of the middle, so it never dithers. */
 function dawn() {
   const top = document.getElementById("contact")?.getBoundingClientRect().top;
   if (top === undefined) return false;
-  return top < innerHeight * (document.documentElement.dataset.theme === "light" ? 0.55 : 0.45);
+  return top < winH() * (document.documentElement.dataset.theme === "light" ? 0.55 : 0.45);
 }
 function lights(theme: "light" | "dark", instant = false) {
   const el = document.documentElement;
+  setNight(theme === "dark" ? Infinity : -Infinity);
   if (el.dataset.theme === theme) return;
   window.clearTimeout(lightsTimer);
   if (instant) { el.removeAttribute("data-theme-moving"); unmarkFade(); }
@@ -211,13 +218,16 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
   let q = 0, resume: { phase: Phase; frame: number } = { phase: "idle", frame: 0 };
   // the rule's own clock (NaN: not set off; -Infinity: there whole), when the canvas first had
   // something on it, how far up the lights are, and what the canvas and the masthead were last told
-  let ruledAt = NaN, shownAt = NaN, lit = 1, alpha = -1, told = "", dark = false;
+  let ruledAt = NaN, shownAt = NaN, lit = 1, alpha = -1, told = "";
   // first look: the board comes up under the box; anything else (back from another page, a
   // resize, ?tune) is already there, and only fades up if it had gone
   let fresh = !(visit()?.phase === "typed");
 
   const shade = { pattern: null as CanvasPattern | null, cache: new WeakMap<Layer, { c: HTMLCanvasElement; m: number }>() };
-  const debug = process.env.NODE_ENV !== "production" ? { under: 0, measures: 0, log: [] as [number, Phase, Phase][], holds: [] as [number, number][] } : null;
+  // in development, or anywhere with ?plate: the machine's steps on the Performance panel's Timings
+  // track, its faults counted, and (?plate) a panel of its state over the page
+  const debug = process.env.NODE_ENV !== "production" || /[?&]plate\b/.test(location.search)
+    ? { under: 0, measures: 0, holds: [] as [number, number][], faults: new Map<string, number>() } : null;
 
   const M = createMachine("boot", {
     enter: {
@@ -231,8 +241,8 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
       exit: () => { frameIdx = resume.frame; acc = 0; shown = ""; seenAt = ""; },
       away: () => { const next = scene.nextElementSibling as HTMLElement | null; if (next) next.style.clipPath = ""; },
     },
-    change: (to, from) => { debug?.log.push([Math.round(performance.now()), from, to]); out.phase(to); },
-  });
+    change: (to) => { out.phase(to); },
+  }, !!debug);
 
   // ---- drawings ------------------------------------------------------------------------
 
@@ -397,7 +407,7 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     // sheet's foot has to come up through (less than the room, where the board is cropped)
     scene.style.setProperty("--at", `${Math.round(at)}px`);
     const top = parseFloat(getComputedStyle(plate).top) || 0;
-    scene.style.setProperty("--below", `${Math.round(Math.max(0, Math.min(room, innerHeight - top - at)))}px`);
+    scene.style.setProperty("--below", `${Math.round(Math.max(0, Math.min(room, winH() - top - at)))}px`);
     // that room is the board's to go through, not the page's: what follows the sheet (Experience)
     // is drawn up into it, and comes out from under the board as the hands take it away
     document.documentElement.style.setProperty("--tail", getComputedStyle(scene).paddingBottom);
@@ -408,13 +418,16 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     if (Math.abs(next - X) >= 0.1) { X = next; out.x?.(X); configure(); }
   };
   const moved = () => { dirty = true; geo++; };
+  // the window's own resizes: only those layout sees (not a phone's URL bar showing and hiding)
+  let winWas = "";
+  const resized = () => { const k = `${innerWidth}x${winH()}`; if (k !== winWas) { winWas = k; moved(); } };
   const ro = new ResizeObserver(moved);
   ro.observe(plate);
   ro.observe(note);
   if (ruled) ro.observe(ruled);
   // a short window holds the desk at its least height and pins it higher (its `top`), which
   // moves with the window's height while the desk's size does not
-  window.addEventListener("resize", moved);
+  window.addEventListener("resize", resized);
   const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; });
   io.observe(plate);
 
@@ -428,7 +441,7 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     if (M.phase !== "boot" && M.phase !== "load" && M.phase !== "still") {
       if (PLAYING.has(M.phase)) resume = { phase: M.phase === "live" ? "idle" : M.phase, frame: frameIdx };
       if (M.phase === "live") dropAll();
-      M.go("load");
+      M.go("load", "scene drawn again");
     }
     const seq = ++cfgSeq;
     cfgTimer = window.setTimeout(() => run(seq), o.tune ? 60 : 0);
@@ -499,7 +512,24 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     for (const id of drawn) if (id !== ahead) drawn.delete(id);
   };
   const wantLive = (frames: Frame[], pri = -4) => frames.forEach((fr, j) => layersOf(fr, j).forEach(([ty, r]) => { liveKeys.add(keyOf(ty, r)); want(ty, r, pri); }));
-  const whole = (row?: string) => { if (row) { out.row(row, null); markRows([row]); } };
+  const whole = (row?: string) => { if (row) { sets.delete(row); out.row(row, null); markRows([row]); } };
+  // lines that came up while the hands were busy (or had more than one in hand): they set
+  // themselves, letter by letter, from the number out, so nothing on the sheet is ever just there
+  const sets = new Map<string, { at: number; from: number; n: number; len: number }>();
+  let setLast = 0;
+  const set = (row?: string, from = 0) => {
+    if (!row || sets.has(row)) return;
+    const now = performance.now(), at = Math.max(now, setLast + SET_GAP);
+    setLast = at;
+    sets.set(row, { at, from, n: -1, len: out.title(row).length });
+  };
+  const setting = (now: number) => {
+    for (const [id, S] of sets) {
+      const n = Math.min(S.len, S.from + Math.max(0, Math.floor((now - S.at) / SET_MS)));
+      if (n >= S.len) { whole(id); continue; }
+      if (n !== S.n) { S.n = n; out.row(id, n); }
+    }
+  };
   /** a line's strokes, asked for once (they take a millisecond or two; drawing them takes the time) */
   const planFor = (id: string) => {
     if (rowPlans.has(id)) return rowPlans.get(id) ?? null;
@@ -522,7 +552,7 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
   };
   /** the hands put down what they were typing, and every line waiting is there whole */
   function dropAll() {
-    whole(Lv.cur?.row); Lv.queue.forEach((lv) => whole(lv.row)); rowQ.forEach((id) => whole(id));
+    set(Lv.cur?.row, Lv.cur?.shown); Lv.queue.forEach((lv) => set(lv.row)); rowQ.forEach((id) => set(id));
     rowQ = []; Lv.pending = ""; Lv.queue = []; Lv.cur = null; rush = false; out.cur("");
     if (Lv.said) { Lv.said = ""; out.said(""); }
     letLiveGo();
@@ -550,6 +580,7 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     }
     return false;
   };
+  const jobWhy = () => (Lv.cur?.row ? `row ${Lv.cur.row}` : "the reader's keys");
   /** the reader's keys go in a few at a time */
   const feed = () => {
     if (Lv.pending && !Lv.asking) {
@@ -565,8 +596,8 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
   let seenAt = "", seenGeo = -1, seenY = NaN, seenH = 0;
   const page = { platenY: 0, foot: 0, next: null as HTMLElement | null, nextBox: null as DOMRect | null, day: false, above: false };
   const read = () => {
-    if (seenGeo === geo && seenY === scrollY && seenH === innerHeight) return false;
-    seenGeo = geo; seenY = scrollY; seenH = innerHeight;
+    if (seenGeo === geo && seenY === scrollY && seenH === winH()) return false;
+    seenGeo = geo; seenY = scrollY; seenH = winH();
     page.platenY = plate.getBoundingClientRect().top + stage.platen;
     page.foot = note.getBoundingClientRect().bottom;
     page.next = scene.nextElementSibling as HTMLElement | null;
@@ -582,6 +613,23 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     document.documentElement.dataset.board = v;
     out.board(away);
   };
+  // what paints its own stock, and so is not turned by the GL layers at the lights' front: the
+  // sheet's box (its ground follows the front, --nf) and the masthead (the theme the front has
+  // given it, until the page's own theme is that)
+  const mast = document.querySelector<HTMLElement>("header");
+  let nfWas = NaN, mastWas = "";
+  const painted = () => {
+    const y = night.y;
+    if (ruled) {
+      const v = Math.round(Math.max(-1e5, Math.min(1e5, y - ruled.getBoundingClientRect().top)));
+      if (v !== nfWas) { nfWas = v; ruled.style.setProperty("--nf", `${v}px`); }
+    }
+    if (mast) {
+      const r = mast.getBoundingClientRect(), want = y > (r.top + r.bottom) / 2 ? "dark" : "light";
+      const v = want === (document.documentElement.dataset.theme ?? "light") ? "" : want;
+      if (v !== mastWas) { mastWas = v; if (v) mast.dataset.night = v; else delete mast.dataset.night; }
+    }
+  };
   const clip = (el: HTMLElement | null | undefined, px: number) => {
     const v = px ? `inset(0 0 ${px}px 0)` : "";
     if (el && el.style.clipPath !== v) el.style.clipPath = v;
@@ -594,9 +642,10 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
   /**
    * The lines against the platen: as each comes up past it, it waits its turn (its number there
    * at once) and the hands type it, its strokes drawn before it is up. They keep one line in
-   * hand: with another coming up, the one waiting is simply there (as the bio is pasted) and the
-   * one being typed is hurried; so is one that leaves the window before it is done. Only in the
-   * loop: anywhere else, a line that comes up is there whole.
+   * hand: with another coming up, the one waiting sets itself and the one being typed is
+   * hurried; so is one that leaves the window before it is done. Only in the loop: anywhere
+   * else (the hands still on the heading, the board on its way out), a line that comes up sets
+   * itself. Only one that leaves the window unseen is simply there.
    */
   const rows = (canType: boolean) => {
     const at = `${Math.round(page.platenY)}:${Math.round(page.foot)}`;
@@ -614,14 +663,15 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     if (fresh2.length) {
       if (canType) {
         const waiting = [...rowQ, ...fresh2], keep = waiting.slice(-1);
-        waiting.slice(0, -1).forEach(whole);
+        waiting.slice(0, -1).forEach((id) => set(id));
         rowQ = keep;
         out.row(keep[0], 0);
         planFor(keep[0]);
-      } else fresh2.forEach(whole);
+      } else fresh2.forEach((id) => set(id));
     }
     // out of the window above before their turn: there whole; the one under way, hurried
     if (gone.size) {
+      for (const id of gone) if (sets.has(id)) whole(id);
       const left = rowQ.filter((id) => gone.has(id));
       if (left.length) { rowQ = rowQ.filter((id) => !gone.has(id)); left.forEach(whole); }
       rush = !!Lv.cur?.row && gone.has(Lv.cur.row);
@@ -651,37 +701,37 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
 
   const steps: Record<Phase, (now: number, dt: number) => void> = {
     boot() {
-      if (o.reduced || (sched && !o.playing)) { if (sched) M.go("still"); return; }
-      if (X && o.text) M.go("load");
+      if (o.reduced || (sched && !o.playing)) { if (sched) M.go("still", o.reduced ? "reduced motion" : "paused"); return; }
+      if (X && o.text) M.go("load", "measured");
     },
     load(now) {
       const s = sched;
       if (!s || loaded !== cfgSeq) return;
-      if (o.reduced || !o.playing) { M.go("still"); return; }
+      if (o.reduced || !o.playing) { M.go("still", o.reduced ? "reduced motion" : "paused"); return; }
       const { typeAt } = planOf(s), loop0 = s.loop[0];
       if (fresh && now - ruledAt < RULED_MS) return;
       if (!aheadReady(s, startAt)) return;
       frameIdx = startAt; acc = 0; shown = "";
       if (startAt) arrive(s.frames[startAt]);
-      M.go(startAt >= loop0 ? "idle" : startAt >= typeAt ? "type" : "enter", now);
+      M.go(startAt >= loop0 ? "idle" : startAt >= typeAt ? "type" : "enter", startAt ? `drawn ahead, from frame ${startAt}` : "drawn ahead", now);
     },
     enter(_now, dt) {
       clock(dt);
-      if (frameIdx >= planOf(sched!).typeAt) M.go("type");
+      if (frameIdx >= planOf(sched!).typeAt) M.go("type", "hands on the keys");
     },
     type(_now, dt) {
       clock(dt);
-      if (frameIdx >= sched!.loop[0]) M.go("idle");
+      if (frameIdx >= sched!.loop[0]) M.go("idle", "heading typed");
     },
     idle(_now, dt) {
       feed();
-      if (nextJob()) { M.go("live"); steps.live(_now, dt); return; }
+      if (nextJob()) { M.go("live", jobWhy()); steps.live(_now, dt); return; }
       clock(dt);
     },
     live(now, dt) {
       feed();
       const s = sched!, step = 1000 / s.fps, C = Lv.cur;
-      if (!C) { M.go("idle"); return; }
+      if (!C) { M.go("idle", "nothing to type"); return; }
       const F = C.frames;
       // a line of the index is typed briskly, and faster with others waiting (or when it has gone by)
       const sp = C.row ? 1.35 * (rowQ.length ? 2 : 1) * (rush ? 2 : 1) : 1, stp = step / sp;
@@ -708,13 +758,13 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
       if (C.row) out.cur("");
       Lv.cur = null; rush = false; frameIdx = s.loop[0]; shown = "";
       letLiveGo();
-      if (nextJob()) { M.go("live", now); return; }
-      M.go("idle", now);
+      if (nextJob()) { M.go("live", jobWhy(), now); return; }
+      M.go("idle", "typed", now);
       clock(dt);
     },
     exit() {
       const s = sched!;
-      if (q === 0) { M.go(resume.phase); return; }
+      if (q === 0) { M.go(resume.phase, "board back in place"); return; }
       // the board goes off the foot of the window as drawn; only its last few frames thin out
       const E = s.exit, f = q * (E.length - 1), i0 = Math.floor(f), i1 = Math.min(E.length - 1, i0 + 1), a = f - i0;
       const key = frameKey("x", i0, E[i0], E[i1], a, sizeKey(), 3);
@@ -728,12 +778,12 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
       }
     },
     away() {
-      if (visible) M.go("exit");
+      if (visible) M.go("exit", "back in view");
     },
     still() {
       const s = sched;
       if (!s) return;
-      if (!o.reduced && o.playing) { frameIdx = 0; acc = 0; shown = ""; prime(s); M.go("enter"); return; }
+      if (!o.reduced && o.playing) { frameIdx = 0; acc = 0; shown = ""; prime(s); M.go("enter", "playing"); return; }
       const loop0 = s.loop[0], key = `still${loop0}:${sizeKey()}`;
       if (shown !== key && paint(s.frames[loop0], s.frames[loop0], 0, loop0)) { shown = key; arrive(s.frames[loop0]); }
     },
@@ -771,9 +821,11 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
       // (or day again, over the contact form); back up, the hands bring the board back with the scroll
       if (page.above) {
         lights(page.day ? "light" : "dark");
-        if (PLAYING.has(ph) && s && !o.reduced) M.go("exit");
-        if (M.phase === "exit") { q = 1; board(true); M.go("away"); }
+        if (PLAYING.has(ph) && s && !o.reduced) M.go("exit", "left above the window");
+        if (M.phase === "exit") { q = 1; board(true); M.go("away", "above the window"); }
       }
+      for (const id of sets.keys()) whole(id);
+      painted();
       return;
     }
     if (ph === "away") steps.away(now, dt);
@@ -781,6 +833,7 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     const still = o.reduced;
     // the index's lines against the platen, looked at only when the sheet has moved
     if (!still && moved2) rows(M.phase === "idle" || M.phase === "live");
+    if (sets.size) setting(now);
     // the next line's strokes drawn while it is still on its way up, the first in the queue
     // first; both after the next half second of what is on stage, which must never wait for them
     if (M.phase === "idle" || M.phase === "live") {
@@ -792,16 +845,25 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     // go through, eased a little behind the scroll (measured from where the platen is pinned: at
     // the scene's end the desk goes up with it, and the board is gone before it does)
     const pinned = Math.max(page.platenY, stage.pin + stage.platen);
-    const past = pinned - stage.lh * 0.5 - page.foot, span = Math.max(220, (innerHeight - pinned) * 0.9);
+    const past = pinned - stage.lh * 0.5 - page.foot, span = Math.max(220, (winH() - pinned) * 0.9);
     const target = still || !s ? 0 : clamp01(past / span);
     q += (target - q) * (1 - Math.exp(-dt / 90));
     if (Math.abs(target - q) < 0.002) q = target;
-    if (q > 0 && PLAYING.has(M.phase)) M.go("exit");
+    if (q > 0 && PLAYING.has(M.phase)) M.go("exit", "the sheet's foot past the platen");
     // the lights: down as the board nears the foot of the window, and up as soon as the scroll
     // turns back for it (the scroll's place, not the board's, which trails it)
-    dark = still ? past > 0 : dark ? target > 0.8 : target > 0.9;
+    // The lights are the hands': as they pull the board down, night comes down the window after
+    // it (night.js, a front every GL layer and the stock turn their pixels at), all the way down
+    // as the board is gone; only then does the page's theme change, with nothing left in the
+    // light to show it. Brought back up, the front goes back up with it, and the theme is day's
+    // again once the board is in place.
     board(still ? past > 0 : q > 0.55);
-    lights(dark && !page.day ? "dark" : "light", still);
+    if (still || page.day) lights(!page.day && past > 0 ? "dark" : "light", still);
+    // (no fade when it does: what the GL layers draw has already turned)
+    else if (q >= 1) lights("dark", true);
+    else if (q <= 0) lights("light", true);
+    else setNight(q * Math.max(winH() + 60, page.platenY + drop));
+    painted();
     Lv.open = M.phase === "idle" || M.phase === "live";
 
     // Nothing of the sheet, or of what follows it, shows under the board: both are cut at the
@@ -815,10 +877,53 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
 
     steps[M.phase](now, dt);
     setAlpha(alphaOf(now));
+    if (debug) audit(now);
   };
+
+  // ---- what must hold, every frame (development, ?plate) -----------------------------------
+  // Each is a way the plate has gone wrong before. A fault is counted, traced (its own mark on the
+  // Timings track) and said once; the steps above are what put it right.
+  let hudEl: HTMLPreElement | null = null, hudAt = 0;
+  const said = new Set<string>();
+  const fault = (k: string, cond: boolean) => {
+    if (!cond || !debug) return;
+    debug.faults.set(k, (debug.faults.get(k) ?? 0) + 1);
+    performance.mark(`plate fault: ${k}`);
+    if (!said.has(k)) { said.add(k); console.warn(`plate: ${k} (phase ${M.phase}, q ${q.toFixed(3)})`); }
+  };
+  const state = () => ({
+    phase: M.phase, inPhase: Math.round(performance.now() - M.since), q: +q.toFixed(3), night: night.y,
+    theme: document.documentElement.dataset.theme ?? "light", board: told, visible, frame: frameIdx, alpha, lit: +lit.toFixed(2),
+    rows: { queued: [...rowQ], setting: [...sets.keys()], typing: Lv.cur?.row ?? "", ahead }, keys: { pending: Lv.pending, said: Lv.said },
+    stage: { ...stage }, under: debug?.under ?? 0, faults: Object.fromEntries(debug?.faults ?? []),
+  });
+  const audit = (now: number) => {
+    const ph = M.phase, inPhase = now - M.since, theme = document.documentElement.dataset.theme ?? "light";
+    fault("playing with the board on its way out", PLAYING.has(ph) && q > 0.01);
+    fault("away, but the plate is in view", ph === "away" && visible && inPhase > 100);
+    fault("still, though playing", ph === "still" && !o.reduced && o.playing && inPhase > 100);
+    fault("night all over in the day's theme", night.y === Infinity && theme !== "dark");
+    fault("day all over in the night's theme", night.y === -Infinity && theme === "dark" && !page.above);
+    fault("a line setting itself for over 3s", [...sets.values()].some((S) => now - S.at > 3000));
+    fault("loading for over 8s", ph === "load" && inPhase > 8000 && visible);
+    if (hudEl && now - hudAt > 150) {
+      hudAt = now;
+      const st = state(), tr = M.trace.slice(-10).map((x) => `${(x.t / 1000).toFixed(2).padStart(7)} ${x.ok ? "" : "✗ "}${x.from}→${x.to}  ${x.why}`);
+      hudEl.textContent = `${st.phase} ${st.inPhase}ms  q ${st.q}  night ${Number.isFinite(st.night) ? Math.round(st.night) : st.night}  ${st.theme}  board ${st.board}\n` +
+        `frame ${st.frame}  alpha ${st.alpha}  lit ${st.lit}  held ${st.under}  ${st.visible ? "in view" : "out of view"}\n` +
+        `rows: typing ${st.rows.typing || "-"}  queued ${st.rows.queued.join(",") || "-"}  setting ${st.rows.setting.join(",") || "-"}\n` +
+        (Object.keys(st.faults).length ? `faults: ${Object.entries(st.faults).map(([k, n]) => `${k} ×${n}`).join("; ")}\n` : "") + tr.join("\n");
+    }
+  };
+  if (debug && /[?&]plate\b/.test(location.search)) {
+    hudEl = document.createElement("pre");
+    hudEl.setAttribute("data-ink-off", ""); hudEl.setAttribute("aria-hidden", "true");
+    hudEl.style.cssText = "position:fixed;right:8px;top:calc(var(--masthead, 56px) + 8px);z-index:99;max-width:min(420px, calc(100vw - 16px));margin:0;padding:8px 10px;font:10px/1.4 ui-monospace,monospace;white-space:pre-wrap;color:#e8e3d6;background:rgb(20 19 17 / 0.92);border-radius:6px;pointer-events:none";
+    document.body.append(hudEl);
+  }
   raf = requestAnimationFrame(frame);
   const unwatch = watchFade();
-  if (debug) (window as unknown as { __plate: unknown }).__plate = { pool, debug, get phase() { return M.phase; }, get frame() { return frameIdx; }, get done() { return SHARED.done; } };
+  if (debug) (window as unknown as { __plate: unknown }).__plate = { pool, debug, state, get trace() { return M.trace; }, get phase() { return M.phase; }, get frame() { return frameIdx; }, get done() { return SHARED.done; } };
 
   return {
     /** new options from the page (?tune's sliders and play, reduced motion) */
@@ -827,9 +932,9 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
       o = { ...o, ...next };
       if (o.text !== prev.text || o.params !== prev.params) configure();
       if (o.reduced !== prev.reduced || o.playing !== prev.playing) {
-        if ((o.reduced || !o.playing) && M.phase !== "boot" && M.phase !== "load") M.go("still");
+        if ((o.reduced || !o.playing) && M.phase !== "boot" && M.phase !== "load") M.go("still", o.reduced ? "reduced motion" : "paused");
         // back on from reduced motion: from where the performance would be, through load
-        else if (!o.reduced && prev.reduced && M.phase === "still") { startAt = sched ? sched.loop[0] : 0; M.go("load"); }
+        else if (!o.reduced && prev.reduced && M.phase === "still") { startAt = sched ? sched.loop[0] : 0; M.go("load", "motion back on"); }
       }
     },
     /** the reader's keys, once the hands have typed the heading and while the board is in place:
@@ -859,12 +964,14 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     },
     stop() {
       cancelAnimationFrame(raf);
+      hudEl?.remove();
       cfgSeq++;
       window.clearTimeout(cfgTimer);
-      ro.disconnect(); io.disconnect(); window.removeEventListener("resize", moved);
+      ro.disconnect(); io.disconnect(); window.removeEventListener("resize", resized);
       unwatch();
       // off the home page the lights are up, and there is no board to be away
       lights("light", true);
+      painted();
       delete document.documentElement.dataset.board;
       document.documentElement.style.removeProperty("--tail");
       const next = scene.nextElementSibling as HTMLElement | null;

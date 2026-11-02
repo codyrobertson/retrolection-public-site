@@ -48,8 +48,31 @@
   --theme-time: 0.9s;
 }
 
-/* night: graphite turned to chalk on a dark stock; vermilion lifted to hold its weight */
-:root[data-theme="dark"] {
+/* day's stock under the night's theme: a part of the page the lights' front (night.js) has not
+   yet gone back up over, while the theme is still the night's (the masthead) */
+[data-night="light"] {
+  color-scheme: light;
+  --paper: #f4f1e8;
+  --paper-deep: #ebe7db;
+  --ink: #1a1917;
+  --ink-2: #4a4740;
+  --ink-3: #8a857a;
+  --rule: rgb(26 25 23 / 0.14);
+  --vermilion: #d4462a;
+}
+
+/* the front over a box that paints its own stock: night above --nf (px from the box's top), day
+   below, a line of type between. It does not inherit, so moving it restyles the box alone. */
+@property --nf {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: -100000px;
+}
+
+/* night: graphite turned to chalk on a dark stock; vermilion lifted to hold its weight. Also a
+   part of the page the front has come down over before the theme has (the masthead). */
+:root[data-theme="dark"],
+[data-night="dark"] {
   color-scheme: dark;
   --paper: #141311;
   --paper-deep: #1c1b18;

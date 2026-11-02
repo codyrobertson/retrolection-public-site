@@ -6,6 +6,7 @@
   z-index: 30;
   height: var(--masthead);
   background: var(--paper);
+  transition: background-color 0.25s ease, color 0.25s ease;
   box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 7%, transparent);
   display: grid;
   grid-template-columns: auto 1fr auto;

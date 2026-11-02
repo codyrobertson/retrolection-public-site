@@ -139,7 +139,6 @@
   position: relative;
   aspect-ratio: 4 / 3;
   border: 1px dashed var(--rule);
-  background: var(--paper);
 }
 .thumb::before, .thumb::after { content: "+"; position: absolute; z-index: 1; font-size: 11px; line-height: 1; color: var(--ink-3); }
 .thumb::before { top: -6px; left: -3px; }

@@ -11,6 +11,7 @@
  */
 import { surface, onSurface } from "./surface-mode.js";
 import { linked } from "./gl-ready.js";
+import { NIGHT, night, onNight } from "./night.js";
 
 const SIZE = 400; // css px per tile; only periodicity matters
 
@@ -84,7 +85,8 @@ const VS = `attribute vec2 p;void main(){gl_Position=vec4(p,0,1);}`;
 
 const COMP = `precision highp float;
 uniform sampler2D tA,tD;uniform vec2 res,doc;uniform float dpr,uSize,uPx,uScroll,uFrom,uTo,uFront;
-uniform vec4 wA,wB;uniform vec3 fg;
+uniform vec4 wA,wB;uniform vec3 fg,bg;
+${NIGHT}
 float b2f(vec2 q){return mod(2.*q.x+3.*q.y,4.);}
 float bayer8(vec2 p){p=floor(p);return (b2f(mod(p,2.))*16.+b2f(mod(floor(p/2.),2.))*4.+b2f(mod(floor(p/4.),2.))+.5)/64.;}
 float bh(vec2 q){q=fract(q*vec2(.1031,.1030));q+=dot(q,q.yx+33.33);return fract((q.x+q.y)*q.x);}
@@ -104,6 +106,9 @@ void main(){
     vec4 w=vec4(wA.rgb*wA.a*fa,wA.a*fa); w+=vec4(wB.rgb*wB.a*fb,wB.a*fb)*(1.-w.a);
     o=o+w*(1.-o.a);
   }
+  // the lights' front (night.js): on its far side the stock is the other theme's, drawn whole over the body's
+  float want=1.-smoothstep(uNightY-56.,uNightY,cp.y), k=abs(want-uDark);
+  if(k>.002) o=mix(o,vec4(turnTo(o.rgb+bg*(1.-o.a),1.-uDark),1.),k);
   gl_FragColor=o;
 }`;
 
@@ -114,7 +119,7 @@ export function startPaper() {
   const cv = document.createElement("canvas");
   cv.id = "paper-gl";
   cv.setAttribute("data-gl-host", ""); cv.setAttribute("aria-hidden", "true");
-  cv.style.cssText = "position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;display:block";
+  cv.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100vh;height:100lvh;z-index:-1;pointer-events:none;display:block";
   const g = cv.getContext("webgl", { premultipliedAlpha: true, alpha: true, antialias: false, depth: false, stencil: false });
   if (!g) return { rebuild() {}, destroy() {} };
   document.body.prepend(cv);
@@ -134,7 +139,7 @@ export function startPaper() {
   const tex = [mkTex(false), mkTex(true)], fb = g.createFramebuffer();
 
   let alive = true, raf = 0, dpr = 1, px = 0, docW = 1, docH = 1, ready = false, compiled = false, wait = 0;
-  const col = { wA: [0, 0, 0, 0], wB: [0, 0, 0, 0], fg: [0, 0, 0] };
+  const col = { wA: [0, 0, 0, 0], wB: [0, 0, 0, 0], fg: [0, 0, 0], bg: [1, 1, 1], dark: 0 };
 
   function readColours() {
     const cs = getComputedStyle(docEl), bs = getComputedStyle(document.body);
@@ -143,7 +148,10 @@ export function startPaper() {
     col.wB = b.length >= 3 ? [b[0] / 255, b[1] / 255, b[2] / 255, b[3] ?? 1] : [0, 0, 0, 0];
     col.fg = f.length >= 3 ? [f[0] / 255, f[1] / 255, f[2] / 255] : [0, 0, 0];
     const bg = num(bs.backgroundColor);
-    return bg.length >= 3 ? (bg[0] + bg[1] + bg[2]) / 3 < 128 : false;
+    if (bg.length >= 3) col.bg = [bg[0] / 255, bg[1] / 255, bg[2] / 255];
+    const dark = bg.length >= 3 ? (bg[0] + bg[1] + bg[2]) / 3 < 128 : false;
+    col.dark = dark ? 1 : 0;
+    return dark;
   }
 
   /** render both tiles into textures (with a 1px periodic border); nothing until the programs have linked */
@@ -168,7 +176,7 @@ export function startPaper() {
   }
 
   function size() {
-    const w = Math.max(1, Math.round(docEl.clientWidth * dpr)), h = Math.max(1, Math.round(innerHeight * dpr));
+    const w = Math.max(1, Math.round(docEl.clientWidth * dpr)), h = Math.max(1, Math.round((cv.clientHeight || innerHeight) * dpr));
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
     docW = Math.max(docEl.clientWidth, 1); docH = Math.max(docEl.scrollHeight, 1);
   }
@@ -185,12 +193,18 @@ export function startPaper() {
     g.uniform1f(compP.u("uScroll"), Math.round(scrollY * dpr) / dpr);   // device-pixel aligned so the grid never shimmers
     g.uniform1f(compP.u("uFrom"), surface.from); g.uniform1f(compP.u("uTo"), surface.to); g.uniform1f(compP.u("uFront"), surface.front);
     g.uniform4fv(compP.u("wA"), col.wA); g.uniform4fv(compP.u("wB"), col.wB); g.uniform3fv(compP.u("fg"), col.fg);
+    g.uniform3fv(compP.u("bg"), col.bg); g.uniform1f(compP.u("uDark"), col.dark);
+    g.uniform1f(compP.u("uNightY"), Math.max(-1e6, Math.min(1e6, night.y)));
     g.clearColor(0, 0, 0, 0); g.clear(g.COLOR_BUFFER_BIT); g.drawArrays(g.TRIANGLE_STRIP, 0, 4);
   }
   function request() { if (!raf && alive) raf = requestAnimationFrame(draw); }
 
-  const onResize = () => { size(); request(); };
+  // as tall as the window gets (100lvh), so a phone's URL bar coming and going never resizes the
+  // buffer; when the window does change, the new one is drawn at once (a resized buffer is blank)
+  const onResize = () => { const w = cv.width, h = cv.height; size(); if (cv.width !== w || cv.height !== h) { cancelAnimationFrame(raf); draw(); } else request(); };
   const off = onSurface(request);
+  // the lights' front: drawn in the frame it moved, with the text over it (gl-layer draws there too)
+  const offNight = onNight(() => { if (ready && alive) { cancelAnimationFrame(raf); draw(); } });
   addEventListener("scroll", request, { passive: true });
   addEventListener("resize", onResize);
   const ro = new ResizeObserver(onResize); ro.observe(document.body);
@@ -216,7 +230,7 @@ export function startPaper() {
   return {
     rebuild: bake,
     destroy() {
-      alive = false; cancelAnimationFrame(raf); cancelAnimationFrame(wait); off(); ro.disconnect(); mo.disconnect(); document.body.removeEventListener("transitionend", landed);
+      alive = false; cancelAnimationFrame(raf); cancelAnimationFrame(wait); off(); offNight(); ro.disconnect(); mo.disconnect(); document.body.removeEventListener("transitionend", landed);
       scheme.removeEventListener("change", bake); removeEventListener("scroll", request); removeEventListener("resize", onResize);
       g.getExtension("WEBGL_lose_context")?.loseContext(); cv.remove(); docEl.classList.remove("paper-gl");
     },

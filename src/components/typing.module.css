@@ -61,7 +61,8 @@
    in behind the rule as the rule finishes drawing itself (AsciiBox) */
 .box { position: relative; margin: 0 auto; opacity: 0; transition: opacity 0.3s ease, background-color 0.6s ease; }
 .box[data-ready="true"] { opacity: 1; }
-.box[data-drawn="true"] { background: var(--paper); }
+/* the sheet's stock is the lights' (night.js): day's under the front, night's over it, whatever the theme */
+.box[data-drawn="true"] { background: linear-gradient(#141311 var(--nf), #f4f1e8 calc(var(--nf) + 56px)); }
 .box .boxBody > :not(.corner) { opacity: 0; transition: opacity 0.5s ease 0.05s; }
 .box[data-drawn="true"] .boxBody > :not(.corner) { opacity: 1; }
 
