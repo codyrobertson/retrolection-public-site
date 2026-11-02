@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import styles from "./not-found.module.css";
+
+export const metadata: Metadata = { title: "Not found" };
 
 /** A page that isn't there: said the way the plates say things, with the way back. */
 export default function NotFound() {

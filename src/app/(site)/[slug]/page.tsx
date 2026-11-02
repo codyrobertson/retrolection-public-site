@@ -11,7 +11,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/[slug]">) {
   const { slug } = await params;
   const page = await getPage(slug);
-  if (!page) return {};
+  if (!page) return { title: "Not found" };   // the slug catches every unknown path: name the 404 it renders
   return buildMetadata({ title: page.title, seo: page.seo, path: `/${slug}` });
 }
 
