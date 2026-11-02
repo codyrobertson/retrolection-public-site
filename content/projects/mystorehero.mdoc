@@ -3,6 +3,9 @@ title: "MyStoreHero"
 summary: "An AI analytics workspace for store operators. The model never picks the tenant and never writes the headline number."
 cover: /images/projects/mystorehero/cover.webp
 coverAlt: "Diagram: a chat question goes to the server, which resolves operator, org and store, runs every query inside withEntity(), takes headline numbers from Cube, checks generated UI against ViewSpec and saves an App Board"
+art: /images/projects/mystorehero/art.jpg
+artAlt: "A striped awning over a shop counter, with a hand writing in a ledger on a receipt roll; one blank tag is orange."
+loop: /videos/projects/mystorehero/loop.mp4
 discipline: code
 status: hobby
 date: 2026-06-02
@@ -23,17 +26,23 @@ MyStoreHero is a workspace for people who run online stores. You connect your st
 
 Stack: Next.js 15, Better Auth with organizations, Neon and Drizzle, Inngest, Cube, Vercel AI SDK.
 
+{% Spot src="/images/projects/mystorehero/spot-key-to-door.webp" alt="Three small shop doors in a row; a charcoal-outline hand places a single key in one lock while a little geometric robot waits behind with empty hands; the key is orange-red." /%}
+
 ## The model doesn't choose the store
 
 An analytics agent writes queries. In a multi-tenant app, that makes it the thing most likely to leak one store's revenue into another store's dashboard, so isolation can't live in a prompt. Each store is the isolation unit. Postgres enforces it with row-level security through a `withEntity()` wrapper, and every store gets its own warehouse schema. The server works out the operator, the org and the store. The browser and the agent's tools never pass a tenant id.
 
 The cost is that every query path has to go through the wrapper. A later commit moved the remaining control-plane reads into it. One background sync path still can't use it, so it's documented as an exception.
 
+{% Spot src="/images/projects/mystorehero/spot-solid-cube.webp" alt="A solid slate-blue paper cube on a small pedestal, a little geometric robot beside it holding only an empty speech bubble; one face of the cube is orange-red." /%}
+
 ## Cube owns the numbers
 
 Answers about revenue have to be right. So headline numbers come from Cube semantic metrics, not from SQL the model writes, and anything the model works out on its own gets labeled unverified. Generated UI has to validate against a ViewSpec schema before it renders or saves.
 
 The product follows the same rule. Nothing says Connected or synced, and no metric shows, unless real data is behind it. The roadmap's guiding principle was everything real, nothing hidden or cut. The docs hold themselves to it too. Of the nine connectors in the contract (Shopify, WooCommerce, Google Ads, Google Analytics, Search Console, Meta Ads, Stripe, Klaviyo, Mailchimp), several are marked "tile visible, ingestion unproven."
+
+{% Spot src="/images/projects/mystorehero/spot-mended-cup.webp" alt="A cracked teacup mended with one visible seam in the kintsugi way; the seam is orange-red." /%}
 
 ## What broke in production
 

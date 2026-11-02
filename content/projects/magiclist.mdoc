@@ -3,6 +3,9 @@ title: "MagicList"
 summary: "A pipeline that reads public Notice of Trustee Sale filings, extracts the fields, and scores each property as a lead."
 cover: /images/projects/magiclist/cover.webp
 coverAlt: "Diagram of the November 20 extraction flow: regex on the OCR text, then three gates (required fields, average confidence, completeness) whose thresholds drop from 85% and 80% to 70% and 60%, with failures going to free models and then Claude"
+art: /images/projects/magiclist/art.jpg
+artAlt: "Legal notices fly off the page as paper scraps and land in a card tray as index cards; one card has an orange tab."
+loop: /videos/projects/magiclist/loop.mp4
 discipline: code
 status: hobby
 date: 2025-10-01
@@ -22,6 +25,8 @@ MagicList started as AI real-estate analysis, and that was too broad. So I narro
 
 Stack: FastAPI, Postgres with PostGIS, Redis, Cloudflare R2, Tesseract and PaddleOCR, models through OpenRouter.
 
+{% Spot src="/images/projects/magiclist/spot-comb-hand-comb.webp" alt="Paper scraps falling through a coarse comb, a cupped naive hand, then a fine comb; one scrap resting in the hand is orange-red." /%}
+
 ## Regex, then Claude, then regex again
 
 Extraction changed direction three times, and the commits show each one. On October 27 I tried having a model write a regex for each field. The same day I dropped that for straight Claude extraction, with a commit message calling it a breakthrough that "replaces brittle regex."
@@ -29,6 +34,8 @@ Extraction changed direction three times, and the commits show each one. On Octo
 That didn't last. One model call per filing gets expensive across thousands of filings. By November 20 the pipeline was back to regex first, with Claude as a fallback behind three gates: the required fields (recorder number, address, sale date) have to be present, average confidence has to be at least 85%, and completeness at least 80%. Later that day free models went in ahead of Claude, and the gates dropped to 70% and 60% to cut cost again.
 
 That means more code paths and more thresholds, and extraction quality now depends on numbers someone has to tune.
+
+{% Spot src="/images/projects/magiclist/spot-snail-on-stack.webp" alt="A neat stack of paper documents with a small snail resting on top; the snail is orange-red." /%}
 
 ## Documents that stalled quietly
 
@@ -39,3 +46,5 @@ The pipeline runs as a saga: eight explicit stages from discovery to leads, with
 Every external dependency sits behind a circuit breaker: one shared recorder client, a 30-second timeout, and a trip at 10 failures. Enrichment still leaned on slow county GIS lookups. Timeouts there went from about 66% to about 30%, which is better but not fixed.
 
 The last commit was December 4, 2025, and it's a hobby project now. Nothing shows a lead turning into a deal. The people behind these filings are facing foreclosure, so no sample documents or addresses appear on this page. The repo root also has about a hundred agent-written status and session-summary files.
+
+{% Spot src="/images/projects/magiclist/spot-house-flags.webp" alt="A row of naive little houses each with a small paper flag on a stick, the flags at different heights; the tallest flag is orange-red." /%}

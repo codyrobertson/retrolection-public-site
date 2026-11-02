@@ -70,11 +70,14 @@ type Story = {
   url?: string | null;
   cover?: string | null;
   coverAlt?: string | null;
+  art?: string | null;
+  artAlt?: string | null;
+  loop?: string | null;
   tags?: readonly string[];
 };
 
 export function StoryHeader({ story, minutes, author }: { story: Story; minutes: number; author: string }) {
-  const { title, summary, discipline, status, date, role, url, cover, coverAlt } = story;
+  const { title, summary, discipline, status, date, role, url, cover, coverAlt, art, artAlt, loop } = story;
   return (
     <header className={styles.head}>
       <div className={styles.column}>
@@ -102,7 +105,19 @@ export function StoryHeader({ story, minutes, author }: { story: Story; minutes:
           </p>
         </div>
       </div>
-      {cover && (
+      {art ? (
+        <figure className={styles.lead}>
+          <div className={styles.art}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- CMS images have unknown dimensions */}
+            <img src={art} alt={artAlt || ""} fetchPriority="high" />
+            {loop && <video src={loop} poster={art} autoPlay muted loop playsInline aria-hidden />}
+          </div>
+          <figcaption className={styles.column}>
+            {artAlt && <span>{artAlt}</span>}
+            <span className={styles.credit}>Illustration</span>
+          </figcaption>
+        </figure>
+      ) : cover && (
         <figure className={styles.lead}>
           {/* eslint-disable-next-line @next/next/no-img-element -- CMS images have unknown dimensions */}
           <img src={cover} alt={coverAlt || ""} fetchPriority="high" />

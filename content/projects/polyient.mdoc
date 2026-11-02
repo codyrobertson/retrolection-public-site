@@ -9,6 +9,9 @@ client: "Polyient"
 url: "https://polyient.io"
 cover: /images/projects/polyient/cover.webp
 coverAlt: "The Polyient home page hero: Value at the Technical Frontier. in heavy black type on off-white, a teal button, and the top of a black and white dither shader band"
+art: /images/projects/polyient/art.jpg
+artAlt: "A tower of stacked page sections drawn over a wireframe; an orange elevator car shoots up beside a stopwatch."
+loop: /videos/projects/polyient/loop.mp4
 tags:
   - "Website"
   - "Brand"
@@ -21,6 +24,8 @@ seo:
 ---
 I design and build Polyient's public site. This page covers two pieces of it. The main site came together in January and February 2026, with an admin so the team can edit portfolio content without a deploy. In October I added an unlisted page for AI-training consultations, and that's where the calls worth reading about happened. The first pass was designed without opening the brand file, and the real colors had to go back in. Then Lighthouse put the page at a 7.6 second LCP, and the fix was loading less, not tuning anything.
 
+{% Spot src="/images/projects/polyient/spot-toolbox-first.webp" alt="An open toolbox with a few tools set down in front of an unpainted paper house facade; the toolbox handle is orange-red." /%}
+
 ## An admin before a redesign
 
 On January 27 the first design system went in: a paper texture, a logo marquee, a component system for portfolio companies, and a carousel to show them. The next day I added an admin on Supabase and Drizzle with a Tiptap editor, so portfolio content gets edited there instead of in code.
@@ -28,6 +33,8 @@ On January 27 the first design system went in: a paper texture, a logo marquee, 
 On February 3 I threw out the paper-texture look and redesigned the site as something more institutional, with a Three.js dither shader in the hero. The inquiry form got wired to Supabase and Resend on February 6. February 9 was content.
 
 {% Figure src="/images/projects/polyient/hero-paper-texture-jan.webp" alt="The late-January Polyient hero: Building, Backing and Partnering With Exceptional Teams Since 2018 in heavy type over a pale blue paper texture, with glossy tile icons between the words" caption="The paper-texture hero from late January. On February 3 it was replaced by the dither-shader hero at the top of this page." width="wide" frame="browser" /%}
+
+{% Spot src="/images/projects/polyient/spot-skipped-swatchbook.webp" alt="A paintbrush that has painted a wide stripe across the page, while a closed swatch book sits untouched to the side with a bookmark; the bookmark is orange-red." /%}
 
 ## The pass that skipped the brand file
 
@@ -38,6 +45,8 @@ Once the colors were right there were two more passes. One was a refinement afte
 {% Gallery images=[{src: "/images/projects/polyient/training-first-pass.webp", alt: "First pass of the training page: AI training. Built around your work. in black and muted green on off-white, with stacked sage-green cards on the right"}, {src: "/images/projects/polyient/training-shipped.webp", alt: "The training page as it went live: AI training for your team, a black consultation button with a cyan icon, and a photo of a notebook on a cyan surface"}] columns="2" frame="browser" caption="Left: the first pass, built without the brand file. Right: the page after the brand colors and the performance work." /%}
 
 The page uses the two real instructor photos and no stock. The brand voice is written down (understated, dry, anti-hype, with a banned-word list), so the copy had rules to check against. I pulled the adjectives and put in one concrete exercise instead: drafting a client email.
+
+{% Spot src="/images/projects/polyient/spot-dropping-sandbags.webp" alt="A hot-air balloon rising quickly after dropping sandbags that fall below it; the balloon is orange-red." /%}
 
 ## 7.6 seconds to 1.2
 

@@ -9,6 +9,9 @@ client: ""
 url: "https://post2plate.com"
 cover: /images/projects/post2plate/cover.webp
 coverAlt: "A Post2Plate recipe page on desktop: a full-bleed pasta photo under the title Weeknight Pasta, with Save, Remix and Start Cooking actions"
+art: /images/projects/post2plate/art.jpg
+artAlt: "A phone propped on a mint bowl with a recipe card rising out like steam; one chili is orange."
+loop: /videos/projects/post2plate/loop.mp4
 tags:
   - "AI"
   - "Food"
@@ -25,6 +28,8 @@ Post2Plate is a recipe inbox for food creators who live on Instagram and TikTok 
 I built it solo over two weeks in May 2026, with Claude Code and Codex agents writing most of the code. Two calls shaped it. Halfway through, the plan flipped from a private iOS app to public web pages. And the parser got permission to refuse, because a parser that always succeeded was inventing recipes.
 
 I did the product, the brand, a FastAPI and Postgres backend, a Next.js front end and a Figma plugin. 258 commits between May 2 and May 16.
+
+{% Spot src="/images/projects/post2plate/spot-pancake-flip.webp" alt="A pancake mid-flip above a frying pan, a curved charcoal motion line; the pancake is orange-red." /%}
 
 ## Same product, flipped in one day
 
@@ -44,6 +49,8 @@ Handles come from the social account that sent the DM, so a guest's recipes stay
 
 {% Gallery images=[{src: "/images/projects/post2plate/recipe-mobile-iter4.webp", alt: "Early mobile recipe page: photo header, a card of chips for time, servings, difficulty and cuisine, a creator card, and a plain Start Cooking bar"}, {src: "/images/projects/post2plate/recipe-mobile-pass1.webp", alt: "Mobile recipe page after the first Figma pass: the content sheet overlaps the photo, with sections for what people are saying, nutrition marked soon, and the creator"}, {src: "/images/projects/post2plate/recipe-mobile-pass2.webp", alt: "Mobile recipe page after the second Figma pass, showing the sticky bottom bar with a large orange Start Cooking button between back and share"}] columns="3" frame="phone" caption="Mobile, left to right: the first build, then two passes matching the Figma design. Start Cooking went from a text label to the loudest thing on the screen." /%}
 
+{% Spot src="/images/projects/post2plate/spot-colander-catch.webp" alt="A kitchen colander catching one crumpled paper scrap while flat blank cards fall through underneath; the caught scrap is orange-red." /%}
+
 ## A parser that's allowed to say no
 
 The 2025 version of this project, which I threw out, returned a hardcoded pasta recipe whenever an import failed, so the demo always "worked." The rewrite bans that kind of fake success in CI.
@@ -53,6 +60,8 @@ The parser got the same treatment. In the first calibration run on 10 posts, 100
 Eight models went through the same 10 posts and four tied at 100%. The cheapest and fastest was gpt-oss-120b on Cerebras, at about half GPT-4o's cost per post. On 60 real posts, Cerebras with GPT-4o as a fallback and Whisper for audio matched the hand labels 92% of the time and never refused a real recipe. GPT-4o alone scored 90% at twice the cost. The fallback kicks in on 13% of posts.
 
 I also dropped OCR on video text overlays. It mattered on 1 of 61 posts and added cost, plus noise from stickers, on every one. With OCR off and a faster hosted Whisper, the production setup ran all 60 posts for 19 cents.
+
+{% Spot src="/images/projects/post2plate/spot-three-scales.webp" alt="Three small kitchen scales in a row, their needles pointing in different directions; one needle is orange-red." /%}
 
 ## Three scores that were wrong
 

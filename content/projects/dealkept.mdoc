@@ -6,6 +6,9 @@ status: hobby
 date: 2026-09-22
 cover: /images/projects/dealkept/cover.webp
 coverAlt: "DealKept landing page: You promised. We remembered. A waitlist form, Reid the robin, and the top of the Today screen in a browser frame"
+art: /images/projects/dealkept/art.jpg
+artAlt: "Keys hang on a line like laundry over a contact log, each with a white tag; one is tied with an orange reminder string."
+loop: /videos/projects/dealkept/loop.mp4
 role: "Founder"
 client: ""
 url: "https://dealkept.com"
@@ -30,6 +33,8 @@ The realtor approved each draft with one click, or texted back YES or UNDO. It w
 
 Each agent worked on one PR, and a coordinator agent merged and deployed. 740 commits on main, September 22 to October 7, 2026.
 
+{% Spot src="/images/projects/dealkept/spot-name-card-funnel.webp" alt="A blank name card slipping out of an envelope and sliding toward a large slate-blue funnel; the name card is orange-red." /%}
+
 ## Client names were going to the model
 
 The first privacy rule shipped right away: every model call goes to a zero-data-retention provider, fails closed if it can't, and records which provider it used. That's a contract, not a technical guarantee. So the next step was to swap people's names for tokens like `⟦person:id⟧` before text reached the big LLM. Tokens instead of blacking names out, so the model could still tell that two messages were about the same person.
@@ -49,6 +54,8 @@ A benchmark across 5,238 documents put Rampart against Presidio, four GLiNER mod
 GLiNER didn't fit in a Worker at all. In a Cloudflare Container it worked, with a cold start around 20 seconds and about $41 a month at pilot load. It caught more names. It also tokenised a lot of text it should have left alone.
 
 The third try kept the same 14.7 MB model and fine-tuned Rampart on everything either Rampart or GLiNER flagged. For a privacy layer a miss costs more than a false flag, so the union made sense as the teacher. The training run cost $0.76. On our own test set, recall on third-party names went from 88.7% to 94.9%. Precision on that set fell from 92.1% to 83.5%, mostly because the new model started tagging Chinese, Korean and Indian-script text as names. It flagged 61% of Chinese place names. Rampart flagged 6%.
+
+{% Spot src="/images/projects/dealkept/spot-closed-gate.webp" alt="A narrow wooden gate in a picket fence, firmly closed, with a small pile of paper slips waiting in front that did not get through; the gate latch is orange-red." /%}
 
 ## The gate
 
@@ -91,6 +98,8 @@ The Today screen ran 8 rounds and never got the two passes in a row it needed. I
 {% Figure src="/images/projects/dealkept/today-screen.webp" alt="DealKept Today screen on fixture data: a list grouped into Needs you now, Overdue and Due today, with a wire-fraud warning open on the right asking the agent to call the number on file before marking it verified" caption="The Today screen from the round-8 review folder, on fixture data. The wire-fraud item keeps Done and Dismiss off until the agent verifies by phone." width="wide" frame="browser" /%}
 
 {% Figure src="/images/projects/dealkept/reid-poses.webp" alt="Eighteen master drawings of Reid, an orange and brown robin: three-quarter expressions from concerned to proud, a wink, plus front, side and back views" caption="Reid's master poses. Stickers, onboarding panels and animation frames were generated from these and a versioned prompt library." width="wide" /%}
+
+{% Spot src="/images/projects/dealkept/spot-stop-barrier.webp" alt="A long torn-paper road ending at a striped stop barrier, a little paper car parked before it; the barrier is orange-red." /%}
 
 ## Where it stopped
 

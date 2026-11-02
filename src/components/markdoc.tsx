@@ -44,6 +44,14 @@ const components = {
       </figure>
     );
   },
+  Spot({ src, alt }: { src: string; alt: string }) {
+    return (
+      <figure className={styles.spot}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- CMS images have unknown dimensions */}
+        <img src={src} alt={alt} loading="lazy" width={1024} height={1024} />
+      </figure>
+    );
+  },
   Gallery({
     images = [],
     columns = "2",

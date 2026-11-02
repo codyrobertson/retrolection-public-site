@@ -6,6 +6,9 @@ status: hobby
 date: 2026-08-13
 cover: /images/projects/tinyimage/cover.webp
 coverAlt: "A page of six photos with the extension running: three AI-generated images blurred with red AI 100% badges, three real photos of puppies, a church and a stereo with green real badges"
+art: /images/projects/tinyimage/art.jpg
+artAlt: "A magnifier with an orange rim over a framed landscape breaking into pixels, beside three medals, two crossed out."
+loop: /videos/projects/tinyimage/loop.mp4
 role: "Solo"
 client: ""
 url: "https://github.com/codyrobertson/instant-ai-seek"
@@ -24,6 +27,8 @@ TinyImage is a Chrome extension, shipped as Instant AI Seek, that flags AI-gener
 
 I built it solo in five days, August 13 to 18, 2026. An agent loop wrote and ran the training code. I set the bar and kept checking whether its results were honest, and that turned out to be the real job. Three results looked like wins until I checked them. What ships is a small student model distilled from a bigger one, fast enough to score an image in 8 ms.
 
+{% Spot src="/images/projects/tinyimage/spot-snow-globe-gear.webp" alt="A small paper snow globe with a tiny tree and a tiny gear sealed inside; the gear is orange-red." /%}
+
 ## Everything runs in the browser
 
 The extension finds every image that's 64px or bigger and scores it locally on WebGPU, with WASM as the fallback. There's no cloud inference, no API and no local server. The model downloads once, then it works with the internet off. Every image gets a confidence score, and anything at 65% or higher counts as AI.
@@ -39,6 +44,8 @@ I ran it as an autoresearch loop. An agent proposes an experiment, a fixed score
 Early on I told it overfitting was really bad, and so was gaming the metric instead of improving the model. Run advisor reviews at key junctions, keep a training journal, no leakage. The journal ended at 392 lines, facts first, with interpretations tagged as inference.
 
 Training moved off my laptop on day one. ConvNeXt was taking 5 to 11 minutes an epoch on the M2 and pinning the CPU. On a DGX Spark it took 29 seconds.
+
+{% Spot src="/images/projects/tinyimage/spot-boot-on-line.webp" alt="A fishing line pulling an old boot out of the water instead of a fish; the bobber is orange-red." /%}
 
 ## False win one: a leak that didn't change the number
 
@@ -89,6 +96,8 @@ What the headline numbers actually measure:
 - 4.55% of 2,000 real stock photos get wrongly flagged as AI. At 256px an earlier run flagged 0.8%. Moving to 384px fixed the hardest GAN case and made this one worse.
 
 {% Figure src="/images/projects/tinyimage/badges-in-page.webp" alt="A test page of six photos with the extension running: three AI-generated images blurred with red AI 100% badges, three real photos with green real badges" caption="The extension from the repo on a local test page, using images from its own sealed test set, which is the easy case. The badge shows the AI score, so real 0% means a 0% chance of AI. None of these landed in the amber middle band." width="wide" frame="browser" /%}
+
+{% Spot src="/images/projects/tinyimage/spot-missing-piece.webp" alt="A nearly finished jigsaw of plain slate and cream pieces with one piece missing; the outline of the empty gap is orange-red." /%}
 
 ## Not solved
 

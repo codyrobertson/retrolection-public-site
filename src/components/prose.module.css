@@ -92,6 +92,12 @@
 }
 .gallery img { max-height: 80vh; object-fit: contain; }
 
+/* Spot illustrations open a section; the cream ground prints into the page paper. */
+.prose > article > .spot { justify-self: center; width: min(15rem, 60%); margin-top: 1.5em; }
+.prose .spot img { display: block; width: 100%; height: auto; max-height: none; border-radius: 0; }
+:root:not([data-theme="dark"]) .prose .spot img { mix-blend-mode: multiply; }
+.prose > article > .spot + h2 { margin-top: 0.4em; }
+
 /* The feature story (project pages). */
 .story { --measure: 40rem; font-size: 1.1875rem; }
 .story > article { font-family: var(--font-serif); line-height: 1.6; row-gap: 1.15em; }

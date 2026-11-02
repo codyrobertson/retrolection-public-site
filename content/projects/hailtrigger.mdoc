@@ -9,6 +9,9 @@ client: ""
 url: "https://hailtrigger.com"
 cover: /images/projects/hailtrigger/cover.webp
 coverAlt: "The HailTrigger landing page headline: The storm hits. Your crew is first on the doors worth knocking."
+art: /images/projects/hailtrigger/art.jpg
+artAlt: "A slate storm cloud rains postcards on three houses painted over a printed storm report; one house has an orange door."
+loop: /videos/projects/hailtrigger/loop.mp4
 tags:
   - "AI"
   - "Geospatial"
@@ -38,6 +41,8 @@ I wrote `design.md` as a contract with a ban list: Inter on everything, untinted
 
 My notes to the agents stayed blunt: "why do we have this should be way simpler why does the user need to see this." When the assistant flow came back as two forms, I asked for one prompt input and had the AI name the list.
 
+{% Spot src="/images/projects/hailtrigger/spot-circled-hailstone.webp" alt="A handful of white hailstones on torn slate paper, one circled in orange-red, a thin orange-red thread running from it to the one small door of a lone naive house." /%}
+
 ## The column that said "hit this week"
 
 The recon table had a `storm_date` column. Operators read it as "this home got hit this week." It was really the date of the nearest hail report, because proximity was cheaper than geometry when v1 was built.
@@ -49,6 +54,8 @@ A dry run caught it. For two whole cities, zero parcels sat inside that week's h
 Permits had the same bug. A stale permit file can't contain a permit filed after the storm, so "no permit since the storm" was true for every home, and it added scoring credit on data that couldn't have known. Now a permit file that's too old blocks the run.
 
 Both turned into one rule: a stored value can't claim more certainty than its evidence is fresh. The rewrite keeps them as named scars, `freshness-is-correctness` and `storm-containment-not-proximity`, and says absence is "Blocked, Unknown, Unavailable, or Stale, never nullable optimism." In the UI, source, freshness and blockers show up before an operator is asked to spend money.
+
+{% Spot src="/images/projects/hailtrigger/spot-ruler-roof.webp" alt="A plain unmarked ruler laid along the roof of a naive house, stopping short of the far edge; the ruler is orange-red." /%}
 
 ## The roof model
 
@@ -85,6 +92,8 @@ On August 18, 2026 I started a rewrite. The blueprint's goal: "Build the smalles
 The organizing question changed from where code runs to who's allowed to change a fact. Merge-time checks enforce it with module ownership files and a constitution package.
 
 In its first four days the rewrite landed identity with row-level security, a gateway that gives agents named capability handles instead of root credentials, an exact-commit ship path and release telemetry. That's 95 commits, nearly all governance and very little product. It's an architecture bet, and it isn't proven in production.
+
+{% Spot src="/images/projects/hailtrigger/spot-postcard-plane.webp" alt="A postcard with a small square dot pattern folded into an orange-red paper plane, gliding toward a tiny naive house." /%}
 
 ## Where it stands
 

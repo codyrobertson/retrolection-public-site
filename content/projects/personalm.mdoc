@@ -6,6 +6,9 @@ status: retired
 date: 2026-02-17
 cover: /images/projects/personalm/cover.webp
 coverAlt: "PersonaLM landing page hero: There's revenue in your store you can't see yet, with a Run my free audit button and integration chips"
+art: /images/projects/personalm/art.jpg
+artAlt: "A clumsy slate robot stands on a podium beside a small abacus over a printed product list; one bead is orange."
+loop: /videos/projects/personalm/loop.mp4
 role: "Founder"
 client: ""
 url: "https://persona-lm.com"
@@ -30,6 +33,8 @@ It started in February 2026 as retail demand simulation and ended as a one-shot 
 
 One number shows up a lot below. AUC measures how well a model ranks buyers above non-buyers. 0.5 is a coin flip and 1.0 is perfect.
 
+{% Spot src="/images/projects/personalm/spot-telescope-vs-box.webp" alt="A tall elaborate paper telescope knocked over on its tripod, and beside it a plain wooden index-card box standing upright tied with a ribbon; the ribbon is orange-red." /%}
+
 ## The LLM lost to a lookup table
 
 The first plan was the fashionable one. Fine-tune an LLM to act as a synthetic shopper: show it a persona and a product, ask whether they'd buy.
@@ -37,6 +42,8 @@ The first plan was the fashionable one. Fine-tune an LLM to act as a synthetic s
 I ran a LoRA fine-tune of Qwen3-8B on 40,588 examples, then a GRPO reinforcement run on top of it. The fine-tune scored 0.484 AUC and GRPO scored 0.488. Both were worse than a coin flip. A plain popularity table on the same data scored 0.815.
 
 The fine-tuned model had learned to say yes to everyone. Early in training it predicted a purchase almost every time. GRPO never learned to tell buyers apart, and its JSON output kept breaking. The data didn't help either. 71.2% of shoppers had exactly one interaction, and demographics plus category plus price don't say much about what someone buys. RL can change how a model writes an answer. It can't add signal the input doesn't have. The slide I made afterwards said "Always build the dumb baseline first," and I should have done that on day one.
+
+{% Spot src="/images/projects/personalm/spot-leaking-jug.webp" alt="A paper water jug with a hairline crack, a thin drip falling into a cup below; the drip is orange-red." /%}
 
 ## 0.748 was a leak
 
@@ -57,6 +64,8 @@ The biggest single jump was putting learned towers on top of frozen embeddings. 
 I also tried replacing the OpenAI embedding with a fine-tuned open model, Qwen3-Embedding-0.6B, trained for 21 minutes on an A100. The journal's guess beforehand was a gain of 5 to 15 points. Over five configs and three seeds it lost by half a point. A 4B model lost by more. I closed that question and kept the API.
 
 What did move the number was better text going in. When the preference documents went from about 282 characters to 620 and used every review instead of up to eight, the scorer gained a full point. That was more than any architecture change after the towers.
+
+{% Spot src="/images/projects/personalm/spot-crown-in-box.webp" alt="A charcoal-outline hand placing a small paper crown back into an open box; the crown is orange-red." /%}
 
 ## The champion I had to take back
 

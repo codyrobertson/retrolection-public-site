@@ -9,6 +9,9 @@ client: ""
 url: "https://cyanium-design-system.vercel.app"
 cover: /images/projects/cyanium/cover.webp
 coverAlt: "The Cyanium docs site hero: Production UI for React teams, with a component preview card showing a toggle, a checkbox, segmented buttons and an email field"
+art: /images/projects/cyanium/art.jpg
+artAlt: "A slate chest of drawers spills buttons, toggles and tiny bar charts over a component spec sheet; one toggle is switched on in orange."
+loop: /videos/projects/cyanium/loop.mp4
 tags:
   - "Design system"
   - "Tokens"
@@ -23,6 +26,8 @@ Cyanium is a React design system I built on Radix, Tailwind v4 and CVA. It's a m
 
 It didn't start from zero. The first commit is "Ships AlignUI tokens." AlignUI is someone else's design system, and a later commit (`8f36d49`) finishes renaming AlignUI to Cyanium. So the token layer began as AlignUI's. The structure, kits and tooling came after, and I'm not calling the tokens original.
 
+{% Spot src="/images/projects/cyanium/spot-real-bars.webp" alt="Bar-chart blocks cut from newspaper columns beside a hollow outline bar crossed out with a charcoal X; only the tallest real bar is orange-red." /%}
+
 ## Real data or nothing
 
 A design system has to look good in a demo, so its screens need plausible numbers. A real app built on it can never show those numbers to a real customer.
@@ -34,6 +39,8 @@ Cyanium doesn't allow that. The `ui` package never imports sample data (the repo
 {% Figure src="/images/projects/cyanium/finance-kit-demo.webp" alt="The finance kit demo app: a sidebar, a savings card with masked card number, recent transactions and a budget overview bar chart for income, expenses and scheduled payments" caption="The finance kit's demo version. Every name and number here comes from fixtures, which is why it is called a demo." width="wide" frame="browser" /%}
 
 The cost is setup. You can't drop a kit component into a project and see it working. You wire the props first, every time.
+
+{% Spot src="/images/projects/cyanium/spot-two-parcels.webp" alt="Two paper parcels tied with string, one small parcel full of loose circles, squares and triangles, the other a flat parcel of stacked sheets; the string joining them is orange-red." /%}
 
 ## Primitives in one package, screens in another
 
@@ -54,6 +61,8 @@ Badge builds its class names from props. Tailwind v4 only generates classes it f
 The registry at `registry/cyanium.json` is what the install command reads. If it falls behind the components, someone installs an old version and gets no error. Two CI checks, `check:registry` and `check:css`, fail the build when the registry or the CSS disagree with the source. Releases go through Changesets, and 0.1.0 went out on day one.
 
 On June 19 I set up design sync to claude.ai/design. Storybook is arranged as a gallery, and per-component previews needed the package layout, so the sync follows the packages. Subagents wrote each component's preview.
+
+{% Spot src="/images/projects/cyanium/spot-passing-block.webp" alt="Two hands, one drawn in loose charcoal outline and one built from geometric paper shapes, passing a single orange-red block between them." /%}
 
 ## Who did what
 

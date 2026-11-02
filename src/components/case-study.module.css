@@ -103,6 +103,33 @@
 @media (max-width: 40rem) {
   .lead img { width: 100%; border-inline: 0; border-radius: 0; }
 }
+/* The illustration is the still; the loop plays over it unless motion is reduced. */
+.art {
+  position: relative;
+  width: min(72rem, 100% - 2 * var(--gutter));
+  margin-inline: auto;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.lead .art img,
+.art video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  border: 0;
+  border-radius: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .art video { display: none; }
+}
+@media (max-width: 40rem) {
+  .art { width: 100%; border-inline: 0; border-radius: 0; }
+}
 .lead figcaption {
   display: flex;
   flex-wrap: wrap;

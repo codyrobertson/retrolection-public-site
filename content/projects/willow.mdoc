@@ -6,6 +6,9 @@ status: retired
 date: 2025-06-18
 cover: /images/projects/willow/cover.webp
 coverAlt: "Willow's Storybook open on the Button story, with the component list on the left and a grid of button themes and variants"
+art: /images/projects/willow/art.jpg
+artAlt: "A willow whose branches form a box diagram and whose roots run as a cable into a slate box, over terminal output; one leaf-box is orange."
+loop: /videos/projects/willow/loop.mp4
 role: "Design Engineer"
 client: "Willow"
 url: ''
@@ -23,6 +26,8 @@ Aftercare Companion was an app where a video AI persona named Willow walked pati
 
 {% Figure src="/images/projects/willow/storybook-button.webp" alt="Storybook for the Willow design system: a sidebar listing Accordion, Avatar, Badge, Button, Card and more, with the Button All Variants story open and its controls panel below" caption="The system's Storybook, rebuilt from the repo. The live deploy no longer exists." width="wide" frame="browser" /%}
 
+{% Spot src="/images/projects/willow/spot-carbon-copy.webp" alt="A charcoal pencil tracing over carbon paper; the copied wavy line on the bottom sheet is orange-red." /%}
+
 ## Copy the code, don't install a package
 
 The usual way to share components is a package. The app installs the library, and when the library updates, the app bumps a version number and gets the new button everywhere.
@@ -35,6 +40,8 @@ You could already install through the shadcn CLI by pointing a `registries` entr
 
 {% Figure src="/images/projects/willow/registry-flow.svg" alt="Diagram: a component file goes through a build script into one of 30 registry JSON files, and the willow add command copies it into the app as the app's own file with rewritten imports" width="wide" /%} Then the app's PRD made it official: remove shadcn/ui, install Willow UI through the CLI.
 
+{% Spot src="/images/projects/willow/spot-tweezer-chip.webp" alt="Tweezers lifting a single colour chip out of a torn-paper cutout; the chip is orange-red." /%}
+
 ## Tokens, then getting hex out of the app
 
 The tokens are in `tokens.ts`: a Willow purple scale from 50 to 950 (`#F4F3FF` to `#230E67`), cool blue-gray neutrals, an Oxford Blue secondary, and semantic success, warning, error and info. Tailwind and the CSS variables read from it. On June 23 I switched the variables from HSL to hex and moved to the client's official brand colors.
@@ -46,6 +53,8 @@ Screens from Figma show up full of one-off values, so the app got a cleanup pass
 {% Gallery images=[{src: "/images/projects/willow/accordion-medications.webp", alt: "Accordion titled Your Medications listing acetaminophen 650mg and melatonin 3mg with dosing instructions"}, {src: "/images/projects/willow/accordion-red-flags.webp", alt: "Red Flags accordion with a red Call 911 banner and a list of warning symptoms in plain language"}] columns="2" caption="Aftercare-specific stories with sample content: a medication list and a red-flags warning." /%}
 
 The brand typeface was Codec Pro. The licensed OTFs were "rejected by sanitizer" in the browser, so I added a WOFF2 conversion guide and a system-font fallback.
+
+{% Spot src="/images/projects/willow/spot-tipped-rocket.webp" alt="A paper rocket tipped over on its launch pad, a wisp of charcoal smoke, a pale cream sun behind; the rocket is orange-red." /%}
 
 ## The day I lost to deployment
 
