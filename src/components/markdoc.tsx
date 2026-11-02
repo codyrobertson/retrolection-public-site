@@ -102,6 +102,8 @@ function toVideoEmbed(src: string) {
   return null;
 }
 
-export function MarkdocContent({ tree }: { tree: RenderableTreeNode }) {
-  return <div className={styles.prose}>{Markdoc.renderers.react(tree, React, { components })}</div>;
+/** `story` sets the body as a feature: a narrower serif column, a drop cap, ruled charts and captions. */
+export function MarkdocContent({ tree, variant }: { tree: RenderableTreeNode; variant?: "story" }) {
+  const cls = variant === "story" ? `${styles.prose} ${styles.story}` : styles.prose;
+  return <div className={cls}>{Markdoc.renderers.react(tree, React, { components })}</div>;
 }
