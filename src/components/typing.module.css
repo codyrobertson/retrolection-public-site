@@ -231,7 +231,8 @@
 
 @keyframes blink { 50% { opacity: 0; } }
 
-/* the desk: the board and the hands, drawn under everything else */
+/* the desk: the board and the hands, drawn under everything else; hidden until the plate has
+   something on it, then exactly as shown as it says (TypingPlate's machine: no transitions here) */
 .canvas {
   position: absolute;
   inset: 0;
@@ -240,9 +241,7 @@
   width: 100%;
   height: 100%;
   opacity: 0;
-  transition: opacity 0.5s ease;
 }
-.canvas[data-ready="true"] { opacity: 1; }
 
 /* a short window: the box closes up, so the board keeps its keys clear of it */
 @media (max-height: 760px) {
@@ -277,7 +276,6 @@
   .caret { animation: none; }
   .paste[data-on="true"] { animation: none; }
   .primary, .ghost { transition: none; animation: none; }
-  .canvas { transition: none; }
 }
 
 /* ---------------------------------------------------------------- ?tune */
