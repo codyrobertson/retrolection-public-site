@@ -67,6 +67,17 @@ const discipline = fields.select({
   defaultValue: "design-code",
 });
 
+const frame = fields.select({
+  label: "Frame",
+  description: "Browser chrome for site captures, phone for mobile screens.",
+  options: [
+    { label: "None", value: "none" },
+    { label: "Browser", value: "browser" },
+    { label: "Phone", value: "phone" },
+  ],
+  defaultValue: "none",
+});
+
 /** Rich-text components available inside every long-form body. */
 export const richComponents = {
   Video: block({
@@ -110,6 +121,30 @@ export const richComponents = {
         ],
         defaultValue: "wide",
       }),
+      frame: frame,
+    },
+  }),
+  Gallery: block({
+    label: "Gallery (images side by side)",
+    schema: {
+      images: fields.array(
+        fields.object({
+          src: fields.text({ label: "Image URL" }),
+          alt: fields.text({ label: "Alt text" }),
+        }),
+        { label: "Images", itemLabel: (p) => p.fields.alt.value || p.fields.src.value },
+      ),
+      columns: fields.select({
+        label: "Columns",
+        options: [
+          { label: "2", value: "2" },
+          { label: "3", value: "3" },
+          { label: "4", value: "4" },
+        ],
+        defaultValue: "2",
+      }),
+      frame: frame,
+      caption: fields.text({ label: "Caption" }),
     },
   }),
   ExperimentEmbed: block({

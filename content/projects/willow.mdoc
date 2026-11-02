@@ -1,12 +1,14 @@
 ---
 title: "Willow Design System"
-summary: "A Tailwind and React design system with its own registry, CLI and Storybook, built for an AI patient-aftercare product."
+summary: "The design system, registry and CLI behind Aftercare Companion, an AI aftercare app. 57 commits in two and a half weeks, including a day lost to deployment."
 discipline: design-code
 status: retired
 date: 2025-06-18
+cover: /images/projects/willow/cover.webp
+coverAlt: "Willow's Storybook open on the Button story, with the component list on the left and a grid of button themes and variants"
 role: "Design Engineer"
 client: "Willow"
-url: "https://willow-design-system.vercel.app"
+url: ''
 tags:
   - "Design system"
   - "Health"
@@ -17,4 +19,46 @@ seo:
   description: ''
   noindex: false
 ---
-Willow was the design system behind Aftercare Companion, an app where a video AI named Willow walks patients through their discharge plans. I built the system (tokens, components, a shadcn-style registry, a CLI and Storybook) and contributed design to the client app.
+Aftercare Companion was an app where a video AI persona named Willow walked patients through their hospital discharge plans. I built the design system it ran on: tokens, about 80 component files, a shadcn-style registry, a CLI, a starter app and Storybook. That's 57 commits between June 18 and July 4, 2025, all under my name. The app was mostly another developer's work: 9 commits over three days, 3 of them mine, plus some design. The main call was shipping the system the way shadcn does, as code a CLI copies into the app, instead of a package the app installs. Later an agent-written audit tore into the component APIs, and about half of what it asked for got done.
+
+{% Figure src="/images/projects/willow/storybook-button.webp" alt="Storybook for the Willow design system: a sidebar listing Accordion, Avatar, Badge, Button, Card and more, with the Button All Variants story open and its controls panel below" caption="The system's Storybook, rebuilt from the repo. The live deploy no longer exists." width="wide" frame="browser" /%}
+
+## Copy the code, don't install a package
+
+The usual way to share components is a package. The app installs the library, and when the library updates, the app bumps a version number and gets the new button everywhere.
+
+I went the other way, the way shadcn does it. Each component is a file. A build script reads it, works out what it depends on, and writes it out as JSON (30 of those files). The CLI fetches that JSON and copies the component's code straight into the app, fixing the imports as it goes. You type `willow add button` and the app now owns a button.
+
+Owning it is the point. The app can tailor that button to the client's screens. The cost is upgrades. When I fix something in the system, nothing updates on its own. Every copy has to be pulled again by hand, and local edits get in the way. The deploy docs also had a rule that the registry only gets rebuilt on `main`.
+
+You could already install through the shadcn CLI by pointing a `registries` entry at the system, but that meant a long URL per component. The CLI gets it down to `willow add button`, `willow list` and `willow init`.
+
+{% Figure src="/images/projects/willow/registry-flow.svg" alt="Diagram: a component file goes through a build script into one of 30 registry JSON files, and the willow add command copies it into the app as the app's own file with rewritten imports" width="wide" /%} Then the app's PRD made it official: remove shadcn/ui, install Willow UI through the CLI.
+
+## Tokens, then getting hex out of the app
+
+The tokens are in `tokens.ts`: a Willow purple scale from 50 to 950 (`#F4F3FF` to `#230E67`), cool blue-gray neutrals, an Oxford Blue secondary, and semantic success, warning, error and info. Tailwind and the CSS variables read from it. On June 23 I switched the variables from HSL to hex and moved to the client's official brand colors.
+
+Screens from Figma show up full of one-off values, so the app got a cleanup pass. `text-[#534f5e]` and `border-[#e1dee9]` became neutral tokens, and `rounded-[10px]` became `rounded-lg`. Some exact Figma values got rounded onto the scale along the way. I don't know if anyone compared the screens afterward.
+
+{% Figure src="/images/projects/willow/card-semantic-colors.webp" alt="Six cards with tinted headers for the semantic colors: primary, success, warning, danger, info and neutral, each with a line on when to use it" caption="The semantic scale as card headers." width="wide" /%}
+
+{% Gallery images=[{src: "/images/projects/willow/accordion-medications.webp", alt: "Accordion titled Your Medications listing acetaminophen 650mg and melatonin 3mg with dosing instructions"}, {src: "/images/projects/willow/accordion-red-flags.webp", alt: "Red Flags accordion with a red Call 911 banner and a list of warning symptoms in plain language"}] columns="2" caption="Aftercare-specific stories with sample content: a medication list and a red-flags warning." /%}
+
+The brand typeface was Codec Pro. The licensed OTFs were "rejected by sanitizer" in the browser, so I added a WOFF2 conversion guide and a system-font fallback.
+
+## The day I lost to deployment
+
+June 23 had more than 40 commits. Some of it was real work: Label, Input, Textarea, FormField and a few more, plus Storybook and a deploy workflow with protected branches. The rest was Vercel route-manifest errors, a commit called "Nuclear option - pure vanilla Next.js deployment," a move from Vercel to Netlify, and Storybook base-path patches. That Vercel deploy is a 404 now.
+
+## An agent audit, half taken
+
+The repo has an agent-written review in a deliberately harsh persona, a mock principal-engineer audit. Its findings were real. Button had `theme` times `variant`, 7 by 6, for 42 combinations and 245 lines of CVA compound variants. Colors were named three different ways, plus one stray hardcoded hex.
+
+{% Figure src="/images/projects/willow/button-theme-variant-grid.webp" alt="Grid of buttons: rows for primary, danger, warning, info, dark, neutral and success themes, columns for default, secondary, outline, ghost, loading and disabled" caption="Button's theme times variant grid, the API the audit flagged. It shipped this way." width="narrow" /%}
+
+The agent fix passes changed a lot after that. Modal got a native focus trap, which dropped a 30KB dependency. Select became a real dropdown with keyboard navigation. Card shadows went from three wrapper divs to variant classes, and every `any` came out. The first pass also wrapped components in `React.memo`. The second pass took all of it back out.
+
+The `theme` plus `variant` API stayed. The app's component guide still documents `<Button theme="danger" variant="outline">`.
+
+The last commit, July 4, is a plan for the next migration phase. Nothing came after it.

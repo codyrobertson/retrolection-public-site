@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, memo, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { Phase } from "@/lib/typing/machine";
 import { startPlate, type BoxHandle, type Check } from "@/lib/typing/plate";
 import { DEFAULTS, PASTE } from "@/lib/typing/scene";
@@ -117,8 +117,9 @@ export default function TypingPlate({ hero = HERO, work = [], more = work.length
     return () => { dead = true; if (idle) window.cancelIdleCallback(id); else window.clearTimeout(id); layer?.destroy(); };
   }, []);
 
-  // the plate, once the dateline is set (it is the first thing the hands type)
-  useEffect(() => {
+  // the plate, once the dateline is set (it is the first thing the hands type): started before paint, so on a
+  // return to the page (cacheComponents keeps it, hidden, and runs this again) its first look is the one shown
+  useLayoutEffect(() => {
     const scene = sceneRef.current, plate = plateRef.current, canvas = canvasRef.current;
     const note = scene?.querySelector<HTMLElement>(`.${styles.note}`);
     if (!stamp || !scene || !plate || !canvas || !note) return;

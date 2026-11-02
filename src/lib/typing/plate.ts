@@ -206,7 +206,7 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
   window.clearTimeout(SHARED.bye);
   const pool = (SHARED.pool ||= createPool(workerCount()));
   let done = SHARED.done;
-  let sched: Sched | null = null, layout: Layout | null = null;
+  let sched: Sched | null = null, layout: Layout | null = null, stopped = false;
   // the last scene's layers, let go once the new one is on screen
   let retired: Layer[] = [];
   const stage = { w: 0, h: 0, room: 0, phone: false, bw: 0, lh: 18, platen: 0, pin: 0 };
@@ -256,7 +256,11 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     const key = keyOf(type, req);
     if (done.has(key)) return;
     pool.get(type, req, pri).then(
-      (l: Layer) => done.set(key, l),
+      (l: Layer) => {
+        done.set(key, l);
+        // drawn after the reader left: let go, unless it is the board, the loop or the way out kept for their return
+        if (stopped && !(sched && planOf(sched).keep.has(key))) release(key);
+      },
       (err: unknown) => { if ((err as Error)?.message !== STALE.message) console.error(err); },
     );
   };
@@ -505,7 +509,8 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
   // ---- the reader's keys, and the index's lines --------------------------------------------
 
   // the reader's keys: waiting to be scheduled, scheduled and waiting their turn, being typed
-  const Lv = { pending: "", asking: false, queue: [] as Live[], cur: null as (Live & { i: number; shown: number }) | null, said: "", open: false, fresh: false, label: "" };
+  // gen: strokes asked for before an Escape, a masthead link's name or the board going are not typed when they land
+  const Lv = { pending: "", asking: false, queue: [] as Live[], cur: null as (Live & { i: number; shown: number }) | null, said: "", open: false, fresh: false, label: "", gen: 0 };
   // the lines of the index that have come up past the platen (this visit: typed once, they stay)
   const up = new Set<string>(visit()?.rows ?? []);
   let rowQ: string[] = [];                                  // up, waiting for the hands, in the order they came
@@ -556,8 +561,9 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
   /** the hands' strokes for the reader's `text` asked for; typed, in turn, from the loop */
   const ask = (text: string, extra: Partial<Live>) => {
     Lv.asking = true;
+    const g = Lv.gen;
     pool.get("schedule", { text, live: true }, -5).then((ls: { frames: Frame[] }) => {
-      if (!Lv.open) return;
+      if (!Lv.open || g !== Lv.gen) return;
       wantLive(ls.frames);
       Lv.queue.push({ frames: ls.frames, text, ...extra });
     }, () => {}).finally(() => { Lv.asking = false; });
@@ -565,7 +571,7 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
   /** the hands put down what they were typing, and every line waiting is there whole */
   function dropAll() {
     set(Lv.cur?.row, Lv.cur?.shown); Lv.queue.forEach((lv) => set(lv.row)); rowQ.forEach((id) => set(id));
-    rowQ = []; Lv.pending = ""; Lv.queue = []; Lv.cur = null; rush = false; out.cur("");
+    rowQ = []; Lv.pending = ""; Lv.queue = []; Lv.cur = null; Lv.gen++; rush = false; out.cur("");
     if (Lv.said) { Lv.said = ""; out.said(""); }
     letLiveGo();
   }
@@ -966,7 +972,9 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     hudEl.style.cssText = "position:fixed;right:8px;top:calc(var(--masthead, 56px) + 8px);z-index:99;max-width:min(420px, calc(100vw - 16px));margin:0;padding:8px 10px;font:10px/1.4 ui-monospace,monospace;white-space:pre-wrap;color:#e8e3d6;background:rgb(20 19 17 / 0.92);border-radius:6px;pointer-events:none";
     document.body.append(hudEl);
   }
-  raf = requestAnimationFrame(frame);
+  // the first look in the same turn (TypingPlate starts the plate before paint): where the board is and how far
+  // up the lights are come from the scroll at once, rather than a frame later, animated, on a return to the page
+  frame(performance.now());
   const unwatch = watchFade();
   if (debug) (window as unknown as { __plate: unknown }).__plate = { pool, debug, state, get trace() { return M.trace; }, get phase() { return M.phase; }, get frame() { return frameIdx; }, get done() { return SHARED.done; } };
 
@@ -993,7 +1001,8 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
         if (Lv.pending) Lv.pending = Lv.pending.slice(0, -1);
         else { Lv.said = Lv.said.slice(0, -1); out.said(Lv.said); }
       } else if (e.key === "Escape") {
-        Lv.pending = ""; Lv.said = ""; out.said("");
+        Lv.pending = ""; Lv.said = ""; out.said(""); Lv.queue = []; Lv.gen++;
+        if (Lv.cur) Lv.cur.shown = Lv.cur.text.length;
       } else if (e.key.length === 1) {
         if (e.key === " ") e.preventDefault();                 // the space bar types, rather than scrolls, while the board is up
         Lv.pending = (Lv.pending + e.key).slice(-SAID_MAX); Lv.label = "";
@@ -1005,10 +1014,13 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
       label = label.slice(0, SAID_MAX);
       if (!Lv.open || !label) return;
       if (label === Lv.label && (Lv.pending || Lv.asking || Lv.cur || Lv.queue.length || Lv.said === label)) return;
-      Lv.label = label; Lv.pending = label; Lv.fresh = true; Lv.queue = [];
+      Lv.label = label; Lv.pending = label; Lv.fresh = true; Lv.queue = []; Lv.gen++;
     },
     stop() {
+      stopped = true;
       cancelAnimationFrame(raf);
+      // what the hands were typing is there whole, and nothing asked for before the reader left is typed on their return
+      dropAll(); Lv.open = false; Lv.label = "";
       hudEl?.remove();
       cfgSeq++;
       window.clearTimeout(cfgTimer);
@@ -1018,7 +1030,7 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
       lights("light", true);
       painted();
       delete document.documentElement.dataset.board;
-      document.documentElement.style.removeProperty("--tail");
+      // --tail stays: the page is hidden, not gone (cacheComponents), and what follows the sheet is laid out against it on the way back
       const next = scene.nextElementSibling as HTMLElement | null;
       if (next) next.style.clipPath = "";
       SHARED.frame = frameIdx;

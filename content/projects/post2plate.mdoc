@@ -1,12 +1,14 @@
 ---
 title: "Post2Plate"
-summary: "A social-first recipe inbox: share a recipe post, AI turns it into a clean recipe page, and fans cook from it on the web."
+summary: "A recipe inbox for social-first food creators: DM or share a post, AI parses it, and it's published as a public recipe page fans can cook from."
 discipline: design-code
 status: hobby
 date: 2026-05-02
 role: "Solo"
 client: ""
 url: "https://post2plate.com"
+cover: /images/projects/post2plate/cover.webp
+coverAlt: "A Post2Plate recipe page on desktop: a full-bleed pasta photo under the title Weeknight Pasta, with Save, Remix and Start Cooking actions"
 tags:
   - "AI"
   - "Food"
@@ -18,13 +20,58 @@ seo:
   description: ''
   noindex: false
 ---
-## What it does
+Post2Plate is a recipe inbox for food creators who live on Instagram and TikTok and have no website, no SEO and no email list. You DM or share a post, or paste a link or the text. It pulls the caption, transcribes the video's audio, parses it into a structured recipe and publishes it at `/@handle/recipe-name`, with a cook mode on the web.
 
-Food creators post recipes on Instagram and TikTok but rarely have a website. With Post2Plate, a creator shares or DMs a post, AI parses it, and it's published at `/@handle/recipe`, where fans can actually cook from it. The creator owns the audience.
+I built it solo over two weeks in May 2026, with Claude Code and Codex agents writing most of the code. Two calls shaped it. Halfway through, the plan flipped from a private iOS app to public web pages. And the parser got permission to refuse, because a parser that always succeeded was inventing recipes.
 
-I built it solo: product, brand (including Miso, the mascot), a FastAPI and Postgres backend, a Next.js front end and a Figma plugin.
+I did the product, the brand, a FastAPI and Postgres backend, a Next.js front end and a Figma plugin. 258 commits between May 2 and May 16.
 
-## The AI
+## Same product, flipped in one day
 
-- **Parser:** gpt-oss-120b on Cerebras, with GPT-4o as fallback, at 92% on a 60-case test set. Video audio is transcribed with Whisper.
-- **Intelligence heads:** I trained about ten small TF-IDF and logistic-regression models for tasks like ingredient substitution and canonicalization, labeled with larger LLMs. Some looked great (0.99 on canonicalization), but my own training journal later flagged a few of those wins as inflated, which was the most useful lesson of the project.
+The first plan was iOS-first and private by default, aimed at blog creators who already earn ad revenue from recipe sites. Success meant a user importing three recipes in a week.
+
+On May 11 the PRD, the roadmap and the design system all got rewritten in one day. The PRD's own words for the old plan: going after blog-ad revenue was "strategically scary and tactically slow." The better opening was to be the first thing a social-first creator owns. That changed three things.
+
+Web came first. Dynamic Island, Live Activities and App Clips moved to phase 2.
+
+Recipes went public by default. A private library hides the creator's recipes from their own audience, which defeats the point. The owner can still hide one.
+
+Success got redefined. Three imports only proves someone wants to save recipes. Cooking one proves saving them paid off. The new target was at least one cook plus three imports in 14 days.
+
+Handles come from the social account that sent the DM, so a guest's recipes stay private until that person claims the account. I deferred comments, likes, follows and embeds on purpose. The bet is that fans cook and re-cook. Likes don't measure that, and embeds pull traffic away from the page.
+
+{% Figure src="/images/projects/post2plate/recipe-page-desktop.webp" alt="Desktop recipe page at /@handle/slug: a full-bleed pasta photo with the title Weeknight Pasta, tabs for About, Ingredients and Steps, a lime 20 min chip, and a side panel with Remix and Start Cooking" caption="The public recipe page on desktop, with a test handle and a stock photo." width="wide" frame="browser" /%}
+
+{% Gallery images=[{src: "/images/projects/post2plate/recipe-mobile-iter4.webp", alt: "Early mobile recipe page: photo header, a card of chips for time, servings, difficulty and cuisine, a creator card, and a plain Start Cooking bar"}, {src: "/images/projects/post2plate/recipe-mobile-pass1.webp", alt: "Mobile recipe page after the first Figma pass: the content sheet overlaps the photo, with sections for what people are saying, nutrition marked soon, and the creator"}, {src: "/images/projects/post2plate/recipe-mobile-pass2.webp", alt: "Mobile recipe page after the second Figma pass, showing the sticky bottom bar with a large orange Start Cooking button between back and share"}] columns="3" frame="phone" caption="Mobile, left to right: the first build, then two passes matching the Figma design. Start Cooking went from a text label to the loudest thing on the screen." /%}
+
+## A parser that's allowed to say no
+
+The 2025 version of this project, which I threw out, returned a hardcoded pasta recipe whenever an import failed, so the demo always "worked." The rewrite bans that kind of fake success in CI.
+
+The parser got the same treatment. In the first calibration run on 10 posts, 100% of imports produced a saveable recipe, but only 40% matched the hand-checked answers. The model was inventing ingredient lists from promotional captions. So I added a hard refusal: no draft unless the post has at least three named ingredients and two ordered steps. The save rate fell to 50%, which meant it was finally measuring something. The hand labels were wrong too. They'd been written from captions alone while the parser also read the audio transcript, so 7 of the 10 "wrong" answers were really labeling mistakes.
+
+Eight models went through the same 10 posts and four tied at 100%. The cheapest and fastest was gpt-oss-120b on Cerebras, at about half GPT-4o's cost per post. On 60 real posts, Cerebras with GPT-4o as a fallback and Whisper for audio matched the hand labels 92% of the time and never refused a real recipe. GPT-4o alone scored 90% at twice the cost. The fallback kicks in on 13% of posts.
+
+I also dropped OCR on video text overlays. It mattered on 1 of 61 posts and added cost, plus noise from stickers, on every one. With OCR off and a faster hosted Whisper, the production setup ran all 60 posts for 19 cents.
+
+## Three scores that were wrong
+
+Around the parser sit about ten small, cheap models, the kind that count word patterns instead of calling an LLM. They handle things like ingredient roles, substitutions, cooking temperatures and step timing. Their labels came from public recipe datasets, from larger LLMs, and from transcripts of people actually cooking.
+
+Two days after the first scorecard, a diagnostic run took three of its numbers apart.
+
+The temperature model scored 0.751, but the input text contained the temperature. With that removed and the model retrained, it scored 0.636. Always guessing the most common answer scores 0.602.
+
+The substitution model's jump was credited to 321 examples from cooking videos. All 321 were positive examples. On the original test rows, the real gain was 0.7 points, which is noise.
+
+The method-fix model passed its promotion gate. Its 500 training labels all had the same value, and a model that always gives that one answer scored exactly the same 0.685. A constant passed the gate. Its honest ceiling later was 0.36.
+
+The ingredient-matching model, at 0.991, got the same check and held up: always guessing the common answer scores 0.753. After that week every score carried a confidence range, gates were set relative to that dumb-guess baseline, and synthetic examples were only allowed in training data. The journal's version of the rule is to fix the labels instead of the metric.
+
+{% Figure src="/images/projects/post2plate/score-check.svg" alt="Bar chart. Temperature model: 0.751 reported, 0.636 after removing the leak, 0.602 for always guessing. Method-fix: 0.685, identical to always guessing. Ingredient matching: 0.991 against a 0.753 always-guess baseline." caption="Two of these scores were barely better than a constant. The third held up." width="wide" /%}
+
+## What isn't real yet
+
+The small models run in shadow mode only, and no live traffic has produced a shadow result yet. Their confidence scores aren't trustworthy enough either: the worst calibration error is 0.124 against a 0.05 gate. TikTok won't let the bot send DMs, so TikTok is receive-only. The acknowledgement DM takes about 7.4 seconds against a 2-second target. Run end to end with no cache, the 60-post set dropped to 50%, because the scraper's free tier ran out of memory. That wasn't a parser miss, and a yt-dlp fallback fixed it. Stripe isn't integrated. The 200-user beta in the roadmap is a target, and I don't have numbers from it.
+
+{% Figure src="/images/projects/post2plate/miso-sticker-sheet.webp" alt="Sticker sheet for Miso, a white ceramic bowl mascot filled with noodles, a tomato and greens, in about 25 poses and expressions, plus a row of brand color dots" caption="Miso, the mascot, as a sticker sheet for empty states and onboarding." width="narrow" /%}

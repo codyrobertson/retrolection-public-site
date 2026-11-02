@@ -37,7 +37,8 @@ Labels: `src/lib/taxonomy.ts`. Filter: `src/components/discipline-filter.tsx` (C
 ```markdoc
 {% Callout tone="note|insight|warning" text="…" /%}
 {% Video src="/videos/x.mp4 or YouTube/Vimeo URL" poster="" caption="" /%}
-{% Figure src="/images/posts/x.png" alt="…" caption="" width="narrow|wide|full" /%}
+{% Figure src="/images/posts/x.png" alt="…" caption="" width="narrow|wide|full" frame="none|browser|phone" /%}
+{% Gallery images=[{src: "/images/a.webp", alt: "…"}, {src: "/images/b.webp", alt: "…"}] columns="2|3|4" frame="none|browser|phone" caption="" /%}
 {% ExperimentEmbed experiment="<experiment-slug>" /%}
 ```
 

@@ -1,9 +1,11 @@
 ---
 title: "PersonaLM"
-summary: "Buyer intelligence for ecommerce brands: turn your own store data into named customer groups and ranked campaigns, overnight."
+summary: "Purchase prediction for small Shopify brands. The fine-tuned LLM lost to a popularity table, so a 1.7M-parameter scorer made the predictions and the LLM only explained them. Retired."
 discipline: design-code
 status: retired
 date: 2026-02-17
+cover: /images/projects/personalm/cover.webp
+coverAlt: "PersonaLM landing page hero: There's revenue in your store you can't see yet, with a Run my free audit button and integration chips"
 role: "Founder"
 client: ""
 url: "https://persona-lm.com"
@@ -18,23 +20,70 @@ seo:
   description: ''
   noindex: false
 ---
-## The product
+PersonaLM predicted purchases for Shopify brands doing $500K to $3M a year. It took a store's order history, worked out which customers were going to buy which products, and wrote that up as named customer groups and a ranked list of campaigns, with Klaviyo segments and Meta seed lists ready to export.
 
-“Klaviyo sends emails. Tresl finds segments. PLM tells you which campaigns to run.”
+I founded it with a crew of three and was the lead engineer. I built the ML pipeline, the backend and onboarding, and did the brand and product design. The call that shaped everything came in the first eight days. A fine-tuned LLM scored worse than a coin flip and lost to a popularity table. So a small trained scorer made every prediction, and LLMs were only allowed to explain them.
 
-PersonaLM was built for founders and operators of $500K–$3M ecommerce brands. It replaced the week-long customer-segment brief a brand would otherwise buy from a research firm. Overnight, it turned a brand's own store data into a **Customer Activation Map**: named customer groups, campaigns ranked by revenue, plus ready-to-use Klaviyo segments and Meta seed lists. It connected to WooCommerce, Shopify, GA4, BigCommerce, CSV and a REST API, and was 88% accurate on customers it had never seen.
+It's retired. The team pivoted to a different product.
 
-I founded it and built across brand, product, ML and backend: a Next.js app on Vercel, a FastAPI backend on Railway, and GPU training jobs on Modal.
+It started in February 2026 as retail demand simulation and ended as a one-shot "Customer Activation Map." A product lead ran demos and pricing. A lot of the code came from Claude Code agents working against plans I wrote. Over four months the repo got 3,068 commits and a training journal that's 9,818 lines long.
 
-## The models
+One number shows up a lot below. AUC measures how well a model ranks buyers above non-buyers. 0.5 is a coin flip and 1.0 is perfect.
 
-The rule in production was **tower only**: trained models predict, LLMs explain.
+## The LLM lost to a lookup table
 
-- **Learned tower (shipped).** A two-tower-style scorer (an MLP of about 1.7M parameters) over LLM-written preference documents, trained with a contrastive loss and hard negatives. It reached 0.792 test AUC on the main benchmark and 0.942 on one brand's holdout, and served production.
-- **Qwen3-8B SFT and GRPO.** A LoRA fine-tune on 40,588 examples through Tinker, followed by a GRPO run. GRPO collapsed (every persona bought the same things), so that path was abandoned.
-- **Qwen3-Embedding-0.6B.** A contrastive full fine-tune on 30,792 purchase pairs. It scored 0.685 AUC, just under an off-the-shelf OpenAI embedding at 0.691, which settled that question.
-- **DistilBERT heads** for churn and category affinity, plus XGBoost as a diagnostic baseline.
+The first plan was the fashionable one. Fine-tune an LLM to act as a synthetic shopper: show it a persona and a product, ask whether they'd buy.
 
-PersonaLM has since been retired; the team pivoted to a new product.
+I ran a LoRA fine-tune of Qwen3-8B on 40,588 examples, then a GRPO reinforcement run on top of it. The fine-tune scored 0.484 AUC and GRPO scored 0.488. Both were worse than a coin flip. A plain popularity table on the same data scored 0.815.
 
-{% Callout tone="note" text="Full case study coming soon." /%}
+The fine-tuned model had learned to say yes to everyone. Early in training it predicted a purchase almost every time. GRPO never learned to tell buyers apart, and its JSON output kept breaking. The data didn't help either. 71.2% of shoppers had exactly one interaction, and demographics plus category plus price don't say much about what someone buys. RL can change how a model writes an answer. It can't add signal the input doesn't have. The slide I made afterwards said "Always build the dumb baseline first," and I should have done that on day one.
+
+## 0.748 was a leak
+
+Next came XGBoost with extra features written by an LLM. Gemini scored things like how well a shopper's style matched a product. It hit 0.748 AUC, which looked like a real result.
+
+It wasn't. The LLM features had only been computed for some of the rows, so the model learned that "this row has an LLM score" said something about the label. Once I filled the features in for every row, the model with them scored 0.485 and the model without them scored 0.504. The style-match feature had been carrying up to two thirds of the model's decisions. After the fix it carried 1.2%.
+
+The commit that day was "kill Gemini + XGB via honest ablation." It also set the rule the product ran on from then on: trained models predict, LLMs explain. Nothing an LLM writes can change a ranking. A few weeks later I tested it again by asking an LLM to rank products for a persona directly. Its rankings had about zero correlation with real purchases. Its reasons for why someone would or wouldn't buy were decent, though, so that's the job it kept: segment names and campaign copy, written on top of the scorer's output.
+
+{% Figure src="/images/projects/personalm/auc-comparison.svg" alt="Bar chart of test AUC. LLM fine-tune 0.484, GRPO 0.488 and popularity table 0.815 on the first dataset; XGBoost with LLM features 0.485 and the two-tower scorer about 0.79 in later runs. A dashed line marks 0.5." caption="Three LLM-driven approaches landed under the coin-flip line. The two groups used different benchmarks, so compare within a group." width="wide" /%}
+
+## The model that actually worked
+
+The scorer is a two-tower model. Each shopper gets a "preference document," a paragraph an LLM writes from their purchase history and reviews. Each product gets one too. Both get turned into embeddings, each tower squeezes its side down to 128 numbers, and the score is how closely the two line up. It's about 1.7M parameters, trained on pairs of shoppers and things they bought.
+
+The biggest single jump was putting learned towers on top of frozen embeddings. That took AUC from 0.609 to 0.680. Most experiments after that did nothing, and I logged every one. A third layer hurt. A cross-encoder added nothing measurable. An extra category prediction head hurt at every weight I tried. With about 32.6K buying pairs against 1.7M parameters, the model was too big for its data and had to stop training early.
+
+I also tried replacing the OpenAI embedding with a fine-tuned open model, Qwen3-Embedding-0.6B, trained for 21 minutes on an A100. The journal's guess beforehand was a gain of 5 to 15 points. Over five configs and three seeds it lost by half a point. A 4B model lost by more. I closed that question and kept the API.
+
+What did move the number was better text going in. When the preference documents went from about 282 characters to 620 and used every review instead of up to eight, the scorer gained a full point. That was more than any architecture change after the towers.
+
+## The champion I had to take back
+
+In early March a variant scored 0.8019 and got promoted. Ten days later I couldn't reproduce it. Three seeds gave 0.7905. One config flag had been added to the champion three days earlier and the model re-promoted without a clean rerun. I reverted it.
+
+That was the second number I had to retract, after 0.748. After that the process got stricter. Three seeds minimum. Every run written into the journal in the same session. Measured results and guesses labeled separately. A promotion score a model had to clear before it could serve. It made experiments slower, and it's why "about 0.79" is a number I trust.
+
+One caveat I'd want a reviewer to know: the benchmark's non-purchases were generated at a fixed rate, not real browsing that didn't convert. The AUC is measured against synthetic negatives.
+
+## The product side had no discipline
+
+The ML had rules. The business didn't. By May 12 the app had 219 API routes, 73 pages and 39 chat tools. That day produced seven strategy documents in two hours, swinging from a $2,500 diagnostic for performance marketers to a $29 a month tool for solo operators. Under all of it sat one substantive buyer call and zero paying customers.
+
+I ran a forced-reckoning pass with an agent. The first version it gave me was lazy and I sent it back. The finished one said to stop writing strategy, run a 14-day test with free scoring posts and cold outreach, and decide on May 26. On May 26 a PR went in that deleted 458 files and 100,107 lines of the old multi-tenant app. That was batch one of three.
+
+A few design calls from that stretch I'd make again:
+
+- No placeholder data. I found a drawer showing a hardcoded "65% Female, 28 to 42, $55K to $85K" and replaced it with what was true: "Geographic data unavailable." In a product that sells numbers, one fake number makes people doubt the real ones.
+- Segment names have to say who's in them. "Urban Premium Male 25-34," not "Premium Quality-First."
+- Landing illustrations are coded React components on the real design tokens, not screenshots, so they stay sharp and follow the theme.
+
+{% Figure src="/images/projects/personalm/audit-contents.webp" alt="Landing page section titled Four things you get, every time, with card 01 Your six buyer archetypes and card 02 Where the money is" caption="The audit page promised named groups a team could say out loud in a meeting." width="narrow" frame="browser" /%}
+
+{% Gallery images=[{src: "/images/projects/personalm/dashboard-reference.webp", alt: "Likely buyers dashboard on demo data: top segment Hawaiian surf moms, personas in view, predicted GMV with a sparkline, refund rate, and a 14-day predicted buyer arrival chart"}, {src: "/images/projects/personalm/confidence-tiers.webp", alt: "Confidence composition card: a donut of 128 predicted buyers split into high, strong, mid and soft confidence tiers with percentages and counts"}] columns="2" caption="The final round of the dashboard cards, shown on the component reference screen with demo data. Segment names describe people, and confidence is shown as tiers, not a bare score." /%}
+
+## Where it ended
+
+The last commit was June 18, 2026. The scorer held up at about 0.79. Who was buying and what they'd pay never got settled; pricing changed at least five times. Two ML pieces are unfinished: a retrieval-enriched fine-tune that was built but never evaluated, and a preprint that's still a draft.
+
+{% Figure src="/images/projects/personalm/mobile-hero.webp" alt="PersonaLM landing page on a phone: headline, a Run my free audit button and the list of tools it works with" caption="The live landing page on a phone. By the end the offer was a free audit." width="narrow" frame="phone" /%}

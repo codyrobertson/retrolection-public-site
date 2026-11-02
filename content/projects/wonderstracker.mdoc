@@ -1,9 +1,11 @@
 ---
 title: "WondersTracker"
-summary: "Market prices for the Wonders of the First trading card game, tracked across eBay, Blokpax and OpenSea, with portfolio tracking and alerts."
+summary: "A price tracker for the Wonders of the First card game, across eBay, Blokpax and OpenSea. The price collectors see is a trimmed mean, not a model, and a backtest caught its confidence score running backwards."
 discipline: design-code
 status: active
 date: 2025-11-20
+cover: /images/projects/wonderstracker/cover.webp
+coverAlt: "WondersTracker home page in a dark monospace theme: the title, a line about real-time data from eBay, Blokpax and OpenSea, and category tiles for singles, boxes, packs, bundles, mythics, trending, hot deals and floor prices"
 role: "Solo"
 client: ""
 url: "https://wonderstracker.com"
@@ -18,6 +20,68 @@ seo:
   description: ''
   noindex: false
 ---
-WondersTracker tracks every sale of Wonders of the First cards across marketplaces, computes a fair market price for each card, and gives collectors portfolio tracking and Discord alerts for deals.
+WondersTracker tracks what Wonders of the First cards actually sell for, across eBay, Blokpax and OpenSea. I built it solo in two months, November 20, 2025 to January 21, 2026: 987 commits, with Claude as co-author on 82% of them.
 
-The pricing runs on my own autoregressive pricing models, backed by notebooks on order books and floor prices. Nearly 1,000 commits over two months, plus a subscription tier.
+The interesting part is the pricing. I built an autoregressive model and it never shipped. Collectors see a MAD-trimmed mean instead. And when I backtested the order-book floor before consolidating the pricing code, the confidence score turned out to be upside down: higher confidence meant higher error.
+
+Wonders has physical cards and NFT-backed cards, which is why sales are split across three marketplaces. Every 15 minutes the system pulls sold and active listings, works out a fair market price per card and treatment (Classic Paper, Foil, Stonefoil, Serialized and so on), and shows a floor price and an order book from the active listings. Collectors get portfolio tracking and Discord deal alerts, and there's a subscription tier wired into billing.
+
+Stack: React 18, TanStack Router and Query, Tailwind, FastAPI, SQLModel, APScheduler, Postgres.
+
+{% Figure src="/images/projects/wonderstracker/price-history.webp" alt="Price history chart for one card on a log scale from September to January, with lowest ask, active listings and trend above it, and dashed lines marking the floor and the current ask" caption="Price history on a card page. Dots are sales, diamonds are active listings, and the dashed lines are the floor and the lowest ask." width="wide" frame="browser" /%}
+
+## What sets the price
+
+If a card has at least 3 sales, the fair market price is a MAD-trimmed mean of its 8 most recent. MAD trimming throws out sales that sit too far from the median before averaging. With fewer than 3 sales it falls back to a formula: base set price times rarity, treatment and liquidity multipliers. The floor is the average of the 4 lowest sales in the last 30 days. On January 12 the market price switched to the fair price with a VWAP fallback, and deal ratings use VWAP too.
+
+The outliers are real. A data-quality audit on December 30 found 252 bulk lots in 5,521 listings. Bulk lots drag any average, so I added an `is_bulk_lot` flag and pulled them out of pricing.
+
+{% Figure src="/images/projects/wonderstracker/sales-listings.webp" alt="Sales and listings table for one card: dates, prices from $3.99 to $34.99, treatment tags such as Classic Foil, Classic Paper and Formless Foil, and long marketplace listing titles" caption="Sales and listings for one card, tagged by treatment. The titles are whatever the seller typed." width="wide" frame="browser" /%}
+
+## The model that stayed in a notebook
+
+The design calls are in the training script's header: cards only, no sealed product; predict relative to the card's base price instead of raw dollars; learn treatment multipliers from card-level data; target the next sale price. Features were lagged sale prices, rolling stats, days since the last sale, recent sales volume, rarity and set averages, the lowest ask and order-book depth. The notebook compared gradient boosting, random forest, ridge and lasso against the plain "average of the 4 lowest" floor.
+
+Nothing in the app loads the saved model, and the notebook has no saved outputs, so I don't have an accuracy number to put here.
+
+## Confidence was upside down
+
+Before folding all the pricing into one service, I wrote an ADR that said to backtest the order-book estimator against the next actual sale first. The first run missed by a median of 34.4%, and the confidence score was worse than the error: higher confidence meant higher error.
+
+Three things were wrong:
+
+- `MIN_LISTINGS` was 3, which sent every card back to sales-based pricing. I dropped it to 1.
+- The floor was the midpoint of a price bucket. The ADR says it plainly: "The floor is literally the lowest price available. Using bucket midpoint was overcomplicating it." Now it's the lowest ask.
+- Confidence was `depth_ratio × (1 - stale_ratio)`. I replaced it with a weighted mix of listing count (0.4), spread (0.3) and recency (0.3).
+
+After the fix, low-confidence predictions had the higher error (MAE $108.88) and medium had less ($40.28), which is the right direction. The sample is small, though: 28 low-confidence predictions, 223 medium, and no high bucket at all. I'd say it points the right way. I wouldn't call it calibrated.
+
+{% Figure src="/images/projects/wonderstracker/confidence-mae.svg" alt="Bar chart of mean absolute error by confidence bucket after the fix: low confidence $108.88 over 28 predictions, medium $40.28 over 223, and no predictions in the high bucket" caption="After the fix, the less confident bucket has the bigger error, which is the right way round." width="wide" /%}
+
+## Ten days of zero
+
+On December 20 the eBay sold-listings job stopped returning anything. A timezone bug in the date parser was dropping every result, and nothing alerted. The day it got fixed it pulled 29 sold listings, after 0 for the previous ten days.
+
+eBay is most of the data. In the December 30 audit it was 2,380 of 2,536 sold listings, so for ten days the main input to the fair price was missing.
+
+The December 31 sprint retro recommended an alert on zero sold listings over 24 hours. It also called out 15+ files left uncommitted across the sprint, and floor logic living inside an API handler with no service around it.
+
+## Open source for 36 days
+
+On December 9 I split the project. The data-collection code went public under the O'Saasy license. Fair-market pricing, billing, admin scripts and product docs moved into a private repo mounted as a git submodule. In open-source mode billing returned a 501 and pricing was a stub. I also published a contributor data export with 17K+ rows.
+
+On January 14 I undid it. The commit message: "remove OSS/SaaS split - unify codebase ... This eliminates the complexity of managing a separate private repo and Docker build-time token handling."
+
+The cost was plumbing: submodule bumps on December 19, 20, 22 and 24, Docker builds that needed submodule support and tokens, and CI that had to treat the pricing import as optional and silence the type checker about it.
+
+## SEO without the rewrite
+
+The frontend is a Vite single-page app. Meta tags render in the browser, so search engines saw empty HTML on about 60 routes, including 355+ card pages.
+
+I wrote a migration plan that weighed Next.js App Router, estimated at 5 to 7 days and a "complete rewrite," against Remix and others. I didn't take it. Edge middleware now injects the meta tags server-side before the SPA loads. That was far cheaper than a rewrite, but it still cost a day: the middleware shipped January 14 with infinite-loop and caching bugs fixed the same day, and indexing fixes went in January 21.
+
+## Where it stands
+
+A few things got pulled back along the way. A portfolio refactor into Holdings and Watchlist tabs got reverted, a "Hide Low Signal" filter came out, and so did the Starfoil treatment. A MoonPay "Buy Now" for NFT cards and a deck-synergy feature exist as a PRD and a branch. Neither shipped.
+
+The last commit is January 21, 2026. The status is active, but the record stops there.

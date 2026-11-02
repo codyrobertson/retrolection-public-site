@@ -1,9 +1,11 @@
 ---
 title: "TinyImage"
-summary: "A tiny AI-image detector that runs entirely in your browser: an 11 MB distilled model checks images in about 8 ms, with nothing uploaded."
+summary: "A Chrome extension that flags AI-generated images with a model running entirely in the browser. Five days, an agent research loop, and three results that looked like wins until I checked them."
 discipline: code
 status: hobby
 date: 2026-08-13
+cover: /images/projects/tinyimage/cover.webp
+coverAlt: "A page of six photos with the extension running: three AI-generated images blurred with red AI 100% badges, three real photos of puppies, a church and a stereo with green real badges"
 role: "Solo"
 client: ""
 url: "https://github.com/codyrobertson/instant-ai-seek"
@@ -18,19 +20,78 @@ seo:
   description: ''
   noindex: false
 ---
-## What it is
+TinyImage is a Chrome extension, shipped as Instant AI Seek, that flags AI-generated images with a model running entirely inside the browser. It puts a badge on every image on a page, `AI 87%` or `real 12%`, and blurs the AI ones until you hover. Image pixels never leave your machine.
 
-TinyImage, published as the Chrome extension **Instant AI Seek**, detects AI-generated images without sending anything to a server. The model runs in the browser through ONNX Runtime Web, on WebGPU with a WASM fallback, at about 8 ms per image.
+I built it solo in five days, August 13 to 18, 2026. An agent loop wrote and ran the training code. I set the bar and kept checking whether its results were honest, and that turned out to be the real job. Three results looked like wins until I checked them. What ships is a small student model distilled from a bigger one, fast enough to score an image in 8 ms.
 
-## The model
+## Everything runs in the browser
 
-- **Teacher:** a ConvNeXt-Tiny fine-tuned to tell real photos from AI images across about ten generator families, including Flux, SDXL, SD 3.5, Midjourney, DALL-E, Ideogram, Recraft and StyleGAN3.
-- **Student (shipped):** a ResNet-18 distilled from the teacher, exported at 8-bit (11 MB) and fp16 (22 MB).
-- **Data:** real photos plus AI images generated for training, with a sealed evaluation set and out-of-sample holdouts.
-- **Training:** on a DGX Spark, with every run recorded in a training journal.
+The extension finds every image that's 64px or bigger and scores it locally on WebGPU, with WASM as the fallback. There's no cloud inference, no API and no local server. The model downloads once, then it works with the internet off. Every image gets a confidence score, and anything at 65% or higher counts as AI.
 
-## Results
+That meant the model had to be small enough to bundle and fast enough to run on every image on a page. Everything else followed from that.
 
-- 99.3% balanced accuracy on a sealed 300-image test set
-- 99.8% on out-of-sample Stable Diffusion and Midjourney images
-- 4.55% false-AI rate on 2,000 real photos in the wild
+The main number on this page is balanced accuracy: how often the model is right on AI images and on real photos, averaged. 0.5 is guessing, 1.0 is perfect.
+
+## How the work ran
+
+I ran it as an autoresearch loop. An agent proposes an experiment, a fixed scorer runs it on a fixed test set, and the change stays or gets reverted. The agent wrote and ran the code. I set the bar and kept checking whether it was honest.
+
+Early on I told it overfitting was really bad, and so was gaming the metric instead of improving the model. Run advisor reviews at key junctions, keep a training journal, no leakage. The journal ended at 392 lines, facts first, with interpretations tagged as inference.
+
+Training moved off my laptop on day one. ConvNeXt was taking 5 to 11 minutes an epoch on the M2 and pinning the CPU. On a DGX Spark it took 29 seconds.
+
+## False win one: a leak that didn't change the number
+
+The first clean-looking result was 0.9933 balanced accuracy on a sealed 300-image test set. An advisor review found the 150 real photos in that set came from a dataset split that training had also used. So the 0.9933 couldn't be trusted.
+
+I retrained without that split and fixed a crop bug in the extension where a resize was silently dropped. The honest number came back at 0.9933 again. The model had generalised. I just hadn't been able to show it before the retrain.
+
+## False win two: right score, wrong test
+
+The local test said 0.9867. Then I ran public benchmarks. On Synthbuster+, a set of DALL-E images, the model caught 36.3% of the AI images. On the Community Forensics eval set it caught 4.0%.
+
+My local test was one image generator's fakes against one dataset of photos. It was narrow and easy, and the model had learned that generator, not AI images in general. Adding public Community Forensics training data took the DALL-E number from 36.3% to 88.0% and the Community Forensics number from 4.0% to 60.8%. Public test splits stayed test-only. I never trained on them.
+
+Fixing the real-photo side turned up my favourite bug of the project. The model had learned that JPEG artifacts on a face mean AI, because the generated fakes were saved as JPEG and the real face photos were PNG. A clean real face scored 98% real. The same face saved as a mid-quality JPEG scored 30% real. Compressing 40% of the real training photos fixed it, and the real-photo scores came up 20 to 45 points.
+
+Two days later it broke something else. A stress test that degrades images showed JPEG had become a "this is real" signal with nothing on the AI side to balance it. At heavy compression, balanced accuracy fell to 0.587 and the model caught only 17% of AI images. Adding JPEG to the AI side fixed the stress test and broke the real-photo scores again. I couldn't rebalance my way out of it. The stress test is now a permanent gate before anything ships.
+
+## False win three: a breakthrough that was reading file batches
+
+On August 17 the agent reported a confirmed breakthrough. A second classifier on top of the ensemble lifted its score on hard real photos from 0.809 to 0.981. It was written up as confirmed and committed.
+
+An audit found the real images came from two data batches and the fakes from one. The new classifier was learning which batch an image came from. A clean re-measure across batches gave a gain of 0.002, which is noise. I retracted it the same day and deleted the artifact. Then I told the loop to run the advisor before every new experiment, not just at junctions.
+
+{% Figure src="/images/projects/tinyimage/false-wins-ledger.svg" alt="Ledger of three apparent wins and what checking showed: 0.9933 held after a clean retrain; 0.9867 locally fell to 36.3% and 4.0% AI caught on public benchmarks, then 88.0% and 60.8% with public training data; a claimed 0.809 to 0.981 lift was really 0.002 and was retracted. Below, four experiments that lost." caption="Blue held up after checking. Amber failed the check or lost." width="wide" /%}
+
+## Things that lost
+
+Most experiments didn't work. The ones worth naming:
+
+- Adding 5,000 casual everyday photos as reals dropped GAN fake detection from 92% to 15%. Casual scene photos look too much like diffusion-generated scenes. Reverted.
+- DINOv3, a big general-purpose vision model, scored 0.9333 frozen and 0.9600 fully fine-tuned. That closed the foundation-model direction.
+- Simulated screenshots made screenshot detection worse. Real re-photographed screenshots got real-photo recall to 0.90, and 400 more didn't move it.
+
+I also killed one of the agent's plans. It wanted to generate 600 Stable Diffusion 1.5 images for an experiment. I asked why. It would have cost download time, GPU time and memory for zero new information, with less variety than the images already on disk. It reused those instead.
+
+## What ships
+
+A ConvNeXt-Tiny teacher, distilled into a smaller ResNet-18 student. Distillation was my call. The first browser build was far too slow, and I wanted something close to 45 ms. The student landed at 8 ms per image on WebGPU, on an M2 Max at 256px input.
+
+I picked ResNet-18 over MobileNetV3 for two reasons. It scored higher, and it survives being compressed to 8-bit. MobileNet didn't: at 8-bit it called real photos 92% AI. The WASM fallback needs 8-bit, so that settled it. WebGPU gets the 16-bit version, because the 8-bit one on WebGPU took 177 ms. The student is 22 MB at 16-bit and 11 MB at 8-bit.
+
+The student couldn't learn everything the teacher knew. It caught about 59% of GAN images against the teacher's 86%. So the shipped score is whichever of the two is higher. Averaging them pulled the teacher's GAN calls under the 65% line.
+
+What the headline numbers actually measure:
+
+- 99.3% balanced accuracy on the sealed 300 is the student and teacher together. The student alone scored 98.3% at 256px. That set is easy by design, and by the end every model maxed it out.
+- 99.8% on 1,069 unseen Stable Diffusion and Midjourney images is the share of AI images caught. There are no real photos in that set.
+- 4.55% of 2,000 real stock photos get wrongly flagged as AI. At 256px an earlier run flagged 0.8%. Moving to 384px fixed the hardest GAN case and made this one worse.
+
+{% Figure src="/images/projects/tinyimage/badges-in-page.webp" alt="A test page of six photos with the extension running: three AI-generated images blurred with red AI 100% badges, three real photos with green real badges" caption="The extension from the repo on a local test page, using images from its own sealed test set, which is the easy case. The badge shows the AI score, so real 0% means a 0% chance of AI. None of these landed in the amber middle band." width="wide" frame="browser" /%}
+
+## Not solved
+
+The false-AI rate was supposed to be 1% or less. It's 4.55%. So I added a third state instead of pretending: anything scoring between 35% and 65% gets an amber `?` and never blurs. That's a product change, not a better model, and the report calls it mitigated, not solved.
+
+Real photos that look like generated ones still fail; the model gets 37% of those right. Heavily compressed AI images slip through. The WASM fallback running both models at 384px takes 1.1 seconds per image against a 200 ms target. An outside review called it a strong browser-deployable detector, not state of the art. I agree with that. The last journal entry is an experiment design I never ran.

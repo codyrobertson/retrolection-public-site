@@ -1,12 +1,14 @@
 ---
 title: "Sedona"
-summary: "An AI-agent platform on Solana where agents compete in monthly competitions inside Trusted Execution Environments, and the winner takes all."
+summary: "Brand, front end and two design systems for Sedona, a Solana marketplace where AI agents compete monthly and their scores are verified inside TEEs. Plus a pitch deck I art-directed through short, blunt notes."
 discipline: design-code
 status: active
 date: 2025-07-14
 role: "Creative Director & Design Engineer"
 client: "Sedona"
 url: "https://sedona.fun"
+cover: /images/projects/sedona/cover.webp
+coverAlt: "AeroDash component board for trading widgets: a BTC/USDT price ticker, an order entry form, an order book and wallet, position and portfolio cards with hard ink borders and cyan accents"
 tags:
   - "AI"
   - "Solana"
@@ -18,10 +20,59 @@ seo:
   description: ''
   noindex: false
 ---
-## Overview
+Sedona is a marketplace on Solana where AI agents compete. Builders launch agents, the agents compete each month on a set objective, and the scores are produced inside Trusted Execution Environments so anyone can check them. The site pitches it against self-reported benchmarks: "Unlike self-reported benchmarks, our evaluations can be independently verified."
 
-Sedona is built around competition-based discovery for AI agents. Agents run inside Trusted Execution Environments (TEEs) and compete in monthly, winner-takes-all competitions, opening AI development up to more builders.
+I was creative director and design engineer. I did the brand, the website, the front end, and the Sedona UI kit with its own [Storybook](https://sedona-ui-storybook.vercel.app). The competition model, the TEE backend and the Solana programs aren't mine. I built the front end against fixtures and stubs.
 
-I was both creative director and design engineer: I designed the brand, the website and the front end, and built the Sedona UI kit, a Next.js, Tailwind and Radix component library with its own [Storybook](https://sedona-ui-storybook.vercel.app).
+The front end ended up with two design systems: a warm orange one from January, and a dense chrome one for the trading screens that the build checks before a PR lands. I kept the old one instead of deleting it.
 
-{% Callout tone="note" text="Full case study coming soon." /%}
+## Zeus, in ten days
+
+The kit's first release was July 14, 2025. Then the repo sat quiet for five and a half months. Between January 3 and January 12, 2026 there are 120 commits, 68 of them on January 6: the landing page, SEO, trading components, a swap widget with tests, and a component registry.
+
+The first design system shipped in that sprint. Internally it was Zeus: Sedona orange, Souvenir paired with Monument Grotesk, paper-texture shader backgrounds, a WebGL terminal effect, and over 100 tokens in light and dark.
+
+I shipped the kit as a shadcn-compatible registry, so components install one at a time from the CLI instead of as one package: price chart, swap widget, token avatar, data table, elimination progress and a few more. That's more surface to maintain, and the registry got its own test config.
+
+It wasn't clean. An automated review on January 7 turned up security issues and bugs, and a fix pass followed. The hero's browser mockup animation broke if you went straight to `/landing`, and a paper shader had a loading bug.
+
+{% Figure src="/images/projects/sedona/zeus-landing-hero.webp" alt="Sedona landing hero on the Zeus system: CROWDSOURCING COMMUNITY INTELLIGENCE in cream serif capitals over a night desert scene, with the Sedona wordmark below" caption="The Zeus-era landing hero, as exported for the social card. Warm serif capitals, a night desert, the wordmark at the bottom." width="wide" /%}
+
+## AeroDash
+
+On April 26, 2026 I added AeroDash, a "y2k chrome" component family with 11 primitives and a playground at `/aerodash`. On May 4 it became the active Sedona design system.
+
+It goes the other way from Zeus. Its doc calls it "a dense y2k chrome system for product UI, not a marketing kit": hard ink borders, cyan focus rings, offset underlays, clipped chrome tags, tabular numerals, compact uppercase labels. It's for the trading, competition and dashboard screens. Two of its rules: "Do not put page sections inside decorative cards," and a control never resizes when its text, hover, loading or selected state changes.
+
+I didn't delete Zeus. It stays for older surfaces and registry work, and new screens use AeroDash unless a PR is explicitly scoped to the legacy kit. The cost is two systems in one repo.
+
+AeroDash is also checked by the build. `manifest.ts` is the inventory, `index.ts` is the public API, and `scripts/audit-aerodash.mjs` uses the TypeScript compiler API to check consistency. It runs with the tests and the type check before a PR lands.
+
+{% Figure src="/images/projects/sedona/aerodash-buttons.webp" alt="AeroDash component board 02: button anatomy with a left cap, label and right action well, a grid of button states, split buttons, segmented controls, chips and full-width CTA bars" caption="AeroDash board 02. Every button state has the same footprint, so nothing shifts when a control is hovered, pressed or disabled." width="wide" frame="browser" /%}
+
+## The risograph plugin
+
+I wanted charts that look printed, so I had a risograph halftone effect built as a Chart.js plugin. The first version was broken in several places: animation stalled and jumped, the riso line didn't animate at all, and half-wired grid and text drawing broke Chart.js rendering.
+
+The March 17 rewrite plan split it into two lists. Keep the AM halftone tone lookup, the cached paper texture, multiply compositing and 20 performance optimizations. Rebuild everything else from scratch, with one global `printHeadX` driving all of the animation.
+
+{% Gallery images=[{src: "/images/projects/sedona/riso-early.webp", alt: "Risograph line chart test capture: blue halftone fill under a very faint line, with the config panel on the right"}, {src: "/images/projects/sedona/riso-v2-working.webp", alt: "The v2-working capture of the same chart: halftone fill under a solid printed blue line, config panel on the right"}] columns="2" caption="Test captures from the repo, dummy data. Left: an earlier run where the line barely prints. Right: the v2-working capture after the rewrite." /%}
+
+## The pitch deck
+
+In August 2026 I redesigned Sedona's pitch deck, with agents doing the production. The deck is investor material, so none of its content is here, only the direction.
+
+My brief asked for dither-kit charts, "very tuftian," a serious tone, and experiments on the style and a few key slides "before going deep." I prototyped in Paper. Then the notes, in order:
+
+- I vetoed the first typeface pairing outright.
+- "less dither I liked your previous version this is too much"
+- "Mixing Orange and Blue on single slide is no no"
+- "Let's do just blue in this -- keep Tuft maxxing every chart"
+- "More tuftian chart this is slop"
+- "Yes you cooked on the illus! Lets start on the remaining slides"
+
+Two things reversed along the way. The dither got dialed back once I saw too much of it, and orange came off the chart slides. What's left is a small chart studio: ordered-dither charts exported at 3x, ink #021B33, blue #006DFF and cyan #00C8FF on paper white, and the wordmark and star as SVG.
+
+## Where it stands
+
+The docs lag the code. The CHANGELOG stops at 1.0.0 from January, and the README lists Zeus first while pointing to AeroDash as the source of truth. The repo moves in surges: July 2025, January 2026, then a handful of commits in April and May.

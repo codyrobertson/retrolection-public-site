@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" font-family="system-ui, sans-serif">
+  <rect width="1200" height="640" fill="#f6f2e9"/>
+  <text x="60" y="70" font-size="30" font-weight="600" fill="#171717">The same block, two ways to fill the storm_date column</text>
+  <text x="60" y="102" font-size="17" fill="#6b6b6b">Synthetic parcels. The hail polygon misses this block entirely.</text>
+
+  <text x="60" y="160" font-size="21" font-weight="600" fill="#d97706">Before: nearest hail report</text>
+  <text x="640" y="160" font-size="21" font-weight="600" fill="#2563eb">After: inside the polygon or nothing</text>
+
+  <g font-size="17" fill="#171717">
+    <text x="60" y="205" fill="#6b6b6b">Parcel</text><text x="250" y="205" fill="#6b6b6b">storm_date</text>
+    <text x="640" y="205" fill="#6b6b6b">Parcel</text><text x="830" y="205" fill="#6b6b6b">storm_date</text>
+    <line x1="60" y1="218" x2="560" y2="218" stroke="#171717"/>
+    <line x1="640" y1="218" x2="1140" y2="218" stroke="#171717"/>
+
+    <text x="60" y="258">Parcel 101</text><text x="250" y="258" fill="#d97706">this week</text>
+    <text x="60" y="302">Parcel 102</text><text x="250" y="302" fill="#d97706">this week</text>
+    <text x="60" y="346">Parcel 103</text><text x="250" y="346" fill="#d97706">this week</text>
+    <text x="60" y="390">Parcel 104</text><text x="250" y="390" fill="#d97706">this week</text>
+    <text x="60" y="434">Parcel 105</text><text x="250" y="434" fill="#d97706">this week</text>
+    <text x="60" y="478">Parcel 106</text><text x="250" y="478" fill="#d97706">this week</text>
+
+    <text x="640" y="258">Parcel 101</text><text x="830" y="258" fill="#6b6b6b">none: outside polygon</text>
+    <text x="640" y="302">Parcel 102</text><text x="830" y="302" fill="#6b6b6b">none: outside polygon</text>
+    <text x="640" y="346">Parcel 103</text><text x="830" y="346" fill="#6b6b6b">none: outside polygon</text>
+    <text x="640" y="390">Parcel 104</text><text x="830" y="390" fill="#6b6b6b">none: outside polygon</text>
+    <text x="640" y="434">Parcel 105</text><text x="830" y="434" fill="#6b6b6b">none: outside polygon</text>
+    <text x="640" y="478">Parcel 106</text><text x="830" y="478" fill="#6b6b6b">none: outside polygon</text>
+  </g>
+  <text x="60" y="545" font-size="17" fill="#6b6b6b">Operators read the left column as "this home got hit this week."</text>
+  <text x="60" y="572" font-size="17" fill="#6b6b6b">It only meant a hail report landed somewhere nearby.</text>
+  <text x="640" y="545" font-size="17" fill="#6b6b6b">Containment only. If the city's geometry is missing,</text>
+  <text x="640" y="572" font-size="17" fill="#6b6b6b">the coverage check fails closed instead of guessing.</text>
+</svg>

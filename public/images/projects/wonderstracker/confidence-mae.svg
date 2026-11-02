@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" font-family="system-ui, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">Order-book error by confidence bucket, after the fix</title>
+  <desc id="d">Two bars. Low-confidence predictions: mean absolute error $108.88 across 28 predictions. Medium-confidence: $40.28 across 223 predictions. No predictions landed in the high bucket. Before the fix, the order was reversed.</desc>
+  <rect width="1200" height="600" fill="#f6f2e9"/>
+  <text x="60" y="70" font-size="30" font-weight="600" fill="#171717">Floor price error by confidence, after the fix</text>
+  <text x="60" y="104" font-size="18" fill="#6b6b6b">Mean absolute error against the next actual sale. Before the fix, higher confidence meant higher error.</text>
+  <!-- scale: x = 300 + mae * 6 -->
+  <g font-size="20">
+    <text x="280" y="205" text-anchor="end" fill="#171717">Low confidence</text>
+    <text x="280" y="231" text-anchor="end" font-size="16" fill="#6b6b6b">28 predictions</text>
+    <rect x="300" y="182" width="653" height="54" fill="#6b6b6b"/>
+    <text x="968" y="217" fill="#171717" font-weight="600">$108.88</text>
+
+    <text x="280" y="325" text-anchor="end" fill="#171717">Medium confidence</text>
+    <text x="280" y="351" text-anchor="end" font-size="16" fill="#6b6b6b">223 predictions</text>
+    <rect x="300" y="302" width="242" height="54" fill="#2563eb"/>
+    <text x="557" y="337" fill="#171717" font-weight="600">$40.28</text>
+
+    <text x="280" y="445" text-anchor="end" fill="#171717">High confidence</text>
+    <text x="318" y="445" fill="#6b6b6b">No predictions landed here</text>
+  </g>
+  <line x1="300" y1="160" x2="300" y2="470" stroke="#171717" stroke-width="1.5"/>
+  <text x="60" y="548" font-size="16" fill="#6b6b6b">Small sample, and no high bucket to compare against.</text>
+</svg>

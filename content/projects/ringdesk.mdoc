@@ -1,6 +1,8 @@
 ---
 title: "RingDesk"
-summary: "An AI phone receptionist for service businesses, starting with pest control."
+summary: "A self-serve AI receptionist for pest-control shops. Owners edit a call-flow diagram and the prompt is compiled from it."
+cover: /images/projects/ringdesk/cover.webp
+coverAlt: "The RingDesk landing page hero: AI receptionist that books every job, 24/7, with a laptop showing a bookings dashboard"
 discipline: design-code
 status: hobby
 date: 2026-03-17
@@ -17,6 +19,30 @@ seo:
   description: ''
   noindex: false
 ---
-RingDesk answers the phone for service businesses: it books jobs, answers questions and hands off to a human when it should. It launched with a pest-control focus, with a live demo agent, an admin console and an SEO content engine.
+RingDesk answers the phone for service businesses. An owner signs up, lays out a call flow in a visual editor and gets a phone number. The agent picks up 24/7, qualifies the lead, books through Cal.com, sends a text notification, and hands off to a person when it should. I built it solo between March 17 and May 19, 2026: 450 commits, with agents working from specs and plans.
 
-Built with SvelteKit.
+Stack: SvelteKit 2 and Svelte 5, Drizzle, Tailwind 4, Vapi for voice, Twilio for SMS, OpenAI, Stripe, Cal.com.
+
+The first vertical was pest control. The spec's reasons were that it has the simplest call flow, the calls are urgent, and owners already pay for answering services.
+
+{% Figure src="/images/projects/ringdesk/owner-dashboard.webp" alt="The owner dashboard for a demo pest-control account: calls today, leads captured, appointments, links to start a training call or edit call flows, and a list of recent calls with one-line summaries" caption="The owner's view, on seeded demo data. Edit call flows sits one click from the call log." width="narrow" frame="browser" /%}
+
+## The diagram is the source, the prompt is compiled
+
+Owners edit a diagram, not a prompt. The node graph (greeting, identify need, router and so on) compiles on the server into the Vapi system prompt and tool definitions, and every save recompiles and pushes it. That keeps the call logic in something I can diff and test, and the compiler has its own test suite.
+
+The tradeoff is expressiveness. Only router nodes branch, so there are things a hand-written prompt could do that the editor can't.
+
+I rented the voice stack instead of building speech-to-text, the model loop and text-to-speech myself. The spec picked Vapi for its docs, its phone-number provisioning API and its webhooks, and because it was the fastest to integrate. The cost showed up in late April and early May as reconciliation code: reaping orphaned calls, handling replayed webhooks, making call completion idempotent, and recording when the assistant on Vapi's side drifted from the one I'd pushed.
+
+{% Figure src="/images/projects/ringdesk/demo-agent.webp" alt="The admin console's Sales Demo Agent screen: prospect industry, city and company size fields above a large microphone button and an empty transcript panel" caption="The admin console's demo agent. Set the prospect's trade and city, then talk to it." width="wide" frame="browser" /%}
+
+Billing changed early. The spec was written around Polar, and two days in it was all rewritten on Stripe. April mostly went to programmatic SEO: 40 industry pages, plus city, glossary and compare pages.
+
+{% Figure src="/images/projects/ringdesk/pest-control-page.webp" alt="The generated industry page AI Receptionist for Pest Control Businesses, with a list of everyday challenges and a section on why pest-control shops need one" caption="One of the 40 generated industry pages." width="wide" frame="browser" /%}
+
+## Checking the marketing against the code
+
+A May 8 audit compared what the public site promised with what the code actually did. It flagged three things as critical: a /reviews page with eight made-up reviews and review schema markup, a homepage case study with hardcoded numbers, and integrations (Google Calendar, ServiceTitan, Jobber, HubSpot) advertised with no connector behind them. The testimonials came off the homepage. That left a thinner landing page, with nothing on it the code couldn't back up. The voice-samples section came off on May 19.
+
+The May 19 readiness check said it wasn't ready for a client to launch without help, and the release gate was blocked on the live SMS credential failing auth. 530 unit tests passed that day. It's also the last commit. It's a hobby project now.

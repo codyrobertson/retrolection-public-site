@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" font-family="system-ui, sans-serif">
+  <rect width="1200" height="600" fill="#f6f2e9"/>
+  <text x="60" y="70" font-size="30" font-weight="600" fill="#171717">Roof model: exact-material accuracy by version</text>
+  <text x="60" y="102" font-size="17" fill="#6b6b6b">v4 looked solved on its own split, then collapsed on imagery it hadn't been trained on.</text>
+  <!-- baseline at y=500, 100% = 340px tall (y=160) -->
+  <line x1="60" y1="500" x2="1140" y2="500" stroke="#171717" stroke-width="2"/>
+  <g font-size="18" text-anchor="middle">
+    <rect x="130" y="281.7" width="150" height="218.3" fill="#6b6b6b"/>
+    <text x="205" y="268" fill="#171717" font-weight="600">64.2%</text>
+    <text x="205" y="530" fill="#171717">v1</text>
+    <text x="205" y="554" fill="#6b6b6b" font-size="15">hand-built features</text>
+
+    <rect x="380" y="279.7" width="150" height="220.3" fill="#6b6b6b"/>
+    <text x="455" y="266" fill="#171717" font-weight="600">64.8%</text>
+    <text x="455" y="530" fill="#171717">v2</text>
+    <text x="455" y="554" fill="#6b6b6b" font-size="15">more assessor rows</text>
+
+    <rect x="630" y="205.3" width="150" height="294.7" fill="#2563eb"/>
+    <text x="705" y="192" fill="#171717" font-weight="600">86.7%</text>
+    <text x="705" y="530" fill="#171717">v4, held-out split</text>
+    <text x="705" y="554" fill="#6b6b6b" font-size="15">footprint-centered crops</text>
+
+    <rect x="880" y="345.3" width="150" height="154.7" fill="#d97706"/>
+    <text x="955" y="332" fill="#171717" font-weight="600">45.5%</text>
+    <text x="955" y="530" fill="#171717">v4, unseen imagery</text>
+    <text x="955" y="554" fill="#6b6b6b" font-size="15">promotion blocked</text>
+  </g>
+</svg>

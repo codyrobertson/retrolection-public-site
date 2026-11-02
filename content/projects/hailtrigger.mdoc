@@ -1,12 +1,14 @@
 ---
 title: "HailTrigger"
-summary: "A storm-response lead engine for roofing contractors: rank homes by hail exposure and roof vulnerability, mail them, and track every lead back to the address."
+summary: "Storm-response targeting for roofing contractors. It ranks homes by hail exposure and roof vulnerability, mails each one a postcard with its own QR code, and traces every scan and booking back to the address. Two people and a lot of agents built it, and the data isn't allowed to claim more than it knows."
 discipline: design-code
 status: active
 date: 2026-06-02
 role: "Co-founder & CTO"
 client: ""
 url: "https://hailtrigger.com"
+cover: /images/projects/hailtrigger/cover.webp
+coverAlt: "The HailTrigger landing page headline: The storm hits. Your crew is first on the doors worth knocking."
 tags:
   - "AI"
   - "Geospatial"
@@ -18,20 +20,74 @@ seo:
   description: ''
   noindex: false
 ---
-## What it does
+HailTrigger tells roofing contractors which homes to mail after a hailstorm. It scores homes by hail exposure and roof vulnerability from public property records, storm data and authorized county aerial imagery. Then it prints a postcard with its own QR code for each home, so every scan, booking and signed job traces back to one address.
 
-HailTrigger turns public property records and hail and wind data into a ranked list of homes worth contacting after a storm. Contractors choose homes for direct-mail campaigns, every mailer carries its own QR code, and scans, bookings and leads are attributed back to each address.
+I'm co-founder and CTO. We're two people directing a lot of AI coding agents in parallel. In July 2026 we merged 1,367 pull requests, about 30 a day.
 
-It serves two very different users: contractor staff working in a dense dashboard, and homeowners scanning a postcard on their phone after a storm. It's positioned as targeting intelligence, never a damage claim.
+The rule I hold it to is that the data never claims more than it knows. HailTrigger is targeting intelligence. It doesn't say a roof is damaged, who owns the house, or anything about insurance. Most of the calls below come back to that rule, including why the roof model is still a canary.
 
-## Built with agents
+{% Figure src="/images/projects/hailtrigger/flow.svg" alt="Diagram of seven steps in a row: storm, score, pick homes, postcard with its own QR code, scan, booking, signed job. A line underneath ties every step to one address." caption="The whole loop hangs on one address. The postcard's QR code is what lets a booking point back to the home that was mailed." width="wide" /%}
 
-HailTrigger was built by a two-person team working with large numbers of parallel AI coding agents. By August 2026 the live product had 4,071 commits, 2,371 pull requests and 529 database migrations. A ground-up rebuild is underway on a stricter kernel-and-modules architecture.
+There are two users. Contractor staff work a dense dashboard on a laptop. Homeowners scan a postcard on their phone, outside, after a storm. Same tokens, two treatments.
+
+## It looked like an AI demo
+
+The first commit in the live repo, June 2, 2026, is "baseline before AlignUI reskin." The prototype already worked. The first thing I changed was the look, because it looked like every other AI-built dashboard.
+
+I wrote `design.md` as a contract with a ban list: Inter on everything, untinted gray neutrals, identical shadow cards, a green primary button. It requires a display and body pairing and neutrals tinted toward the brand. A screen wasn't done until it rendered live and an adversarial design pass had gone over it. The doc admits there's still no drawn logo, just the wordmark set in the display face.
+
+My notes to the agents stayed blunt: "why do we have this should be way simpler why does the user need to see this." When the assistant flow came back as two forms, I asked for one prompt input and had the AI name the list.
+
+## The column that said "hit this week"
+
+The recon table had a `storm_date` column. Operators read it as "this home got hit this week." It was really the date of the nearest hail report, because proximity was cheaper than geometry when v1 was built.
+
+A dry run caught it. For two whole cities, zero parcels sat inside that week's hail polygons, and the column still showed recent dates on everything. We switched to containment only and added a city-coverage check that fails closed when the geometry is missing.
+
+{% Figure src="/images/projects/hailtrigger/storm-date-column.svg" alt="Two versions of the same table for six synthetic parcels. Before: every parcel shows this week as its storm date. After: every parcel shows none, outside polygon." caption="Synthetic parcels. Nearest-report dates made a block the storm missed look freshly hit." width="wide" /%}
+
+Permits had the same bug. A stale permit file can't contain a permit filed after the storm, so "no permit since the storm" was true for every home, and it added scoring credit on data that couldn't have known. Now a permit file that's too old blocks the run.
+
+Both turned into one rule: a stored value can't claim more certainty than its evidence is fresh. The rewrite keeps them as named scars, `freshness-is-correctness` and `storm-containment-not-proximity`, and says absence is "Blocked, Unknown, Unavailable, or Stale, never nullable optimism." In the UI, source, freshness and blockers show up before an operator is asked to spend money.
 
 ## The roof model
 
-To estimate roof vulnerability, I trained a roof-material classifier on authorized county aerial imagery, first fine-tuning a ResNet-50 and then training a classification head on DINOv2 features. The v4 model reached 86.7% exact-material accuracy on a 372-property holdout, and 92.2% on the 85% of properties where it was at least 95% confident. It runs as a canary, not yet the default.
+Roof vulnerability depends on what the roof is made of, so I wanted a roof-material classifier on authorized county aerial imagery. Agents ran the experiments and logged them in a training journal that's past 3,000 lines, with my directives recorded where I gave them.
+
+v1 and v2 used hand-built color and texture features in a scikit-learn model, trained on county assessor labels. Both landed around 64% exact-material accuracy, and adding more assessor rows didn't move it.
+
+v4 was still a classical model. What changed was centering each crop on the building footprint instead of the middle of the parcel, and that got it to 86.7% on a held-out split. Then we tested it on imagery it hadn't been trained on and strict accuracy fell to 45.5%, so promotion was blocked. A fully fine-tuned ResNet-50, with an augmentation built to bridge that gap, fixed the collapse.
+
+{% Figure src="/images/projects/hailtrigger/roof-model-accuracy.svg" alt="Bar chart of exact-material accuracy: v1 64.2 percent, v2 64.8 percent, v4 on its held-out split 86.7 percent, v4 on imagery it was not trained on 45.5 percent." caption="The 86.7% was real on its own split. The orange bar is why it never shipped as the default." width="wide" /%}
+
+Free labels made it worse. Assessor records label roof material for nothing, so the obvious move was to add more of them. 372 single-county assessor labels went into training, multi-county accuracy dropped from 0.800 to 0.700, and the most confident predictions got less trustworthy. That augmentation was dropped.
+
+The labels that mattered were the ones nobody could give. Two reviewer agents went over 22 candidate roofs and couldn't produce one confident label for the two hardest classes. Two tile subtypes were the one pair proven unseparable, so my directive was "get a working model with fewer classes," and they became one class.
+
+The small eval was optimistic, too. It grew from 30 rows to 63 and every number went down. The confidence gate had the same problem. Its 0.95 threshold had been tuned on the old, overconfident model, and a calibrated network rarely goes that high, so the gate passed 1 roof out of 30. Lowering the threshold would have made the number look fine. We fixed calibration and kept the gate.
+
+Every run had kill criteria written before it started, on sealed, leak-checked holdouts. That's slow. Distilling from an external roof model got rejected because the teacher was worse than ours on the most common class, and the narrow version that survived failed across six stages. Six hard-negative variants, v103 to v108, all missed their criteria and went into a "do not revive" table, because the training chips didn't match the sealed set.
+
+What held up was boring: freeze v98 and use the assessor data as a gate for shingle instead of as training labels. On two sealed packs it hit 97.6% and 97.7% selective accuracy with no tile false positives. But the confident tile calls behind those numbers were 5 roofs and 2 roofs. The verdict was do not promote.
+
+## Retiring the merge train
+
+We promote to production on the exact commit that passed, and a serialized merge train is the textbook way to protect that. Ours ran the release candidate two or more times for every PR that landed. At 30 PRs a day we were paying for the same checks over and over.
+
+I retired it. Changes land directly on green, and promotion checks the exact commit instead of merge. Once promotion does that check, merges don't need to wait in line.
+
+## The rewrite
+
+By August the old repo had 4,071 commits on master and a forensic study of its own history, listing the failures that kept coming back. Agents collided: one July wave of PRs got superseded wholesale by a single release. Retries around the credit ledger went wrong at least five separate times, including one wave that mailed postcards while refunding the credits.
+
+On August 18, 2026 I started a rewrite. The blueprint's goal: "Build the smallest HailTrigger that retains everything the old system earned, discards what it accumulated." One product app, one Postgres, one object store, one tile server. "Not six microservices, not a Rust port, not an event-bus program."
+
+The organizing question changed from where code runs to who's allowed to change a fact. Merge-time checks enforce it with module ownership files and a constitution package.
+
+In its first four days the rewrite landed identity with row-level security, a gateway that gives agents named capability handles instead of root credentials, an exact-commit ship path and release telemetry. That's 95 commits, nearly all governance and very little product. It's an architecture bet, and it isn't proven in production.
+
+## Where it stands
+
+The live product still runs on the old repo, and the rewrite hasn't cut over. The roof model runs as a canary for targeting hints only, with promotion off and metal suppressed. It's processed 768 properties with zero failures. That says the pipeline works. It doesn't say the model is ready.
 
 Built with Next.js, Postgres/PostGIS, a Python worker, MapLibre and print-mail APIs.
-
-{% Callout tone="note" text="Full case study coming soon." /%}

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" font-family="system-ui, sans-serif">
+  <rect width="1200" height="640" fill="#f6f2e9"/>
+  <text x="60" y="78" font-size="30" font-weight="600" fill="#171717">How a chat question becomes an App Board</text>
+  <text x="60" y="112" font-size="18" fill="#6b6b6b">The server picks the store. The model never does, and it never writes the headline number.</text>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#171717"/></marker>
+  </defs>
+  <g fill="none" stroke="#171717" stroke-width="2">
+    <rect x="60" y="160" width="320" height="170" rx="10"/>
+    <rect x="440" y="160" width="320" height="170" rx="10"/>
+    <rect x="820" y="160" width="320" height="170" rx="10" stroke="#2563eb" stroke-width="3"/>
+    <rect x="820" y="400" width="320" height="170" rx="10"/>
+    <rect x="440" y="400" width="320" height="170" rx="10"/>
+    <rect x="60" y="400" width="320" height="170" rx="10" fill="#171717"/>
+    <path d="M380 245H432" marker-end="url(#a)"/>
+    <path d="M760 245H812" marker-end="url(#a)"/>
+    <path d="M980 330V392" marker-end="url(#a)"/>
+    <path d="M820 485H768" marker-end="url(#a)"/>
+    <path d="M440 485H388" marker-end="url(#a)"/>
+  </g>
+  <g font-size="14" fill="#6b6b6b" letter-spacing="1.5">
+    <text x="84" y="194">1</text><text x="464" y="194">2</text><text x="844" y="194" fill="#2563eb">3</text>
+    <text x="844" y="434">4</text><text x="464" y="434">5</text><text x="84" y="434" fill="#b8b8b8">6</text>
+  </g>
+  <g font-size="22" font-weight="600" fill="#171717">
+    <text x="84" y="232">Operator asks in chat</text>
+    <text x="464" y="232">Server resolves</text>
+    <text x="464" y="260">operator, org, store</text>
+    <text x="844" y="232">Every query runs</text>
+    <text x="844" y="260">inside withEntity()</text>
+    <text x="844" y="472">Headline numbers</text>
+    <text x="844" y="500">come from Cube</text>
+    <text x="464" y="472">ViewSpec check</text>
+    <text x="84" y="472" fill="#f6f2e9">Saved App Board</text>
+  </g>
+  <g font-size="16" fill="#6b6b6b">
+    <text x="84" y="266">A question about one store's</text>
+    <text x="84" y="288">data, typed in plain words.</text>
+    <text x="464" y="292">The browser and the agent's</text>
+    <text x="464" y="314">tools never pass a tenant id.</text>
+    <text x="844" y="292">Postgres row-level security,</text>
+    <text x="844" y="314">one warehouse schema per store.</text>
+    <text x="844" y="532">Anything the model works out</text>
+    <text x="844" y="554">itself is labeled unverified.</text>
+    <text x="464" y="506">Generated UI must validate</text>
+    <text x="464" y="528">against the schema before it</text>
+    <text x="464" y="550">renders or saves.</text>
+    <text x="84" y="506" fill="#d6d2c9">A dashboard built from</text>
+    <text x="84" y="528" fill="#d6d2c9">governed metrics.</text>
+  </g>
+</svg>

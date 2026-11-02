@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" font-family="system-ui, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">Test AUC by approach</title>
+  <desc id="d">Horizontal bars in two groups. First experiments on one dataset: Qwen3-8B LoRA fine-tune 0.484, GRPO on top 0.488, popularity table 0.815. Later experiments: XGBoost with LLM features at full coverage 0.485, two-tower scorer about 0.79. A dashed line marks 0.5, a coin flip.</desc>
+  <rect width="1200" height="640" fill="#f6f2e9"/>
+  <text x="60" y="66" font-size="30" font-weight="600" fill="#171717">How well each approach ranked buyers (test AUC)</text>
+  <text x="60" y="100" font-size="18" fill="#6b6b6b">0.5 is a coin flip, 1.0 is perfect.</text>
+  <!-- scale: x = 400 + auc * 720 -->
+  <g font-size="19">
+    <text x="60" y="148" font-size="15" font-weight="600" letter-spacing="1" fill="#6b6b6b">FIRST EXPERIMENTS, SAME DATASET</text>
+    <text x="380" y="188" text-anchor="end" fill="#171717">LLM fine-tune (Qwen3-8B LoRA)</text>
+    <rect x="400" y="165" width="348" height="34" fill="#d97706"/>
+    <text x="772" y="188" fill="#171717" font-weight="600">0.484</text>
+
+    <text x="380" y="246" text-anchor="end" fill="#171717">GRPO on top of the fine-tune</text>
+    <rect x="400" y="223" width="351" height="34" fill="#d97706"/>
+    <text x="772" y="246" fill="#171717" font-weight="600">0.488</text>
+
+    <text x="380" y="304" text-anchor="end" fill="#171717">Popularity table</text>
+    <rect x="400" y="281" width="587" height="34" fill="#6b6b6b"/>
+    <text x="999" y="304" fill="#171717" font-weight="600">0.815</text>
+
+    <text x="60" y="372" font-size="15" font-weight="600" letter-spacing="1" fill="#6b6b6b">LATER EXPERIMENTS</text>
+    <text x="380" y="412" text-anchor="end" fill="#171717">XGBoost + LLM features, full coverage</text>
+    <rect x="400" y="389" width="349" height="34" fill="#d97706"/>
+    <text x="772" y="412" fill="#171717" font-weight="600">0.485</text>
+
+    <text x="380" y="470" text-anchor="end" fill="#171717">Two-tower scorer (shipped)</text>
+    <rect x="400" y="447" width="569" height="34" fill="#2563eb"/>
+    <text x="981" y="470" fill="#171717" font-weight="600">~0.79</text>
+  </g>
+  <line x1="760" y1="150" x2="760" y2="505" stroke="#171717" stroke-width="2" stroke-dasharray="6 6"/>
+  <text x="760" y="532" text-anchor="middle" font-size="17" fill="#6b6b6b">coin flip (0.5)</text>
+  <line x1="400" y1="150" x2="400" y2="505" stroke="#171717" stroke-width="1.5"/>
+  <text x="400" y="532" text-anchor="middle" font-size="17" fill="#6b6b6b">0</text>
+  <text x="60" y="590" font-size="16" fill="#6b6b6b">The two groups were measured on different benchmarks, so compare bars within a group.</text>
+</svg>
