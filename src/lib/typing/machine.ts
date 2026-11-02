@@ -9,6 +9,7 @@
  *
  *   enter | type | idle | live ──(the sheet's foot past the platen)──▶ exit ──(scrolled back)──▶ where it was
  *   exit ──(the plate above the window)──▶ away ──(back in view)──▶ exit
+ *   load ──(opened past the platen: a reload down the page)──▶ exit
  *   any ──(the scene is drawn again: a resize, ?tune)──▶ load ──▶ where it was
  *   any ──(reduced motion, or ?tune paused)──▶ still
  *
@@ -27,7 +28,7 @@ export type Phase = "boot" | "load" | "enter" | "type" | "idle" | "live" | "exit
 /** where each phase may go; anything else is a fault, and says so in development */
 export const EDGES: Record<Phase, readonly Phase[]> = {
   boot: ["load", "still"],
-  load: ["enter", "type", "idle", "still"],
+  load: ["enter", "type", "idle", "exit", "still"],
   enter: ["type", "exit", "load", "still"],
   type: ["idle", "exit", "load", "still"],
   idle: ["live", "exit", "load", "still", "enter"],

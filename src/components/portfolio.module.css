@@ -1,32 +1,48 @@
-/* After the ledger: the portfolio, on a dotted surface that goes on every way (PortfolioCanvas).
-   Prints are placed in column widths (--x, --y, --h); --cw is a column in px, so the one
-   layout serves every window. */
+/* After the ledger, in the light again: the portfolio as a window-high surface, dotted, that goes
+   on every way (PortfolioCanvas). Always the light stock, whatever the page's lights are doing
+   as it comes up (the theme turns back to day once it is half up the window: plate.ts dawn).
+   Prints are placed and sized in cells (--x, --y, --w, --h); --cell is a cell in px. */
 .section {
+  --paper: #f4f1e8;
+  --paper-deep: #ebe7db;
+  --ink: #1a1917;
+  --ink-2: #4a4740;
+  --ink-3: #8a857a;
+  --rule: rgb(26 25 23 / 0.14);
+  --vermilion: #d4462a;
   position: relative;
-  padding: clamp(40px, 7vh, 88px) 0 0;
+  color-scheme: light;
+  color: var(--ink);
+  background: var(--paper);
   scroll-margin-top: var(--masthead);
 }
 
+/* the title, over the canvas's top corner, on a little of the stock so it reads over the prints */
 .head {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 2ch;
-  width: min(var(--sheet, 760px), calc(100% - 2 * var(--gutter)));
-  margin: 0 auto clamp(20px, 3vh, 32px);
+  padding: clamp(28px, 5vh, 56px) var(--gutter) 48px;
+  background: linear-gradient(var(--paper) 35%, transparent);
+  pointer-events: none;
 }
+.head > * { pointer-events: auto; }
 .title {
   margin: 0;
   font-family: var(--font-sans);
   font-weight: 700;
-  font-size: clamp(30px, 5vw, 52px);
-  line-height: 1.02;
-  letter-spacing: -0.03em;
+  font-size: clamp(36px, 7vw, 96px);
+  line-height: 0.95;
+  letter-spacing: -0.035em;
   color: var(--ink);
 }
 .out {
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--ink-2);
   text-decoration: none;
   padding: 6px 0;
@@ -37,32 +53,33 @@
 .out:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 3px; }
 
 .view {
-  --cw: 250px;
-  --gap: calc(var(--cw) * 0.08);
+  --cell: 268px;
   position: relative;
-  height: clamp(460px, 78svh, 860px);
+  height: max(640px, 100svh);
   overflow: hidden;
-  background: var(--paper-deep);
-  border-block: 1px solid var(--rule);
+  background: var(--paper);
   cursor: grab;
   touch-action: pan-y;               /* a finger sideways moves the canvas; up and down, the page */
   user-select: none;
   -webkit-user-select: none;
-  /* the edges go soft, so the surface reads as going on past them */
-  mask-image:
-    linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent),
-    linear-gradient(transparent, #000 8%, #000 92%, transparent);
-  mask-composite: intersect;
 }
 .view[data-dragging="true"] { cursor: grabbing; }
 .view:focus-visible { outline: 2px solid var(--vermilion); outline-offset: -2px; }
+/* the foot fades into the stock, so the surface reads as going on under the page */
+.view::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 96px;
+  background: linear-gradient(transparent, var(--paper));
+  pointer-events: none;
+}
 
 .dots {
   position: absolute;
-  inset: -22px;
-  background-image: radial-gradient(circle at 11px 11px, var(--ink-3) 1px, transparent 1.6px);
-  background-size: 22px 22px;
-  opacity: 0.45;
+  inset: -24px;
+  background-image: radial-gradient(circle at 12px 12px, rgb(26 25 23 / 0.22) 1.1px, transparent 1.7px);
+  background-size: 24px 24px;
   will-change: transform;
 }
 
@@ -74,12 +91,11 @@
 
 .print {
   position: absolute;
-  left: calc(var(--x) * var(--cw));
-  top: calc(var(--y) * var(--cw));
-  width: var(--cw);
-  height: calc(var(--h) * var(--cw));
+  left: calc(var(--x) * var(--cell));
+  top: calc(var(--y) * var(--cell));
+  width: calc(var(--w) * var(--cell));
+  height: calc(var(--h) * var(--cell));
   border-radius: 6px;
-  outline-offset: 3px;
   -webkit-user-drag: none;
 }
 .print img {
@@ -89,23 +105,22 @@
   object-fit: cover;
   object-position: top;
   border-radius: inherit;
-  background: var(--paper);
-  box-shadow: 0 0 0 1px var(--rule), 0 10px 24px -14px rgb(0 0 0 / 0.35);
-  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s ease;
+  background: var(--paper-deep);
+  box-shadow: 0 0 0 1px var(--rule), 0 10px 22px -14px rgb(26 25 23 / 0.4);
   pointer-events: none;
 }
-.print[data-own="true"] img { box-shadow: 0 0 0 1px var(--ink-3), 0 12px 28px -14px rgb(0 0 0 / 0.45); }
-.print:focus-visible { outline: 2px solid var(--vermilion); }
+.print[data-own="true"] img { box-shadow: 0 0 0 1px rgb(26 25 23 / 0.22), 0 16px 32px -16px rgb(26 25 23 / 0.45); }
+.print:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 3px; }
 
 /* its name, under it, when pointed at */
 .tip {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(100% + 6px);
+  top: calc(100% + 7px);
   overflow: hidden;
   font-family: var(--font-sans);
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1.3;
   color: var(--ink-2);
   white-space: nowrap;
@@ -114,22 +129,15 @@
   transition: opacity 0.2s ease;
   pointer-events: none;
 }
-
 @media (hover: hover) {
-  .view:not([data-dragging="true"]) .print:hover img { transform: translateY(-3px); box-shadow: 0 0 0 1px var(--ink-3), 0 18px 34px -14px rgb(0 0 0 / 0.45); }
   .view:not([data-dragging="true"]) .print:hover .tip { opacity: 1; }
 }
 .print:focus-visible .tip { opacity: 1; }
 
 @media (max-width: 640px) {
-  .view { --cw: 168px; height: clamp(420px, 70svh, 640px); }
-}
-
-/* without scripts: the tile as it lies, from its corner */
-@media (scripting: none) {
-  .view { cursor: default; }
+  .view { --cell: 168px; height: max(560px, 88svh); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .print img, .tip { transition: none; }
+  .tip { transition: none; }
 }

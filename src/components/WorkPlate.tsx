@@ -33,7 +33,7 @@ export function workItems(projects: WorkRow[]): WorkItem[] {
     line: oneLiner(p.summary),
     role: p.role?.trim() || "",
     discipline: p.discipline,
-    shots: (SHOTS[p.slug] ?? []).slice(0, 3),
+    shots: (SHOTS[p.slug] ?? []).slice(0, 3).map((s) => ({ ...s, src: s.src.replace("/images/", "/images/thumbs/") })),   // small copies (scripts/thumbs.mjs)
     art: <Mark slug={p.slug} discipline={p.discipline} active={p.status === "active"} />,
   }));
 }

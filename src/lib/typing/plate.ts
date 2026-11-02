@@ -110,10 +110,11 @@ let lightsTimer = 0;
 /** the window's height as layout sees it: on a phone, without the URL bar's coming and going
  * (innerHeight follows the bar; anything laid out or lit by it bounces and flickers as it does) */
 const winH = () => document.documentElement.clientHeight;
-/** night is only over the ledger: once the contact plate (light stock) is up to mid-window, the
- * lights come back on for it and the foot. A little either side of the middle, so it never dithers. */
+/** night is only over the ledger: once what follows it in the light (the portfolio, marked
+ * data-dawn; or the contact plate) is up to mid-window, the lights come back on for it and the
+ * foot. A little either side of the middle, so it never dithers. */
 function dawn() {
-  const top = document.getElementById("contact")?.getBoundingClientRect().top;
+  const top = (document.querySelector("[data-dawn]") ?? document.getElementById("contact"))?.getBoundingClientRect().top;
   if (top === undefined) return false;
   return top < winH() * (document.documentElement.dataset.theme === "light" ? 0.55 : 0.45);
 }
@@ -428,6 +429,10 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
   // a short window holds the desk at its least height and pins it higher (its `top`), which
   // moves with the window's height while the desk's size does not
   window.addEventListener("resize", resized);
+  /** opened (or reloaded) down the page: the opening went by unseen, so the hands start in their
+   * loop, the heading typed and the rule whole; past the platen, the board is where the scroll
+   * has it, its way out drawn first (load) */
+  const downPage = () => scene.getBoundingClientRect().top < -winH() / 4;
   const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; });
   io.observe(plate);
 
@@ -474,7 +479,7 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
       // a plate typed out this visit starts in its loop
       const loop0 = s.loop[0], N = s.frames.length;
       const was = played === id ? frameIdx : SHARED.played === id ? SHARED.frame : 0;
-      const typed = visit()?.phase === "typed";
+      const typed = visit()?.phase === "typed" || downPage();
       startAt = typed ? Math.max(loop0, Math.min(was, N - 1)) : Math.min(was, N - 1);
       fresh &&= startAt === 0;
       played = SHARED.played = id;
@@ -709,7 +714,25 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
       if (!s || loaded !== cfgSeq) return;
       if (o.reduced || !o.playing) { M.go("still", o.reduced ? "reduced motion" : "paused"); return; }
       const { typeAt } = planOf(s), loop0 = s.loop[0];
+      // opened (or reloaded) down the page: the opening went by unseen, so the hands are in their
+      // loop already, the heading typed and the rule whole, and anything past the platen has its
+      // way out drawn first; the board is wherever the scroll has it (exit picks it up from there)
+      const out = page.above || q > 0;
+      if (out || downPage()) {
+        fresh = false; ruledAt = -Infinity;
+        if (startAt < loop0) { startAt = loop0; prime(s, loop0); }
+      }
       if (fresh && now - ruledAt < RULED_MS) return;
+      if (out) {
+        const E = s.exit, i = page.above ? E.length - 1 : Math.floor(q * (E.length - 1));
+        if (!isReady(E[i], i)) { layersOf(E[i], i).forEach(([ty, r]) => want(ty, r, -6)); return; }
+        frameIdx = startAt; acc = 0; shown = "";
+        arrive(s.frames[startAt]);
+        markTyped();
+        resume = { phase: "idle", frame: startAt };
+        M.go("exit", "opened past the platen", now);
+        return;
+      }
       if (!aheadReady(s, startAt)) return;
       frameIdx = startAt; acc = 0; shown = "";
       if (startAt) arrive(s.frames[startAt]);
@@ -820,8 +843,10 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
       // far down the page (the desk out of sight above), the board is away and it is night
       // (or day again, over the contact form); back up, the hands bring the board back with the scroll
       if (page.above) {
+        // opened down here: the scene is made all the same, and goes straight to being away
+        if (ph === "load") steps.load(now, dt);
         lights(page.day ? "light" : "dark");
-        if (PLAYING.has(ph) && s && !o.reduced) M.go("exit", "left above the window");
+        if (PLAYING.has(M.phase) && s && !o.reduced) M.go("exit", "left above the window");
         if (M.phase === "exit") { q = 1; board(true); M.go("away", "above the window"); }
       }
       for (const id of sets.keys()) whole(id);
@@ -850,19 +875,19 @@ export function startPlate(view: PlateView, out: PlateOut, init: PlateOpts) {
     q += (target - q) * (1 - Math.exp(-dt / 90));
     if (Math.abs(target - q) < 0.002) q = target;
     if (q > 0 && PLAYING.has(M.phase)) M.go("exit", "the sheet's foot past the platen");
-    // the lights: down as the board nears the foot of the window, and up as soon as the scroll
-    // turns back for it (the scroll's place, not the board's, which trails it)
-    // The lights are the hands': the board's top edge is the mask. As they pull it down, night is
-    // everything above that edge (night.js, a front every GL layer and the stock turn their pixels
-    // at), so the dark comes down the window exactly as fast as the board does; once it is gone,
-    // the page's theme changes, with nothing left in the light to show it. Brought back up, the
-    // front goes back up with it, and the theme is day's again once the board is in place.
+    // The lights come down the window with the scroll, from its top (night.js: a front every GL
+    // layer and the stock turn their pixels at), and the board's top edge is the mask: the front
+    // never passes it, so the dark comes down to the board and goes on down the page behind it as
+    // the hands take it away. It starts at the window's top, not at the board: the board only
+    // begins to move halfway out, and a front set to its edge put half the window in the dark at
+    // once, then held it there. Once the board is gone the page's theme changes, with nothing
+    // left in the light to show it; brought back up, the front goes back up the same way.
     board(still ? past > 0 : q > 0.55);
     if (still || page.day) lights(!page.day && past > 0 ? "dark" : "light", still);
     // (no fade when it does: what the GL layers draw has already turned)
     else if (q >= 1) lights("dark", true);
     else if (q <= 0) lights("light", true);
-    else setNight(page.platenY + drop);
+    else setNight(Math.min(page.platenY + drop, q * q * (3 - 2 * q) * Math.max(winH() + 2, page.platenY + drop)));
     painted();
     Lv.open = M.phase === "idle" || M.phase === "live";
 
